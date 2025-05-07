@@ -51,7 +51,6 @@ export class InMessageComponent extends BaseComponent implements OnInit, OnDestr
         let message_type = this.messages.message_type;
         if (message_type === 'video_call') {
             this.rawHtml = ''; // optional, just to be safe
-            this.isInitialized = true;
             this.handleExpire(content); // handle expiration separately
             this.cdr.detectChanges();
             return;
@@ -60,9 +59,9 @@ export class InMessageComponent extends BaseComponent implements OnInit, OnDestr
         content.text = this.WhatsappInlineStyleFormat.transform(content.text)      
         this.rawHtml = this.sanitizer.bypassSecurityTrustHtml(content.text)
         this.handleExpire(content);
-
         this.isInitialized = true;
         this.cdr.detectChanges();
+        
     }
 
     ngOnChanges(changes: SimpleChanges): void {
