@@ -76,7 +76,7 @@ const ChatbotDrawer = ({
     isHuman,
     Name,
     tagline,
-    hideCloseButton,
+    // hideCloseButton,
     voice_call_widget
   } = useCustomSelector((state: $ReduxCoreType) => {
     const bridgeName = GetSessionStorageData("bridgeName") || state.appInfo?.bridgeName || "root";
@@ -92,7 +92,7 @@ const ChatbotDrawer = ({
       isHuman: state.Hello?.isHuman || false,
       Name: JSON.parse(getLocalStorage("client") || '{}')?.name || state.Hello?.channelListData?.customer_name || '',
       tagline: state.Hello?.widgetInfo?.tagline || '',
-      hideCloseButton: state.Interface.hideCloseButton || false,
+      // hideCloseButton: state.Interface.hideCloseButton || false,
       voice_call_widget: state.Hello?.widgetInfo?.voice_call_widget || false
     };
   });
@@ -100,14 +100,14 @@ const ChatbotDrawer = ({
   // Handlers
   const handleCreateNewSubThread = async () => {
     if (preview) return;
-    if (subThreadList?.[0]?.newChat){
+    if (subThreadList?.[0]?.newChat) {
       return;
     }
-    const newThreadData  = {
-        sub_thread_id: createRandomId(),
-        thread_id: reduxThreadId,
-        display_name: "New Chat",
-        newChat:"true"
+    const newThreadData = {
+      sub_thread_id: createRandomId(),
+      thread_id: reduxThreadId,
+      display_name: "New Chat",
+      newChat: "true"
     }
     if (!subThreadList?.[0]?.newChat) {
       dispatch(
@@ -119,7 +119,7 @@ const ChatbotDrawer = ({
 
       );
       setOptions([]);
-    
+
     }
   };
 
@@ -385,7 +385,7 @@ const ChatbotDrawer = ({
   };
 
   const CloseButton = useMemo(() => {
-    if (hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen) return null;
+    if (!isSmallScreen) return null;
 
     return (
       <div
@@ -395,7 +395,7 @@ const ChatbotDrawer = ({
         <X size={22} color="#555555" />
       </div>
     );
-  }, [hideCloseButton, handleCloseChatbot]);
+  }, [handleCloseChatbot]);
 
   return (
     <div className="drawer z-[999]">
