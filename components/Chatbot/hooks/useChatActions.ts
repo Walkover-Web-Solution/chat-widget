@@ -1,17 +1,28 @@
-// hooks/useChatActions.ts
 import { errorToast } from '@/components/customToast';
 import { getAllThreadsApi, getPreviousMessage, sendDataToAction, sendFeedbackAction } from '@/config/api';
-import { getHelloDetailsStart } from '@/store/hello/helloSlice';
 import { setThreads } from '@/store/interface/interfaceSlice';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { PAGE_SIZE } from '@/utils/enums';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { ChatAction, ChatActionTypes, ChatState, SendMessagePayloadType } from './chatTypes';
-import { version } from 'os';
 
-export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdRef, chatSessionId, tabSessionId }: { chatDispatch: React.Dispatch<ChatAction>, chatState: ChatState, messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>, timeoutIdRef: React.RefObject<NodeJS.Timeout | null>, chatSessionId: string, tabSessionId: string }) => {
+export const useChatActions = ({
+    chatDispatch,
+    chatState,
+    messageRef,
+    timeoutIdRef,
+    chatSessionId,
+    tabSessionId
+}: {
+    chatDispatch: React.Dispatch<ChatAction>,
+    chatState: ChatState,
+    messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
+    timeoutIdRef: React.RefObject<NodeJS.Timeout | null>,
+    chatSessionId: string,
+    tabSessionId: string
+}) => {
     const globalDispatch = useDispatch();
     const { threadId, subThreadId, bridgeName, variables, selectedAiServiceAndModal, userId, isHelloUser, firstThread, versionId = 'null' } = useCustomSelector((state: $ReduxCoreType) => ({
         threadId: state.appInfo?.[tabSessionId]?.threadId,
@@ -23,23 +34,7 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
         userId: state.appInfo?.[tabSessionId]?.userId || null,
         isHelloUser: state.Hello?.[chatSessionId]?.isHelloUser || false,
         firstThread: state.Interface?.[chatSessionId]?.interfaceContext?.[state.appInfo?.[tabSessionId]?.bridgeName]?.threadList?.[state.appInfo?.[tabSessionId]?.threadId]?.[0]
-    }))
-
-    useEffect(() => {
-        if (bridgeName) {
-            globalDispatch(getHelloDetailsStart({ slugName: bridgeName }));
-        }
-    }, [bridgeName, chatSessionId])
-
-    useEffect(() => {
-        threadId && bridgeName && fetchAllThreads()
-    }, [threadId, bridgeName, chatSessionId]);
-
-    useEffect(() => {
-        if (!(firstThread?.newChat && firstThread?.subThread_id === subThreadId)) {
-            getIntialChatHistory();
-        }
-    }, [threadId, bridgeName, subThreadId]);
+    }));
 
     const startTimeoutTimer = () => {
         timeoutIdRef.current = setTimeout(() => {
@@ -112,7 +107,6 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
             type: ChatActionTypes.SET_IS_FETCHING, payload: true
         })
         try {
-
             const nextPage = currentPage + 1;
             const { previousChats } = await getPreviousMessage(
                 threadId,
@@ -149,7 +143,7 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
     const sendMessage = async ({ message = '', customVariables = {}, customThreadId = '', customBridgeSlug = '', apiCall = true }: SendMessagePayloadType) => {
         chatDispatch({ type: ChatActionTypes.SET_NEW_MESSAGE, payload: true })
         const textMessage = message || (messageRef?.current as HTMLInputElement)?.value;
-        const imageUrls = Array.isArray(chatState.images) && chatState?.images?.length ? chatState?.images : []; // Assuming imageUrls is an empty array or you can replace it with the actual value
+        const imageUrls = Array.isArray(chatState.images) && chatState?.images?.length ? chatState?.images : [];
 
         if (!textMessage && imageUrls.length === 0) return;
         if (messageRef.current) {
@@ -180,7 +174,7 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
 
         const payload = {
             message: textMessage,
-            images: imageUrls, // Send image URLs
+            images: imageUrls,
             userId,
             interfaceContextData: { ...variables, ...customVariables } || {},
             threadId: customThreadId || threadId,
@@ -231,14 +225,16 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
                 if (!chatState?.loading) {
                     const data = event?.data?.data;
                     if (typeof data === "string") {
-                        // this is for when direct sending message through window.askAi("hello")
                         sendMessage({ message: data });
                     } else {
-                        // this is for when sending from SendDataToChatbot method window.SendDataToChatbot({bridgeName: 'asdlfj', askAi: "hello"})
                         setTimeout(() => {
-                            sendMessage({ message: data.askAi || data?.message || "", customVariables: data?.variables || {}, customThreadId: data?.threadId || null, customBridgeSlug: data?.bridgeName || null });
+                            sendMessage({
+                                message: data.askAi || data?.message || "",
+                                customVariables: data?.variables || {},
+                                customThreadId: data?.threadId || null,
+                                customBridgeSlug: data?.bridgeName || null
+                            });
                         }, 500);
-
                     }
                 } else {
                     errorToast("Please wait for the response from AI");
@@ -246,17 +242,8 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
                 }
             }
         },
-        []
+        [chatState?.loading]
     );
-
-    useEffect(() => {
-        if (!isHelloUser) {
-            window.addEventListener("message", handleMessage);
-            return () => {
-                window.removeEventListener("message", handleMessage);
-            };
-        }
-    }, [handleMessage]);
 
     if (isHelloUser) {
         return {
@@ -270,7 +257,8 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
             setImages: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_IMAGES, payload }),
             setOptions: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_OPTIONS, payload }),
             setNewMessage: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_NEW_MESSAGE, payload }),
-            handleMessageFeedback: () => { }
+            handleMessageFeedback: () => { },
+            handleMessage
         }
     }
 
@@ -286,5 +274,6 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
         setOptions: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_OPTIONS, payload }),
         setNewMessage: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_NEW_MESSAGE, payload }),
         handleMessageFeedback,
+        handleMessage
     };
-}
+};

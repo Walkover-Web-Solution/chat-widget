@@ -26,6 +26,8 @@ import { ChatBotGif } from '@/assests/assestsIndex';
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
+import { useChatEffects } from './hooks/useChatEffects';
+import useHelloIntegrationEffects from './hooks/useHelloIntegrationEffects';
 
 interface ChatbotProps {
   chatSessionId: string
@@ -59,6 +61,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
     chatSessionId,
     tabSessionId
   });
+  useChatEffects({ chatDispatch, chatState, messageRef, timeoutIdRef, chatSessionId, tabSessionId })
 
   // Custom hooks
   const { sendMessageToHello, fetchChannels, getMoreHelloChats } =
@@ -74,6 +77,27 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
         setLoading: (data) => chatActions.setLoading(data)
       }
     });
+  const hihih =
+    useHelloIntegration({
+      chatDispatch,
+      chatState,
+      messageRef,
+      chatSessionId,
+      tabSessionId,
+      chatActions: {
+        setNewMessage: (data) => chatActions.setNewMessage(data),
+        setChatsLoading: (data) => chatActions.setChatsLoading(data),
+        setLoading: (data) => chatActions.setLoading(data)
+      }
+    });
+
+  useHelloIntegrationEffects({
+    chatDispatch, chatState, messageRef, chatSessionId, tabSessionId, chatActions: {
+      setNewMessage: (data) => chatActions.setNewMessage(data),
+      setChatsLoading: (data) => chatActions.setChatsLoading(data),
+      setLoading: (data) => chatActions.setLoading(data)
+    }
+  })
 
   const { isHelloUser, isSmallScreen, currentChatId, isDefaultNavigateToChatScreen } =
     useReduxStateManagement({
