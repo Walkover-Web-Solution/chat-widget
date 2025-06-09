@@ -1,20 +1,26 @@
 'use client';
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
-import useLocalStorageEventHandler from "@/hooks/core/eventHandlers/localStorageEventHandler";
-import useScriptEventHandler from "@/hooks/core/eventHandlers/scriptEventHandler";
+import { useEmbeddingScriptEventHandler } from "@/hooks/CORE/eventHandlers/embeddingScript/embeddingScriptEventHandler";
+import { useLocalStorageEventHandler } from "@/hooks/CORE/eventHandlers/localStorage/localStorageEventsHandler";
 import { $ReduxCoreType } from "@/types/reduxCore";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
 import React, { useEffect } from "react";
 import Chatbot from "../Chatbot/Chatbot";
 
-function ChatbotWrapper() {
+interface ChatbotWrapperProps {
+  tabSessionId: string;
+}
+
+function ChatbotWrapper({ tabSessionId }: ChatbotWrapperProps) {
+  
+  useEmbeddingScriptEventHandler(tabSessionId);
+  useLocalStorageEventHandler(tabSessionId);
+
   const { reduxChatSessionId } = useCustomSelector((state: $ReduxCoreType) => ({
     reduxChatSessionId: state.tabInfo?.widgetToken || state?.tabInfo?.chatbotId || '',
   }));
 
-  useScriptEventHandler();
-  useLocalStorageEventHandler();
-
+  // Notify parent when interface is loaded
   useEffect(() => {
     setTimeout(() => {
       // INFORM SCRIPT THAT CHATBOT IS LOADED , SO SCRIPT WILL START SENDING EVENTS
