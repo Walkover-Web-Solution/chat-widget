@@ -1,11 +1,9 @@
 import { LinearProgress, useTheme } from '@mui/material';
 import Image from 'next/image';
-import React, { useEffect, useReducer, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 // Context and hooks
 import { MessageContext } from '../Interface-Chatbot/InterfaceChatbot';
-import { chatReducer, initialChatState } from './hooks/chatReducer';
-import { ChatActionTypes } from './hooks/chatTypes';
 import { useChatActions } from './hooks/useChatActions';
 import useHelloIntegration from './hooks/useHelloIntegration';
 import { useReduxStateManagement } from './hooks/useReduxManagement';
@@ -24,6 +22,8 @@ import StarterQuestions from '../Interface-Chatbot/Messages/StarterQuestions';
 // Utils
 import { ChatBotGif } from '@/assests/assestsIndex';
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
+import { setChatsLoading, setLoading, setNewMessage, setOpenHelloForm, setToggleDrawer } from '@/store/chat/chatSlice';
+import { useAppDispatch } from '@/store/useTypedHooks';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 
@@ -37,23 +37,25 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const mountedRef = useRef<boolean>(false);
   const messageRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-
+  const dispatch = useAppDispatch();
   // State management
-  const [chatState, chatDispatch] = useReducer(chatReducer, initialChatState);
-  const {
-    openHelloForm,
+
+  const { openHelloForm,
     isToggledrawer,
     chatsLoading,
     messageIds,
-    msgIdAndDataMap,
     subThreadId,
-    helloMsgIds,
-    isTyping
-  } = chatState;
+    helloMsgIds
+  } = useCustomSelector((state) => ({
+    openHelloForm: state.Chat.openHelloForm,
+    isToggledrawer: state.Chat.isToggledrawer,
+    chatsLoading: state.Chat.chatsLoading,
+    messageIds: state.Chat.messageIds,
+    subThreadId: state.Chat.subThreadId,
+    helloMsgIds: state.Chat.helloMsgIds
+  }))
 
   const chatActions = useChatActions({
-    chatDispatch,
-    chatState,
     messageRef,
     timeoutIdRef,
     chatSessionId,
@@ -63,21 +65,18 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   // Custom hooks
   const { sendMessageToHello, fetchChannels, getMoreHelloChats } =
     useHelloIntegration({
-      chatDispatch,
-      chatState,
       messageRef,
       chatSessionId,
       tabSessionId,
       chatActions: {
-        setNewMessage: (data) => chatActions.setNewMessage(data),
-        setChatsLoading: (data) => chatActions.setChatsLoading(data),
-        setLoading: (data) => chatActions.setLoading(data)
+        setNewMessage: (data) => dispatch(setNewMessage(data)),
+        setChatsLoading: (data) => dispatch(setChatsLoading(data)),
+        setLoading: (data) => dispatch(setLoading(data))
       }
     });
 
   const { isHelloUser, isSmallScreen, currentChatId, isDefaultNavigateToChatScreen } =
     useReduxStateManagement({
-      chatDispatch,
       chatSessionId,
       tabSessionId
     });
@@ -93,9 +92,6 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
 
   // Initialize RTLayer event listeners
   useRtlayerEventManager({
-    chatDispatch,
-    chatState,
-    messageRef,
     timeoutIdRef,
     chatSessionId,
     tabSessionId
@@ -106,15 +102,15 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   // Effect to open drawer for new human users
   useEffect(() => {
     if (isHelloUser && !currentChatId && !mountedRef.current) {
-      chatActions.setToggleDrawer(true);
+      dispatch(setToggleDrawer(true));
     }
     mountedRef.current = true;
-  }, [isHelloUser, currentChatId, chatActions]);
+  }, [isHelloUser, currentChatId, dispatch]);
 
   // open Chat directly if no team or one team exista
   useEffect(() => {
     if (isDefaultNavigateToChatScreen) {
-      chatActions.setToggleDrawer(false);
+      dispatch(setToggleDrawer(false));
       if (messageRef.current) {
         messageRef.current.focus();
       }
@@ -123,16 +119,9 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
 
   // Context value
   const contextValue = {
-    ...chatState,
     sendMessageToHello,
     messageRef,
-    chatDispatch,
-    messageIds: messageIds?.[subThreadId] || [],
-    msgIdAndDataMap: msgIdAndDataMap?.[subThreadId],
-    allMessages: messageIds,
-    allMessagesData: msgIdAndDataMap,
     isSmallScreen,
-    isTyping: isTyping?.[subThreadId],
     fetchChannels,
     getMoreHelloChats,
     ...chatActions
@@ -150,7 +139,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
         {/* Sidebar - visible on large screens */}
         <div className={`hidden lg:block bg-base-100 border-r overflow-y-auto transition-all duration-300 ease-in-out ${isToggledrawer ? 'w-96 max-w-[286px]' : 'w-0'}`}>
           <ChatbotDrawer
-            setToggleDrawer={chatActions.setToggleDrawer}
+            setToggleDrawer={(data: boolean) => { dispatch(setToggleDrawer(data)) }}
             isToggledrawer={isToggledrawer}
           />
         </div>
@@ -175,10 +164,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
             <FormComponent
               open={openHelloForm}
               setOpen={(isFormOpen: boolean) =>
-                chatDispatch({
-                  type: ChatActionTypes.SET_OPEN_HELLO_FORM,
-                  payload: isFormOpen
-                })
+                dispatch(setOpenHelloForm(isFormOpen))
               }
               isSmallScreen={isSmallScreen}
             />

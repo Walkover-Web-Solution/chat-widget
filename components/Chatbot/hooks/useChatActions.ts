@@ -1,6 +1,7 @@
 // hooks/useChatActions.ts
 import { errorToast } from '@/components/customToast';
 import { getAllThreadsApi, getPreviousMessage, sendDataToAction, sendFeedbackAction } from '@/config/api';
+import { removeMessages, setChatsLoading, setData, setHelloEventMessage, setImages, setInitialMessages, setIsFetching, setLoading, setNewMessage, setOptions, setPaginateMessages, setStarterQuestions, setToggleDrawer, updateLastAssistantMessage, updateSingleMessage } from '@/store/chat/chatSlice';
 import { getHelloDetailsStart } from '@/store/hello/helloSlice';
 import { setThreads } from '@/store/interface/interfaceSlice';
 import { $ReduxCoreType } from '@/types/reduxCore';
@@ -8,10 +9,9 @@ import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { PAGE_SIZE } from '@/utils/enums';
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { ChatAction, ChatActionTypes, ChatState, SendMessagePayloadType } from './chatTypes';
-import { version } from 'os';
+import { SendMessagePayloadType } from './chatTypes';
 
-export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdRef, chatSessionId, tabSessionId }: { chatDispatch: React.Dispatch<ChatAction>, chatState: ChatState, messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>, timeoutIdRef: React.RefObject<NodeJS.Timeout | null>, chatSessionId: string, tabSessionId: string }) => {
+export const useChatActions = ({ messageRef, timeoutIdRef, chatSessionId, tabSessionId }: { messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>, timeoutIdRef: React.RefObject<NodeJS.Timeout | null>, chatSessionId: string, tabSessionId: string }) => {
     const globalDispatch = useDispatch();
     const { threadId, subThreadId, bridgeName, variables, selectedAiServiceAndModal, userId, isHelloUser, firstThread, versionId = 'null' } = useCustomSelector((state: $ReduxCoreType) => ({
         threadId: state.appInfo?.[tabSessionId]?.threadId,
@@ -23,6 +23,15 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
         userId: state.appInfo?.[tabSessionId]?.userId || null,
         isHelloUser: state.Hello?.[chatSessionId]?.isHelloUser || false,
         firstThread: state.Interface?.[chatSessionId]?.interfaceContext?.[state.appInfo?.[tabSessionId]?.bridgeName]?.threadList?.[state.appInfo?.[tabSessionId]?.threadId]?.[0]
+    }))
+
+    const { isFetching, hasMoreMessages, currentPage, images, msgIdAndDataMap, loading } = useCustomSelector((state) => ({
+        isFetching: state.Chat.isFetching,
+        hasMoreMessages: state.Chat.hasMoreMessages,
+        currentPage: state.Chat.currentPage,
+        images: state.Chat.images || [],
+        msgIdAndDataMap: state.Chat.msgIdAndDataMap?.[subThreadId] || {},
+        loading: state.Chat.loading || false,
     }))
 
     useEffect(() => {
@@ -43,8 +52,8 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
 
     const startTimeoutTimer = () => {
         timeoutIdRef.current = setTimeout(() => {
-            chatDispatch({ type: ChatActionTypes.UPDATE_LAST_ASSISTANT_MESSAGE, payload: { role: "assistant", wait: false, timeOut: true } })
-            chatDispatch({ type: ChatActionTypes.SET_LOADING, payload: false })
+            globalDispatch(updateLastAssistantMessage({ role: "assistant", wait: false, timeOut: true }));
+            globalDispatch(setLoading(false));
         }, 240000);
     };
 
@@ -59,9 +68,7 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
 
     const getIntialChatHistory = async () => {
         if (threadId && bridgeName) {
-            chatDispatch({
-                type: ChatActionTypes.SET_CHATS_LOADING, payload: true
-            })
+            globalDispatch(setChatsLoading(true));
             try {
                 const { previousChats, starterQuestion } = await getPreviousMessage(
                     threadId,
@@ -70,47 +77,35 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
                     subThreadId
                 );
                 if (Array.isArray(previousChats)) {
-                    chatDispatch({ type: ChatActionTypes.SET_INTIAL_MESSAGES, payload: { messages: previousChats } });
-                    chatDispatch({
-                        type: ChatActionTypes.SET_DATA, payload: {
-                            currentPage: 1,
-                            hasMoreMessages: previousChats?.length >= PAGE_SIZE.gtwy
-                        }
-                    });
+                    globalDispatch(setInitialMessages({ messages: previousChats }));
+                    globalDispatch(setData({
+                        currentPage: 1,
+                        hasMoreMessages: previousChats?.length >= PAGE_SIZE.gtwy
+                    }));
                 } else {
-                    chatDispatch({ type: ChatActionTypes.SET_INTIAL_MESSAGES, payload: { messages: [] } });
-                    chatDispatch({
-                        type: ChatActionTypes.SET_DATA, payload: {
-                            hasMoreMessages: false
-                        }
-                    });
+                    globalDispatch(setInitialMessages({ messages: [] }));
+                    globalDispatch(setData({
+                        hasMoreMessages: false
+                    }));
                     console.warn("previousChats is not an array");
                 }
                 if (Array.isArray(starterQuestion)) {
-                    chatDispatch({ type: ChatActionTypes.SET_STARTER_QUESTIONS, payload: starterQuestion });
+                    globalDispatch(setStarterQuestions(starterQuestion));
                 }
             } catch (error) {
                 console.warn("Error fetching previous chats:", error);
-                chatDispatch({ type: ChatActionTypes.SET_INTIAL_MESSAGES, payload: { messages: [] } });
-                chatDispatch({
-                    type: ChatActionTypes.SET_DATA, payload: {
-                        hasMoreMessages: false
-                    }
-                });
+                // change to globalDispatch
+                globalDispatch(setInitialMessages({ messages: [] }));
+                globalDispatch(setData({ hasMoreMessages: false }))
             } finally {
-                chatDispatch({
-                    type: ChatActionTypes.SET_CHATS_LOADING, payload: false
-                });
+                globalDispatch(setChatsLoading(false));
             }
         }
     };
 
     const getMoreChats = async () => {
-        const { isFetching, hasMoreMessages, currentPage, subThreadId } = chatState;
         if (isFetching || !hasMoreMessages) return;
-        chatDispatch({
-            type: ChatActionTypes.SET_IS_FETCHING, payload: true
-        })
+        globalDispatch(setIsFetching(true));
         try {
 
             const nextPage = currentPage + 1;
@@ -122,61 +117,44 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
             );
 
             if (Array.isArray(previousChats) && previousChats.length > 0) {
-                chatDispatch({ type: ChatActionTypes.SET_PAGINATE_MESSAGES, payload: { messages: [...previousChats] } });
-                chatDispatch({
-                    type: ChatActionTypes.SET_DATA, payload: {
-                        currentPage: nextPage,
-                        hasMoreMessages: previousChats?.length >= PAGE_SIZE.gtwy
-                    }
-                });
+                globalDispatch(setPaginateMessages({ messages: [...previousChats] }));
+                globalDispatch(setData({
+                    currentPage: nextPage,
+                    hasMoreMessages: previousChats?.length >= PAGE_SIZE.gtwy
+                }));
             } else {
-                chatDispatch({
-                    type: ChatActionTypes.SET_DATA, payload: {
-                        hasMoreMessages: false
-                    }
-                });
+                globalDispatch(setData({
+                    hasMoreMessages: false
+                }));
             }
         } catch (error) {
             console.warn("Error fetching more messages:", error);
             errorToast("Failed to load more messages.");
         } finally {
-            chatDispatch({
-                type: ChatActionTypes.SET_IS_FETCHING, payload: false
-            });
+            globalDispatch(setIsFetching(false));
         }
     }
 
     const sendMessage = async ({ message = '', customVariables = {}, customThreadId = '', customBridgeSlug = '', apiCall = true }: SendMessagePayloadType) => {
-        chatDispatch({ type: ChatActionTypes.SET_NEW_MESSAGE, payload: true })
+        globalDispatch(setNewMessage(true));
         const textMessage = message || (messageRef?.current as HTMLInputElement)?.value;
-        const imageUrls = Array.isArray(chatState.images) && chatState?.images?.length ? chatState?.images : []; // Assuming imageUrls is an empty array or you can replace it with the actual value
+        const imageUrls = Array.isArray(images) && images?.length ? images : []; // Assuming imageUrls is an empty array or you can replace it with the actual value
 
         if (!textMessage && imageUrls.length === 0) return;
         if (messageRef.current) {
             messageRef.current.value = "";
         }
-        chatDispatch({ type: ChatActionTypes.SET_LOADING, payload: true })
-        chatDispatch({ type: ChatActionTypes.SET_OPTIONS, payload: [] })
-
+        globalDispatch(setLoading(true));
+        globalDispatch(setOptions([]));
         startTimeoutTimer();
 
-        chatDispatch({
-            type: ChatActionTypes.SET_DATA,
-            payload: {
-                options: [],
-                images: []
-            }
-        });
-        chatDispatch({ type: ChatActionTypes.SET_HELLO_EVENT_MESSAGE, payload: { message: { role: "user", content: textMessage, urls: imageUrls } } });
-        chatDispatch({
-            type: ChatActionTypes.SET_HELLO_EVENT_MESSAGE, payload: {
-                message: {
-                    content: "Talking with AI",
-                    role: "assistant",
-                    wait: true,
-                }
-            }
-        });
+        globalDispatch(setData({
+            options: [],
+            images: [],
+        }));
+
+        globalDispatch(setHelloEventMessage({ message: { role: "user", content: textMessage, urls: imageUrls } }));
+        globalDispatch(setHelloEventMessage({ message: { role: "assistant", content: "Talking with AI", wait: true } }));
 
         const payload = {
             message: textMessage,
@@ -196,28 +174,25 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
         }
         const response = await sendDataToAction(payload);
         if (!response?.success) {
-            chatDispatch({ type: ChatActionTypes.REMOVE_MESSAGES, payload: { numberOfMessages: 1 } })
-            chatDispatch({ type: ChatActionTypes.SET_LOADING, payload: false })
+            globalDispatch(setLoading(false));
+            globalDispatch(removeMessages({ numberOfMessages: 1 }));
             return
         }
     }
 
     const handleMessageFeedback = async (payload: { msgId: string, feedback: number, reduxMsgId: string }) => {
         const { msgId, feedback, reduxMsgId } = payload;
-        const currentStatus = chatState.msgIdAndDataMap?.[subThreadId]?.[reduxMsgId]?.user_feedback;
+        const currentStatus = msgIdAndDataMap?.[reduxMsgId]?.user_feedback;
         if (msgId && feedback && currentStatus !== feedback) {
             const response = await sendFeedbackAction({
                 messageId: msgId,
                 feedbackStatus: feedback,
             });
             if (response?.success) {
-                chatDispatch({
-                    type: ChatActionTypes.UPDATE_SINGLE_MESSAGE,
-                    payload: {
-                        messageId: reduxMsgId,
-                        data: { user_feedback: feedback }
-                    }
-                })
+                globalDispatch(updateSingleMessage({
+                    messageId: msgId,
+                    data: { user_feedback: feedback }
+                }));
             }
         }
     }
@@ -228,7 +203,7 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
                 getIntialChatHistory();
             }
             if (event?.data?.type === "askAi") {
-                if (!chatState?.loading) {
+                if (!loading) {
                     const data = event?.data?.data;
                     if (typeof data === "string") {
                         // this is for when direct sending message through window.askAi("hello")
@@ -264,12 +239,12 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
             getIntialChatHistory: () => { },
             getMoreChats: () => { },
             sendMessage: () => { },
-            setToggleDrawer: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_TOGGLE_DRAWER, payload }),
-            setLoading: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_LOADING, payload }),
-            setChatsLoading: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_CHATS_LOADING, payload }),
-            setImages: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_IMAGES, payload }),
-            setOptions: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_OPTIONS, payload }),
-            setNewMessage: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_NEW_MESSAGE, payload }),
+            setToggleDrawer: (payload: boolean) => globalDispatch(setToggleDrawer(payload)),
+            setLoading: (payload: boolean) => globalDispatch(setLoading(payload)),
+            setChatsLoading: (payload: boolean) => globalDispatch(setChatsLoading(payload)),
+            setImages: (payload: string[]) => globalDispatch(setImages(payload)),
+            setOptions: (payload: string[]) => globalDispatch(setOptions(payload)),
+            setNewMessage: (payload: boolean) => globalDispatch(setNewMessage(payload)),
             handleMessageFeedback: () => { }
         }
     }
@@ -279,12 +254,12 @@ export const useChatActions = ({ chatDispatch, chatState, messageRef, timeoutIdR
         getIntialChatHistory,
         getMoreChats,
         sendMessage,
-        setToggleDrawer: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_TOGGLE_DRAWER, payload }),
-        setLoading: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_LOADING, payload }),
-        setChatsLoading: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_CHATS_LOADING, payload }),
-        setImages: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_IMAGES, payload }),
-        setOptions: (payload: string[]) => chatDispatch({ type: ChatActionTypes.SET_OPTIONS, payload }),
-        setNewMessage: (payload: boolean) => chatDispatch({ type: ChatActionTypes.SET_NEW_MESSAGE, payload }),
+        setToggleDrawer: (payload: boolean) => globalDispatch(setToggleDrawer(payload)),
+        setLoading: (payload: boolean) => globalDispatch(setLoading(payload)),
+        setChatsLoading: (payload: boolean) => globalDispatch(setChatsLoading(payload)),
+        setImages: (payload: string[]) => globalDispatch(setImages(payload)),
+        setOptions: (payload: string[]) => globalDispatch(setOptions(payload)),
+        setNewMessage: (payload: boolean) => globalDispatch(setNewMessage(payload)),
         handleMessageFeedback,
     };
 }

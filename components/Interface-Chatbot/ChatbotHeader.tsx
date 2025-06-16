@@ -63,17 +63,21 @@ interface ChatbotHeaderProps {
 }
 
 const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSessionId, currentTeamId = "", currentChannelId = "", threadId = "", bridgeName = "" }) => {
+  console.log('header')
   const dispatch = useDispatch();
   const theme = useTheme();
   const {
     setOptions,
     setLoading,
     setToggleDrawer,
-    isToggledrawer,
-    bridgeName: reduxBridgeName,
-    headerButtons,
-    messageIds
   } = useContext(MessageContext);
+
+  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds } = useCustomSelector((state) => ({
+    isToggledrawer: state.Chat?.isToggledrawer,
+    bridgeName: state.Chat.bridgeName || [],
+    headerButtons: state.Chat?.headerButtons || [],
+    messageIds: state.Chat?.messageIds?.[state.Chat.subThreadId] || [],
+  }))
 
   const { chatbotConfig } = useContext<any>(ChatbotContext);
   const {

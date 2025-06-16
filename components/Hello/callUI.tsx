@@ -1,18 +1,16 @@
 // CallUI.tsx
+import { getLocalStorage } from '@/utils/utilities';
+import { Mic, MicOff, Phone } from 'lucide-react';
 import React, { useContext, useEffect, useRef } from 'react';
 import { useCallUI } from '../Chatbot/hooks/useCallUI';
-import './CallUI.css';
-import { Mic, MicOff, Phone } from 'lucide-react';
 import { MessageContext } from '../Interface-Chatbot/InterfaceChatbot';
-import { getLocalStorage } from '@/utils/utilities';
+import './CallUI.css';
 
 const CallUI: React.FC = () => {
     const {
         callState,
         isMuted,
         mediaStream,
-        makeCall,
-        answerCall,
         endCall,
         toggleMute,
         timer

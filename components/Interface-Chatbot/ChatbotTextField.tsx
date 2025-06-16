@@ -8,6 +8,7 @@ import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { useTypingStatus } from "@/hooks/socketEventEmitter";
 import { $ReduxCoreType } from "@/types/reduxCore";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
+import { ParamsEnums } from "@/utils/enums";
 import { isColorLight } from "@/utils/themeUtility";
 import { TextField, useTheme } from "@mui/material";
 import debounce from "lodash.debounce";
@@ -16,7 +17,6 @@ import Image from "next/image";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { MessageContext } from "./InterfaceChatbot";
 import ImageWithFallback from "./Messages/ImageWithFallback";
-import { ParamsEnums } from "@/utils/enums";
 
 interface ChatbotTextFieldProps {
   className?: string;
@@ -25,12 +25,12 @@ interface ChatbotTextFieldProps {
   subThreadId: string;
   currentTeamId: string
   currentChannelId: string
-  isVision:Record<string, any>
+  isVision: Record<string, any>
 }
 
 const MAX_IMAGES = 4;
 
-const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSessionId, tabSessionId, subThreadId, currentTeamId = "", currentChannelId = "" ,isVision:reduxIsVision={}}) => {
+const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSessionId, tabSessionId, subThreadId, currentTeamId = "", currentChannelId = "", isVision: reduxIsVision = {} }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const theme = useTheme();
@@ -51,14 +51,16 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   const {
     sendMessage,
     sendMessageToHello,
-    loading,
     messageRef,
     disabled,
-    options = [],
-    images = [],
     setImages,
-    isTyping
   } = useContext(MessageContext);
+
+  const { images = [], options = [], loading } = useCustomSelector((state) => ({
+    images: state.Chat.images || [],
+    loading: state.Chat.loading || false,
+    options: state.Chat.options || [],
+  }))
 
   const isVisionEnabled = useMemo(() =>
     (reduxIsVision?.vision || mode?.includes("vision")) || isHelloUser,
@@ -360,4 +362,4 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   );
 };
 
-export default React.memo(addUrlDataHoc(ChatbotTextField, [ParamsEnums.subThreadId, ParamsEnums.currentTeamId, ParamsEnums.currentChannelId,ParamsEnums.isVision]));
+export default React.memo(addUrlDataHoc(ChatbotTextField, [ParamsEnums.subThreadId, ParamsEnums.currentTeamId, ParamsEnums.currentChannelId, ParamsEnums.isVision]));

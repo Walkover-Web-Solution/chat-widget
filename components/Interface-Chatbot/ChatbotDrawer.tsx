@@ -30,7 +30,6 @@ const createRandomId = () => Math.random().toString(36).substring(2, 15);
 
 interface ChatbotDrawerProps {
   setLoading: (loading: boolean) => void;
-  isToggledrawer: boolean;
   setToggleDrawer: (isOpen: boolean) => void;
   preview?: boolean;
   chatSessionId: string
@@ -42,7 +41,6 @@ interface ChatbotDrawerProps {
 
 const ChatbotDrawer = ({
   setToggleDrawer,
-  isToggledrawer,
   preview = false,
   chatSessionId,
   tabSessionId,
@@ -54,21 +52,24 @@ const ChatbotDrawer = ({
   const theme = useTheme();
   const isSmallScreen = useMediaQuery('(max-width:1023px)');
 
+  console.log('chatbotdrawer')
   // Context hooks
   const {
     setNewMessage,
     setOptions,
-    chatDispatch,
-    images,
     setImages,
-    fetchChannels,
-    allMessages,
-    allMessagesData,
     messageRef,
     setLoading,
   } = useContext(MessageContext);
 
-  const { currentChatId, currentTeamId } = useReduxStateManagement({ chatDispatch, chatSessionId, tabSessionId });
+  const { images, allMessages, allMessagesData, isToggledrawer } = useCustomSelector((state) => ({
+    images: state.Chat.images || [],
+    allMessages: state.Chat.messageIds || [],
+    allMessagesData: state.Chat.msgIdAndDataMap || {},
+    isToggledrawer: state.Chat.isToggledrawer,
+  }))
+
+  const { currentChatId, currentTeamId } = useReduxStateManagement({ chatSessionId, tabSessionId });
   const { callState } = useCallUI();
 
   // Consolidated Redux state selection

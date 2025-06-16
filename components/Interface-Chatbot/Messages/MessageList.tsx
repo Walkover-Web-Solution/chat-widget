@@ -8,26 +8,30 @@ import { lighten, useTheme } from "@mui/material";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 // App imports
+import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { $ReduxCoreType } from "@/types/reduxCore";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
+import { ParamsEnums } from "@/utils/enums";
 import { generateNewId } from "@/utils/utilities";
 import { MessageContext } from "../InterfaceChatbot";
 import MoveToDownButton from "../MoveToDownButton";
 import Message from "./Message";
-import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
-import { ParamsEnums } from "@/utils/enums";
 
 function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: string, currentChannelId: string }) {
   const {
-    hasMoreMessages = false,
-    newMessage,
     getMoreChats,
     getMoreHelloChats,
-    messageIds = [],
-    msgIdAndDataMap = {},
-    loading,
     setNewMessage
   } = useContext(MessageContext);
+
+  console.log('message list')
+  const { newMessage, messageIds, msgIdAndDataMap, loading, hasMoreMessages } = useCustomSelector((state) => ({
+    newMessage: state.Chat.newMessage || [],
+    messageIds: state.Chat.messageIds?.[state.Chat?.subThreadId] || [],
+    msgIdAndDataMap: state.Chat.msgIdAndDataMap?.[state.Chat?.subThreadId] || {},
+    loading: state.Chat.loading,
+    hasMoreMessages: state.Chat.hasMoreMessages || false,
+  }))
 
   const scrollableDivRef = useRef(null);
   const [showScrollButton, setShowScrollButton] = useState(false);

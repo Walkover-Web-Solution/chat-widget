@@ -4,6 +4,7 @@ import { AiIcon, UserAssistant } from "@/assests/assestsIndex";
 import InterfaceGrid from "@/components/Grid/Grid";
 import RenderHelloVedioCallMessage from "@/components/Hello/RenderHelloVedioCallMessage";
 import { Anchor, Code } from "@/components/Interface-Chatbot/Interface-Markdown/MarkdownUtitily";
+import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { $ReduxCoreType } from "@/types/reduxCore";
 import { supportsLookbehind } from "@/utils/appUtility";
 import { isJSONString } from "@/utils/ChatbotUtility";
@@ -30,10 +31,10 @@ import { MessageContext } from "../InterfaceChatbot";
 import DateGroup from "./DateGroup";
 import ImageWithFallback from "./ImageWithFallback";
 import "./Message.css";
-import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 const remarkGfm = dynamic(() => import('remark-gfm'), { ssr: false });
 
 const UserMessageCard = React.memo(({ message, theme, textColor, sendEventToParentOnMessageClick }: any) => {
+  console.log('user message card')
   const handleMessageClick = () => {
     if (sendEventToParentOnMessageClick) {
       emitEventToParent("MESSAGE_CLICK", message)
@@ -376,7 +377,7 @@ const HumanOrBotMessageCard = React.memo(
   }
 );
 
-const ShadowDomComponent = ({ htmlContent, messageId }:{htmlContent:string, messageId:string}) => {
+const ShadowDomComponent = ({ htmlContent, messageId }: { htmlContent: string, messageId: string }) => {
   const containerRef = useRef(null);
   const [contentHeight, setContentHeight] = useState('auto');
   const shadowRootRef = useRef(null);
@@ -490,7 +491,7 @@ const ShadowDomComponent = ({ htmlContent, messageId }:{htmlContent:string, mess
   );
 };
 
-function Message({ message, addMessage, prevTime ,chatSessionId}: { message: any, addMessage?: any, prevTime?: string | number | null ,chatSessionId:string}) {
+function Message({ message, addMessage, prevTime, chatSessionId }: { message: any, addMessage?: any, prevTime?: string | number | null, chatSessionId: string }) {
   const theme = useTheme();
   const backgroundColor = theme.palette.primary.main;
   const textColor = isColorLight(backgroundColor) ? "#000000" : "#ffffff";
@@ -584,7 +585,10 @@ function Message({ message, addMessage, prevTime ,chatSessionId}: { message: any
 
 
 function FeedBackButtons({ msgId }) {
-  const { handleMessageFeedback, msgIdAndDataMap } = useContext(MessageContext)
+  const { handleMessageFeedback } = useContext(MessageContext)
+  const { msgIdAndDataMap } = useCustomSelector((state) => ({
+    msgIdAndDataMap: state.Chat.msgIdAndDataMap?.[state.Chat?.subThreadId] || {},
+  }))
   return <>
     <button
       className={`btn btn-ghost btn-xs tooltip ${msgIdAndDataMap?.[msgId]?.user_feedback === 1 ? "text-success" : ""

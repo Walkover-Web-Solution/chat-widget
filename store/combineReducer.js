@@ -2,11 +2,12 @@
 import { combineReducers } from "redux";
 import { persistReducer } from "redux-persist";
 
-import InterfaceReducer from "./interface/interfaceSlice";
-import appInfoReducer from "./appInfo/appInfoSlice";
-import helloReducer from "./hello/helloSlice";
-import tabInfoReducer from "./tabInfo/tabInfoSlice";
 import { createNoopStorage, STORAGE_OPTIONS } from "@/utils/storageUtility";
+import appInfoReducer from "./appInfo/appInfoSlice";
+import chatReducer from "./chat/chatSlice";
+import helloReducer from "./hello/helloSlice";
+import InterfaceReducer from "./interface/interfaceSlice";
+import tabInfoReducer from "./tabInfo/tabInfoSlice";
 
 const storage =
   typeof window !== "undefined"
@@ -27,6 +28,7 @@ const tabInfoPersistConfig = {
 const rootReducer = combineReducers({
   Interface: InterfaceReducer,
   Hello: helloReducer,
+  Chat: chatReducer,
   appInfo: persistReducer(appInfoPersistConfig, appInfoReducer),
   tabInfo: persistReducer(tabInfoPersistConfig, tabInfoReducer),
 });

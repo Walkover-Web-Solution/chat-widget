@@ -7,7 +7,9 @@ import useSocket from '@/hooks/socket';
 import useSocketEvents from '@/hooks/socketEventHandler';
 import socketManager from '@/hooks/socketManager';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
+import { setData, setHelloEventMessage, setImages, setInitialMessages, setOpenHelloForm, setPaginateMessages } from '@/store/chat/chatSlice';
 import { setAgentTeams, setChannelListData, setGreeting, setHelloKeysData, setJwtToken, setWidgetInfo } from '@/store/hello/helloSlice';
+import { useAppDispatch } from '@/store/useTypedHooks';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { GetSessionStorageData } from '@/utils/ChatbotUtility';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
@@ -16,7 +18,6 @@ import { PAGE_SIZE } from '@/utils/enums';
 import { generateNewId, getLocalStorage } from '@/utils/utilities';
 import { useCallback, useContext, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { ChatAction, ChatActionTypes, ChatState } from './chatTypes';
 import helloVoiceService from './HelloVoiceService';
 import { useReduxStateManagement } from './useReduxManagement';
 
@@ -32,8 +33,6 @@ interface HelloMessage {
 }
 
 interface UseHelloIntegrationProps {
-  chatState: ChatState;
-  chatDispatch: React.Dispatch<ChatAction>;
   messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | HTMLDivElement>;
   chatSessionId: string;
   tabSessionId: string;
@@ -44,11 +43,18 @@ interface UseHelloIntegrationProps {
   }
 }
 
-const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRef, chatActions, tabSessionId }: UseHelloIntegrationProps) => {
+const useHelloIntegration = ({ chatSessionId, messageRef, chatActions, tabSessionId }: UseHelloIntegrationProps) => {
   const { handleThemeChange } = useContext(ThemeContext);
   const { isHelloUser } = useContext(ChatbotContext);
-  const { loading, helloMessages, images } = chatState;
+  const { loading, helloMessages, images, hasMoreMessages, skip } = useCustomSelector((state) => ({
+    loading: state.Chat.loading,
+    helloMessages: state.Chat.helloMessages,
+    images: state.Chat.images,
+    hasMoreMessages: state.Chat.hasMoreMessages,
+    skip: state.Chat.skip
+  }))
   const { setLoading, setChatsLoading, setNewMessage } = chatActions
+  const globalDispatch = useAppDispatch();
 
   const {
     uuid,
@@ -57,7 +63,7 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
     currentChatId,
     currentTeamId,
     currentChannelId
-  } = useReduxStateManagement({ chatDispatch, chatSessionId, tabSessionId });
+  } = useReduxStateManagement({ chatSessionId, tabSessionId });
 
   const { assigned_type, companyId, botId, showWidgetForm, reduxChatSessionId } = useCustomSelector((state: $ReduxCoreType) => ({
     assigned_type: state.Hello?.[chatSessionId]?.channelListData?.channels?.find(
@@ -78,16 +84,17 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
   useNotificationSocket({ chatSessionId });
 
   const setHelloMessages = useCallback((messages: HelloMessage[]) => {
-    chatDispatch({ type: ChatActionTypes.SET_INTIAL_MESSAGES, payload: { messages, subThreadId: messages?.[0]?.channel || "" } });
-  }, [chatDispatch]);
+    globalDispatch(setInitialMessages({ messages, subThreadId: messages?.[0]?.channel || "" }));
+  }, [globalDispatch]);
 
   const addHelloMessage = useCallback((message: HelloMessage, subThreadId?: string) => {
     if (Array.isArray(message)) {
-      chatDispatch({ type: ChatActionTypes.SET_PAGINATE_MESSAGES, payload: { messages: message } });
+      globalDispatch(setPaginateMessages({ messages: message }));
       return
     }
-    chatDispatch({ type: ChatActionTypes.SET_HELLO_EVENT_MESSAGE, payload: { message: message, subThreadId } });
-  }, [chatDispatch]);
+    globalDispatch(setHelloEventMessage({ message, subThreadId }));
+
+  }, [globalDispatch]);
 
 
   useEffect(() => {
@@ -108,18 +115,14 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
         if (Array.isArray(helloChats) && helloChats.length > 0) {
           const chatsToStore = helloChats
           setHelloMessages(chatsToStore);
-          chatDispatch({
-            type: ChatActionTypes.SET_DATA, payload: {
-              hasMoreMessages: helloChats.length >= PAGE_SIZE.hello,
-              skip: helloChats.length,
-            }
-          });
+          globalDispatch(setData({
+            hasMoreMessages: helloChats.length >= PAGE_SIZE.hello,
+            skip: helloChats.length,
+          }))
         } else {
-          chatDispatch({
-            type: ChatActionTypes.SET_DATA, payload: {
-              hasMoreMessages: false,
-            }
-          });
+          globalDispatch(setData({
+            hasMoreMessages: false,
+          }))
         }
       })
       .catch((error) => {
@@ -133,7 +136,6 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
 
   const getMoreHelloChats = useCallback(() => {
     if (!currentChannelId || !uuid) return;
-    const { hasMoreMessages, skip } = chatState;
     if (!hasMoreMessages) return;
 
     setChatsLoading(true);
@@ -143,18 +145,14 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
         if (Array.isArray(helloChats) && helloChats.length > 0) {
           const chatsToStore = helloChats;
           addHelloMessage(chatsToStore);
-          chatDispatch({
-            type: ChatActionTypes.SET_DATA, payload: {
-              hasMoreMessages: helloChats.length >= PAGE_SIZE.hello,
-              skip: skip + helloChats.length,
-            }
-          });
+          globalDispatch(setData({
+            hasMoreMessages: helloChats.length >= PAGE_SIZE.hello,
+            skip: skip + helloChats.length,
+          }))
         } else {
-          chatDispatch({
-            type: ChatActionTypes.SET_DATA, payload: {
-              hasMoreMessages: false,
-            }
-          });
+          globalDispatch(setData({
+            hasMoreMessages: false,
+          }))
         }
       })
       .catch((error) => {
@@ -163,7 +161,7 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
       .finally(() => {
         setChatsLoading(false);
       });
-  }, [currentChannelId, uuid, setChatsLoading, setHelloMessages]);
+  }, [currentChannelId, uuid, setChatsLoading, setHelloMessages, hasMoreMessages, skip]);
 
   // Fetch all channels
   const fetchChannels = useCallback(() => {
@@ -180,8 +178,8 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
       });
   }, [dispatch]);
 
-  useSocketEvents({ chatState, chatDispatch, messageRef, fetchChannels, chatSessionId, setLoading, tabSessionId });
-  useNotificationSocketEventHandler({ chatDispatch, chatSessionId })
+  useSocketEvents({ messageRef, fetchChannels, chatSessionId, setLoading, tabSessionId });
+  useNotificationSocketEventHandler({ chatSessionId })
 
   // Start timeout timer for response waiting
   const startTimeoutTimer = useCallback(() => {
@@ -224,13 +222,13 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
       } : undefined;
       // show widget form only if in case of new chat and showWidgetForm is true i.e if all the fields are not filled
       if (!currentChatId && showWidgetForm) {
-        chatDispatch({ type: ChatActionTypes.SET_OPEN_HELLO_FORM, payload: true });
+        globalDispatch(setOpenHelloForm(true));
       }
 
       const attachments = Array.isArray(images) && images?.length ? images : null;
 
       if (attachments) {
-        chatDispatch({ type: ChatActionTypes.SET_IMAGES, payload: [] });
+        globalDispatch(setImages([]));
       }
 
       if (isBot || !assigned_type) {
@@ -247,7 +245,6 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
           currentChannelId: data?.['channel']
         }));
         addHelloMessage(newMessage, data?.['channel'])
-        // chatDispatch({ type: ChatActionTypes.SET_INTIAL_MESSAGES, payload: { messages: [newMessage], subThreadId: data?.['channel'] } })
         fetchChannels();
         if (data?.['presence_channel'] && data?.['channel']) {
           try {
@@ -270,7 +267,7 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
     uuid,
     unique_id,
     presence_channel,
-    chatDispatch,
+    globalDispatch,
     images,
     isBot,
     startTimeoutTimer,
