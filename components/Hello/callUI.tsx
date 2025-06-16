@@ -4,6 +4,7 @@ import { useCallUI } from '../Chatbot/hooks/useCallUI';
 import './CallUI.css';
 import { Mic, MicOff, Phone } from 'lucide-react';
 import { MessageContext } from '../Interface-Chatbot/InterfaceChatbot';
+import { getLocalStorage } from '@/utils/utilities';
 
 const CallUI: React.FC = () => {
     const {
@@ -13,7 +14,8 @@ const CallUI: React.FC = () => {
         makeCall,
         answerCall,
         endCall,
-        toggleMute
+        toggleMute,
+        timer
     } = useCallUI();
 
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -35,7 +37,7 @@ const CallUI: React.FC = () => {
             case 'ringing':
                 return (
                     <div className="flex flex-row items-center w-full justify-between px-3">
-                        <h3 className="text-md">Calling...</h3>
+                        <h3 className="text-md">{getLocalStorage('CallId') ? 'Rejoing Call' : 'Calling...'}</h3>
                         <div className="flex items-center">
                             <div className="call-animation">
                                 <div className="ripple"></div>
@@ -58,7 +60,7 @@ const CallUI: React.FC = () => {
                     <div className="flex flex-row items-center justify-between px-3 w-full">
                         <h3 className="text-md">Ongoing Call</h3>
                         <div className="flex items-center">
-                            <CallTimer />
+                            <CallTimer timer={timer} />
                         </div>
                         <div className="flex items-center space-x-4">
                             <button
@@ -123,8 +125,8 @@ const CallUI: React.FC = () => {
 };
 
 // Simple call timer component
-const CallTimer: React.FC = () => {
-    const [seconds, setSeconds] = React.useState(0);
+const CallTimer: React.FC<{ timer: number }> = ({ timer }) => {
+    const [seconds, setSeconds] = React.useState(timer || 0);
 
     useEffect(() => {
         const interval = setInterval(() => {

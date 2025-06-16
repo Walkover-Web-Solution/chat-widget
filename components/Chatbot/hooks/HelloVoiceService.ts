@@ -1,7 +1,7 @@
 // HelloVoiceService.ts
 import WebRTC from "msg91-webrtc-call";
 import { EventEmitter } from "events";
-import { getLocalStorage } from "@/utils/utilities";
+import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
 import { errorToast } from "@/components/customToast";
 
 class HelloVoiceService {
@@ -31,7 +31,7 @@ class HelloVoiceService {
         const clientToken = getLocalStorage('HelloClientToken');
         if (!clientToken) return;
 
-        this.webrtc = WebRTC(clientToken);
+        this.webrtc = WebRTC(clientToken, 'dev');
 
         this.webrtc.on("call", this.handleOutgoingCall);
     }
@@ -45,15 +45,14 @@ class HelloVoiceService {
         call.on("error", (error: any) => {
             console.log("call error", error);
             errorToast(error?.message || "Something went wrong");
-            this.callState = "idle";
-            this.isMuted = false;
-            this.eventEmitter.emit("callStateChanged", { state: this.callState });
-            this.eventEmitter.emit("muteStatusChanged", { muted: false });
-            this.currentCall = null;
+            this.resetCallState();
         });
         // Set up event listeners for this call
         call.on("answered", (data: any) => {
+            console.log("Call answered:", data);
+            setLocalStorage('CallId', data?.id || '');
             this.callState = "connected";
+            this.eventEmitter.emit("handleTimerUpdate", { state: this.callState, data });
             this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
         });
 
@@ -66,10 +65,12 @@ class HelloVoiceService {
         });
 
         call.on("ended", (data: any) => {
+            setLocalStorage('CallId', '');
             this.callState = "idle";
             this.isMuted = false;
             this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
             this.eventEmitter.emit("muteStatusChanged", { muted: false });
+            this.eventEmitter.emit("handleTimerUpdate", { state: 'ended' });
             this.currentCall = null;
         });
 
@@ -82,6 +83,26 @@ class HelloVoiceService {
             this.isMuted = false;
             this.eventEmitter.emit("muteStatusChanged", { muted: false, uid });
         });
+        call.on("rejoined", (data) => {
+            const summary = data?.summary;
+            console.log("Call rejoined with summary:", summary);
+            /**
+             * Following details can be found in summary to rehydrate the UI
+             * summary.startedAt;
+             * summary.answeredAt;
+             * summary.answeredBy;
+             */
+        });
+    }
+
+    resetCallState(): void {
+        this.callState = "idle";
+        this.isMuted = false;
+        this.currentCall = null;
+        this.eventEmitter.emit("callStateChanged", { state: this.callState });
+        this.eventEmitter.emit("muteStatusChanged", { muted: false });
+        this.eventEmitter.emit("handleTimerUpdate", { state: 'ended' });
+        setLocalStorage('CallId', '');
     }
 
     public initiateCall(): void {
@@ -99,6 +120,27 @@ class HelloVoiceService {
         this.webrtc.call(callToken);
         this.callState = "ringing";
         this.eventEmitter.emit("callStateChanged", { state: this.callState });
+    }
+
+    public rejoinCall(): void {
+        if (!this.webrtc) {
+            console.warn("WebRTC not initialized. Call initialize() first.");
+            return;
+        }
+
+        const CallId = getLocalStorage('CallId');
+        if (!CallId) {
+            console.warn("No call token found in localStorage.");
+            return;
+        }
+
+        this.webrtc.rejoinCall(CallId).then(() => {
+            this.callState = "ringing";
+            this.eventEmitter.emit("callStateChanged", { state: this.callState });
+        }).catch((e: any) => {
+            console.log(e, 'error rejoining call');
+            this.resetCallState();
+        });
     }
 
     public answerCall(): void {
