@@ -3,7 +3,7 @@ import { ChatActionTypes, ChatState } from '@/components/Chatbot/hooks/chatTypes
 import { useChatActions } from '@/components/Chatbot/hooks/useChatActions';
 import { useReduxStateManagement } from '@/components/Chatbot/hooks/useReduxManagement';
 import { changeChannelAssigned, setUnReadCount } from '@/store/hello/helloSlice';
-import { playMessageRecivedSound } from '@/utils/utilities';
+import { getLocalStorage, playMessageRecivedSound, setLocalStorage } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import socketManager from './socketManager';
@@ -54,7 +54,7 @@ export const useSocketEvents = ({
     // Handler for new messages
     const handleNewMessage = useCallback((data: any) => {
         const { response } = data;
-        const { message, timetoken } = response || {};
+        const { message, timetoken, company_id = null } = response || {};
         if (message && timetoken) {
             message.timetoken = timetoken;
         }
@@ -107,6 +107,23 @@ export const useSocketEvents = ({
                         { ...message, id: messageId },
                         channel
                     );
+                }
+                break;
+            }
+            case 'update': {
+                const { channel, client_id } = message || {};
+                if (message?.new_event) {
+                    if (client_id) {
+                        if (getLocalStorage('k_clientId')) {
+                            setLocalStorage('k_clientId', client_id);
+                        } else {
+                            setLocalStorage('a_clientId', client_id);
+                        }
+                        socketManager.unsubscribe([channel]);
+                        // Replace the old client id in the channel with the new client_id
+                        const newUserChannel = `ch-comp-${company_id}-${client_id}`;
+                        socketManager.subscribe([newUserChannel]);
+                    }
                 }
                 break;
             }
