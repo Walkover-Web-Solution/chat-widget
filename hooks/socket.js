@@ -53,7 +53,7 @@ const useSocket = () => {
       // We don't disconnect here as other components might be using the socket
       // The socket manager will handle cleanup when the app unmounts
     };
-  }, [jwtToken, eventChannels, channelListData]);
+  }, [jwtToken, eventChannels, channelListData, company_id]);
 
   return null;
 };
