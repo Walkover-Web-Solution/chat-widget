@@ -1,13 +1,13 @@
 import { ThemeContext } from '@/components/AppWrapper';
 import { ChatbotContext } from '@/components/context';
-import { getAgentTeamApi, getAllChannels, getCallToken, getClientToken, getGreetingQuestions, getHelloChatHistoryApi, getJwtToken, initializeHelloChat, registerAnonymousUser, sendMessageToHelloApi } from '@/config/helloApi';
+import { getAgentTeamApi, getAllChannels, getCallToken, getClientToken, getGreetingQuestions, getHelloChatHistoryApi, getJwtToken, initializeHelloChat, registerAnonymousUser, saveClientDetails, sendMessageToHelloApi } from '@/config/helloApi';
 import useNotificationSocket from '@/hooks/notifications/notificationSocket';
 import useNotificationSocketEventHandler from '@/hooks/notifications/notificationSocketEventHandler';
 import useSocket from '@/hooks/socket';
 import useSocketEvents from '@/hooks/socketEventHandler';
 import socketManager from '@/hooks/socketManager';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
-import { setAgentTeams, setChannelListData, setGreeting, setHelloKeysData, setJwtToken, setWidgetInfo } from '@/store/hello/helloSlice';
+import { setAgentTeams, setChannelListData, setClientInfo, setGreeting, setHelloKeysData, setJwtToken, setWidgetInfo } from '@/store/hello/helloSlice';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { GetSessionStorageData } from '@/utils/ChatbotUtility';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
@@ -59,7 +59,7 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
     currentChannelId
   } = useReduxStateManagement({ chatDispatch, chatSessionId, tabSessionId });
 
-  const { assigned_type, companyId, botId, showWidgetForm, reduxChatSessionId, totalNoOfUnreadMsgs } = useCustomSelector((state: $ReduxCoreType) => ({
+  const { assigned_type, companyId, botId, showWidgetForm, reduxChatSessionId, totalNoOfUnreadMsgs, clientInfo } = useCustomSelector((state: $ReduxCoreType) => ({
     assigned_type: state.Hello?.[chatSessionId]?.channelListData?.channels?.find(
       (channel: any) => channel?.channel === currentChannelId
     )?.assigned_type,
@@ -67,6 +67,7 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
     botId: state.Hello?.[chatSessionId]?.widgetInfo?.bot_id || '',
     showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm,
     reduxChatSessionId: state.draftData?.chatSessionId,
+    clientInfo: state?.Hello?.[chatSessionId]?.clientInfo || {},
     totalNoOfUnreadMsgs: (() => {
       const channelListData = state.Hello?.[chatSessionId]?.channelListData;
       const unreadCount = channelListData?.channels?.reduce((acc, channel) => {
@@ -177,8 +178,8 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
     return getAllChannels()
       .then(data => {
         dispatch(setChannelListData(data));
-        if (data?.customer_name === null || data?.customer_number === null || data?.customer_mail === null) {
-          dispatch(setHelloKeysData({ showWidgetForm: true }));
+        if (data?.customer_name && data?.customer_number && data?.customer_mail) {
+          dispatch(setHelloKeysData({ showWidgetForm: false }));
         }
         return data;
       })
@@ -403,10 +404,6 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
         }
       }
 
-      if (is_domain_enable) {
-        emitEventToParent("ENABLE_DOMAIN_TRACKING")
-      }
-
       // Only get JWT token if widgetData is valid and HelloClientId exists
       if (widgetData && (getLocalStorage(`a_clientId`) || getLocalStorage(`k_clientId`))) {
         try {
@@ -446,6 +443,26 @@ const useHelloIntegration = ({ chatSessionId, chatDispatch, chatState, messageRe
 
       // Step 6: Fetch channels
       needsAnonymousRegistration && fetchChannels();
+
+      // Step 7: Update clientInfo and extra parameters on segmento
+      const clientData = JSON.parse(getLocalStorage('clientData') || '{}');
+      if (a_clientId || k_clientId && Object.keys(clientData)?.length > 0) {
+        let clientInfo = {
+          ...clientData,
+          Name: clientData?.name,
+          Phonenumber: clientData?.number ?? undefined,
+          Email: clientData?.mail,
+        }
+        delete clientInfo.name; delete clientInfo.number; delete clientInfo.mail;
+        saveClientDetails(clientInfo).then((data) => {
+          dispatch(setClientInfo({ clientInfo: { name: data?.name, mail: data?.mail, number: data?.number } }))
+        })
+      }
+
+      // Step 8: Enable domain tracking if enabled
+      if (is_domain_enable) {
+        emitEventToParent("ENABLE_DOMAIN_TRACKING")
+      }
 
       mountedRef.current = true;
     } catch (error) {
