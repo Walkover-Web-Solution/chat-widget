@@ -26,6 +26,11 @@ import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { useChatEffects } from './hooks/useChatEffects';
 import { useColor } from './hooks/useColor';
 import { useHelloEffects } from './hooks/useHelloEffects';
+<<<<<<< Updated upstream
+=======
+import { useScreenSize } from './hooks/useScreenSize';
+import { useReduxEffects } from './hooks/useReduxEffect';
+>>>>>>> Stashed changes
 
 interface ChatbotProps {
   chatSessionId: string
@@ -94,6 +99,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   // Custom hooks
   useChatEffects({ chatSessionId, tabSessionId, messageRef, timeoutIdRef });
   useHelloEffects({ chatSessionId, tabSessionId, messageRef });
+  useReduxEffects({ chatSessionId, tabSessionId });
   useRtlayerEventManager({ timeoutIdRef, chatSessionId, tabSessionId });
 
   const { isHelloUser, isSmallScreen, currentChatId, isDefaultNavigateToChatScreen } = useReduxStateManagement({ chatSessionId, tabSessionId });

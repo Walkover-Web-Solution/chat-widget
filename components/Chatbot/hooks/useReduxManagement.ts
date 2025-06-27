@@ -1,9 +1,10 @@
-import { setBridgeName, setBridgeVersionId, setData, setHeaderButtons, setHelloId, setSubThreadId, setThreadId, setToggleDrawer } from '@/store/chat/chatSlice';
-import { useAppDispatch } from '@/store/useTypedHooks';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
+<<<<<<< Updated upstream
 import { useMediaQuery, useTheme } from '@mui/material';
 import { useEffect } from 'react';
+=======
+>>>>>>> Stashed changes
 
 function isDefaultNavigateToChatScreenFn(state: $ReduxCoreType, chatSessionId: string) {
   const teams = state.Hello?.[chatSessionId]?.widgetInfo?.teams || [];
@@ -18,19 +19,16 @@ export const useReduxStateManagement = ({
   chatSessionId: string;
   tabSessionId: string;
 }) => {
+<<<<<<< Updated upstream
   // FIXED: Always call hooks at the top level, in the same order
   const dispatch = useAppDispatch();
   const isLargeScreen = useMediaQuery('(max-width: 1024px)');
   const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+=======
+>>>>>>> Stashed changes
 
   // Get Redux state
   const {
-    reduxThreadId,
-    reduxSubThreadId,
-    reduxBridgeName,
-    reduxHelloId,
-    reduxBridgeVersionId,
-    reduxHeaderButtons,
     interfaceContextData,
     isHelloUser,
     uuid,
@@ -49,12 +47,6 @@ export const useReduxStateManagement = ({
     isDefaultNavigateToChatScreen
   } = useCustomSelector((state) => ({
     interfaceContextData: state.Interface?.[chatSessionId]?.interfaceContext?.variables,
-    reduxThreadId: state.appInfo?.[tabSessionId]?.threadId || "",
-    reduxSubThreadId: state.appInfo?.[tabSessionId]?.subThreadId || "",
-    reduxHeaderButtons: state.Interface?.[chatSessionId]?.headerButtons || [],
-    reduxBridgeName: state.appInfo?.[tabSessionId]?.bridgeName || "root",
-    reduxHelloId: state.appInfo?.[tabSessionId]?.helloId || null,
-    reduxBridgeVersionId: state.appInfo?.[tabSessionId]?.versionId || null,
     isHelloUser: state.Hello?.[chatSessionId]?.isHelloUser || false,
     uuid: state.Hello?.[chatSessionId]?.channelListData?.uuid,
     unique_id: state.Hello?.[chatSessionId]?.channelListData?.unique_id,
@@ -72,6 +64,7 @@ export const useReduxStateManagement = ({
     currentTeamId: state?.appInfo?.[tabSessionId]?.currentTeamId,
   }));
 
+<<<<<<< Updated upstream
   // Sync Redux threadId with local state
   useEffect(() => {
     dispatch(setThreadId(reduxThreadId));
@@ -111,6 +104,8 @@ export const useReduxStateManagement = ({
   useEffect(() => {
     dispatch(setToggleDrawer(!isLargeScreen));
   }, [isLargeScreen, dispatch]);
+=======
+>>>>>>> Stashed changes
 
   return {
     interfaceContextData,
