@@ -1,17 +1,17 @@
 import { ThemeContext } from '@/components/AppWrapper';
 import { ChatbotContext } from '@/components/context';
-import { getAgentTeamApi, getCallToken, getClientToken, getGreetingQuestions, getJwtToken, initializeHelloChat, registerAnonymousUser } from '@/config/helloApi';
+import { getAgentTeamApi, getCallToken, getClientToken, getGreetingQuestions, getJwtToken, initializeHelloChat, registerAnonymousUser, saveClientDetails } from '@/config/helloApi';
 import useNotificationSocket from '@/hooks/notifications/notificationSocket';
 import useNotificationSocketEventHandler from '@/hooks/notifications/notificationSocketEventHandler';
 import useSocket from '@/hooks/socket';
 import useSocketEvents from '@/hooks/socketEventHandler';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
-import { setAgentTeams, setGreeting, setJwtToken, setWidgetInfo } from '@/store/hello/helloSlice';
+import { setAgentTeams, setGreeting, setHelloClientInfo, setHelloKeysData, setJwtToken, setWidgetInfo } from '@/store/hello/helloSlice';
 import { GetSessionStorageData, SetSessionStorage } from '@/utils/ChatbotUtility';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
-import { getLocalStorage } from '@/utils/utilities';
-import { useContext, useEffect, useRef } from 'react';
+import { cleanObject, getLocalStorage } from '@/utils/utilities';
+import { useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import helloVoiceService from './HelloVoiceService';
 import { useChatActions } from './useChatActions';
@@ -58,7 +58,6 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
     }));
 
     const dispatch = useDispatch();
-    const mountedRef = useRef(false);
 
     useSocket({ chatSessionId });
     useNotificationSocket({ chatSessionId });
@@ -143,10 +142,6 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
                 }
             }
 
-            if (is_domain_enable) {
-                emitEventToParent("ENABLE_DOMAIN_TRACKING")
-            }
-
             // Only get JWT token if widgetData is valid and HelloClientId exists
             if (widgetData && (getLocalStorage(`a_clientId`) || getLocalStorage(`k_clientId`))) {
                 try {
@@ -187,7 +182,43 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
             // Step 6: Fetch channels
             needsAnonymousRegistration && fetchChannels();
 
-            mountedRef.current = true;
+
+            // Step 7: Set client details and save to segmento
+            const scriptParams = JSON.parse(GetSessionStorageData('helloConfig') || '{}')
+            if (Object.keys(scriptParams)?.length > 1) {
+                const formattedParams = {
+                    ...scriptParams,
+                    Name: scriptParams?.name || scriptParams?.Name || undefined,
+                    Phonenumber: scriptParams?.number || undefined,
+                    Email: scriptParams?.mail || scriptParams?.email || undefined,
+                }
+
+                const keysToRemove = [
+                    'widgetToken', 'unique_id', 'user_jwt_token', 'sdkConfig', 'hide_launcher', 'show_widget_form', 'show_close_button', 'launch_widget', 'show_send_button', 'unique_id', 'primary_color', 'bot_id', 'name', 'number', 'mail', 'bot_type', 'isMobileSDK', 'pushConfig'
+                ]
+
+                keysToRemove.map(key => {
+                    if (key in formattedParams) {
+                        delete formattedParams[key];
+                    }
+                });
+                const clientData = cleanObject(formattedParams);
+                if (Object.keys(clientData).length > 0) {
+                    saveClientDetails(cleanObject(clientData)).then((data) => {
+                        dispatch(setHelloClientInfo({ clientInfo: { ...clientData } }));
+                        if (!data?.Phonenumber || !data?.Email || !data?.Name) {
+                            dispatch(setHelloKeysData({ showWidgetForm: true }))
+                        } else {
+                            dispatch(setHelloKeysData({ showWidgetForm: false }))
+                        }
+                    })
+                }
+            }
+
+            if (is_domain_enable) {
+                emitEventToParent("ENABLE_DOMAIN_TRACKING")
+            }
+
         } catch (error) {
             console.error("Error initializing Hello services:", error);
         }

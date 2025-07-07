@@ -2,13 +2,14 @@ import countryCodes from "@/assests/countryCode.json";
 import { saveClientDetails } from "@/config/helloApi";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { setOpenHelloForm } from "@/store/chat/chatSlice";
-import { setHelloKeysData } from "@/store/hello/helloSlice";
+import { setHelloClientInfo, setHelloKeysData } from "@/store/hello/helloSlice";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
-import { getLocalStorage } from "@/utils/utilities";
 import { BookText, Mail, Phone, Send, User } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useColor } from "./Chatbot/hooks/useColor";
+import { GetSessionStorageData } from "@/utils/ChatbotUtility";
+import { splitNumber } from "@/utils/utilities";
 
 interface FormComponentProps {
   open: boolean;
@@ -34,20 +35,19 @@ interface FormErrors {
 function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
   const { textColor, backgroundColor } = useColor();
   const dispatch = useDispatch();
-  const { showWidgetForm, open } = useCustomSelector((state) => ({
-    showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm,
-    open: state.Chat.openHelloForm
+  const { showWidgetForm, open, userData } = useCustomSelector((state) => ({
+    showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm ?? true,
+    open: state.Chat.openHelloForm,
+    userData: state.Hello?.[chatSessionId]?.clientInfo
   }));
-  const setOpen = (open: boolean) => {
-    dispatch(setOpenHelloForm(open));
-  };
+  const scriptParams = JSON.parse(GetSessionStorageData('helloConfig') || '{}')
   console.log('form')
-  const userData = JSON.parse(getLocalStorage("client") || "{}");
+
   const [formData, setFormData] = useState<FormData>({
-    name: userData?.name || "",
-    email: userData?.email || "",
-    number: userData?.number || "",
-    countryCode: userData?.country_code || "+91"
+    name: userData?.Name || "",
+    email: userData?.Email || "",
+    number: splitNumber(userData?.Phonenumber || "")?.number || "",
+    countryCode: splitNumber(userData?.Phonenumber || "")?.code || "+91"
   });
 
   const [errors, setErrors] = useState<FormErrors>({
@@ -56,6 +56,14 @@ function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
     number: "",
     countryCode: ""
   });
+
+  useEffect(() => {
+    setFormData({ ...formData, name: userData?.Name || "", email: userData?.Email || "", number: splitNumber(userData?.Phonenumber || "")?.number || "", countryCode: splitNumber(userData?.Phonenumber || "")?.code || "+91" });
+  }, [userData]);
+
+  const setOpen = (open: boolean) => {
+    dispatch(setOpenHelloForm(open));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -99,9 +107,7 @@ function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
       let clientData = {
         Name: formData?.name,
         Phonenumber: formData?.number ? `${formData?.countryCode}${formData?.number}` : undefined,
-        Email: formData?.email,
-        country_code: formData?.countryCode,
-        number_without_CC: formData?.number
+        Email: formData?.email
       }
 
       // Dispatch setHelloKeysData if all three fields are filled
@@ -111,6 +117,7 @@ function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
 
       saveClientDetails(clientData).then(() => {
         setOpen(false);
+        dispatch(setHelloClientInfo({ clientInfo: { ...clientData } }));
       })
     }
   };
@@ -167,6 +174,7 @@ function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter your name"
+                disabled={scriptParams?.name ? true : false}
                 className={`input input-bordered w-full pl-10 ${errors.name ? "input-error" : ""
                   }`}
                 required
@@ -193,6 +201,7 @@ function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={scriptParams?.mail ? true : false}
                 placeholder="Enter your email"
                 className={`input input-bordered w-full pl-10 ${errors.email ? "input-error" : ""}`}
               />
@@ -236,6 +245,7 @@ function FormComponent({ isSmallScreen, chatSessionId }: FormComponentProps) {
                   name="number"
                   value={formData.number}
                   onChange={handleChange}
+                  disabled={scriptParams?.number ? true : false}
                   placeholder="Enter your phone number"
                   className={`input input-bordered w-full ${errors.number ? "input-error" : ""}`}
                 />
