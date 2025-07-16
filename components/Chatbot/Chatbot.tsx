@@ -28,6 +28,7 @@ import { useColor } from './hooks/useColor';
 import { useHelloEffects } from './hooks/useHelloEffects';
 import { useReduxEffects } from './hooks/useReduxEffects';
 import { useScreenSize } from './hooks/useScreenSize';
+import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 
 interface ChatbotProps {
   chatSessionId: string
@@ -137,6 +138,11 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
     (!greetingMessage || (!greetingMessage.text && !greetingMessage?.options?.length))
     : !subThreadId || messageIds[subThreadId]?.length === 0;
 
+  const sendSamplePN = () =>{
+    emitEventToParent('PUSH_NOTIFICATION',{
+      content:"<p>hello</p>"
+    })
+  }
   return (
     <MessageContext.Provider value={contextValue}>
       <div className="flex h-screen w-full overflow-hidden relative">
@@ -152,7 +158,9 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
         <div className="flex flex-col w-full">
           {/* Mobile header */}
           <ChatbotHeader />
-
+        <button onClick={sendSamplePN} >
+          SEND SAMPLE PUSH NOTIFICATION
+        </button>
           {/* Loading indicator */}
           {chatsLoading && (
             <div className="w-full">
