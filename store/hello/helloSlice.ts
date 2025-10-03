@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { initialState, reducers } from "./helloReducer.ts";
+import { initialState, reducers } from "./helloReducer";
 
 const interfaceSlice = createSlice({
   name: "Hello",
@@ -11,7 +11,6 @@ export const {
   setChannel,
   getHelloDetailsStart,
   getHelloDetailsSuccess,
-  setHuman,
   setIsVision,
   setHelloConfig,
   setWidgetInfo,
@@ -21,6 +20,7 @@ export const {
   changeChannelAssigned,
   setGreeting,
   setUnReadCount,
-  setAgentTeams
+  setAgentTeams,
+  setHelloClientInfo
 } = interfaceSlice.actions;
 export default interfaceSlice.reducer;

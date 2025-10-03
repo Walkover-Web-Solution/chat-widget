@@ -1,12 +1,34 @@
 import { errorToast } from "@/components/customToast";
-import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
-import axios from "@/utils/helloInterceptor";
 import { PAGE_SIZE } from "@/utils/enums";
+import axios from "@/utils/helloInterceptor";
+import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
 
-const HELLO_HOST_URL = process.env.NEXT_PUBLIC_MSG91_HOST_URL;
+const urlParams = new URLSearchParams(window.location.search);
+const env = urlParams.get('env');
+const HELLO_HOST_URL = env !== 'stage' ? process.env.NEXT_PUBLIC_MSG91_HOST_URL : 'https://stageapi.phone91.com';
+const PUSH_NOTIFICATION_URL = process.env.NEXT_PUBLIC_PUSH_NOTIFICATION_URL;
 
-export function getUserData(){
-  return JSON.parse(getLocalStorage('userData') || '{}')
+export const getAuthorization = () => {
+  const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
+  const widgetId = getLocalStorage('WidgetId');
+  return `${widgetId}:${clientId}`;
+};
+
+export function getUserData() {
+  const userData = JSON.parse(getLocalStorage('userData') || '{}');
+  const filteredData: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(userData)) {
+    if (value && key !== 'name') {
+      filteredData[key] = value;
+    }
+  }
+  return filteredData;
+}
+
+// Function to get is_anon value
+export function getIsAnonValue(): boolean {
+  return getLocalStorage("k_clientId") ? false : getLocalStorage("a_clientId") ? true : false;
 }
 
 // Register anonymous user
@@ -36,9 +58,10 @@ export async function registerAnonymousUser(): Promise<any> {
 // Get JWT token for socket subscription
 export async function getJwtToken(): Promise<string | null> {
   try {
-    const response = await axios.get(`${HELLO_HOST_URL}/jwt-token/?is_anon=${getLocalStorage("is_anon") == 'true'}`, {
+    // const response = await axios.get(`${HELLO_HOST_URL}/jwt-token/?is_anon=${getIsAnonValue()}`, {
+    const response = await axios.get(`${HELLO_HOST_URL}/jwt-token/`, {
       headers: {
-        authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+        authorization: getAuthorization(),
       },
     });
     const token = response?.data?.data?.jwt_token;
@@ -55,7 +78,24 @@ export async function getJwtToken(): Promise<string | null> {
 // Get all channels for registered user
 export async function getAllChannels(): Promise<any> {
   try {
-    const { mail, number, user_jwt_token, unique_id, name } = JSON.parse(getLocalStorage('userData') || '{}');
+    const { mail, number, unique_id, name } = JSON.parse(getLocalStorage('userData') || '{}');
+    const hasUserIdentity = !!(unique_id || mail || number);
+    const isAnon = getIsAnonValue();
+
+    // Determine which client ID to use for authorization
+    const widgetId = getLocalStorage('WidgetId');
+    const aClientId = getLocalStorage('a_clientId');
+    const kClientId = getLocalStorage('k_clientId');
+    let authorization = widgetId;
+
+    if (kClientId) {
+      // For known users and registered users (msg sent), use k_clientId if available
+      authorization = `${widgetId}:${kClientId}`;
+    } else if (aClientId) {
+      // For anonymous users (msg not sent), use a_clientId if available
+      authorization = `${widgetId}:${aClientId}`;
+    }
+
     const response = await axios.post(
       `${HELLO_HOST_URL}/pubnub-channels/list/`,
       {
@@ -64,24 +104,25 @@ export async function getAllChannels(): Promise<any> {
         number,
         unique_id,
         user_data: getUserData(),
-        is_anon: getLocalStorage('is_anon') == 'true',
-        ...(getLocalStorage('is_anon') == 'true' ? { anonymous_client_uuid: getLocalStorage('a_clientId'), uuid: getLocalStorage('a_clientId') } : {})
+        // is_anon: isAnon,
+        // ...(isAnon ? { anonymous_client_uuid: aClientId, uuid: aClientId } : {})
       },
       {
         headers: {
-          authorization: (unique_id || mail || number || user_jwt_token)
-            ? getLocalStorage('WidgetId')
-            : (getLocalStorage('a_clientId')
-              ? `${getLocalStorage('WidgetId')}:${getLocalStorage('a_clientId')}`
-              : getLocalStorage('WidgetId')),
+          authorization,
         },
       }
     );
 
-    if (unique_id || mail || number || user_jwt_token) {
-      setLocalStorage('k_clientId', response?.data?.uuid)
-    } else if (response?.data?.customer_name) {
-      setLocalStorage('default_client_created', 'true')
+    // Set the appropriate client ID based on user type
+    if (response?.data?.uuid) {
+      if (hasUserIdentity) {
+        setLocalStorage('k_clientId', response.data.uuid);
+      } else if (isAnon) {
+        setLocalStorage('a_clientId', response.data.uuid);
+      } else {
+        setLocalStorage('k_clientId', response.data.uuid);
+      }
     }
 
     // Update userData with customer details from response if available
@@ -107,10 +148,10 @@ export async function getAgentTeamApi(): Promise<any> {
   try {
     const response = await axios.post(`${HELLO_HOST_URL}/agent-team/`, {
       user_data: getUserData(),
-      is_anon: getLocalStorage("is_anon") == 'true',
+      // is_anon: getIsAnonValue(),
     }, {
       headers: {
-        authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+        authorization: getAuthorization(),
       },
     });
     return response?.data || [];
@@ -123,7 +164,7 @@ export async function getAgentTeamApi(): Promise<any> {
 // Get greeting/starter questions
 export async function getGreetingQuestions(companyId: string, botId: string, botType: 'lex' | 'chatgpt'): Promise<any> {
   try {
-    const isAnonymousUser = getLocalStorage("is_anon") == 'true';
+    // const isAnonymousUser = getIsAnonValue();
     const widgetId = getLocalStorage('WidgetId');
     const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
     const authorization = clientId ? `${widgetId}:${clientId}` : widgetId;
@@ -134,7 +175,7 @@ export async function getGreetingQuestions(companyId: string, botId: string, bot
         {
           company_id: companyId,
           bot_id: botId,
-          is_anon: isAnonymousUser
+          // is_anon: isAnonymousUser
         },
         {
           headers: {
@@ -152,7 +193,7 @@ export async function getGreetingQuestions(companyId: string, botId: string, bot
           params: {
             company_id: companyId,
             bot_id: botId,
-            is_anon: isAnonymousUser
+            // is_anon: isAnonymousUser
           },
           headers: {
             authorization: authorization,
@@ -169,24 +210,20 @@ export async function getGreetingQuestions(companyId: string, botId: string, bot
 }
 
 // Save client details
-export async function saveClientDetails(clientData: any): Promise<any> {
+export async function saveClientDetails(clientData = {}): Promise<any> {
   try {
-    const response = await axios.put(`${HELLO_HOST_URL}/client/`, clientData, {
+    const payload = {
+      user_data: getUserData(),
+      // is_anon: getIsAnonValue(),
+      ...clientData
+    }
+
+    const response = await axios.put(`${HELLO_HOST_URL}/v2/client/${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`, payload, {
       headers: {
-        authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+        authorization: getAuthorization(),
       },
     });
-    if (response?.data) {
-      const existingUserData = JSON.parse(getLocalStorage('client') || '{}');
-      setLocalStorage("client", JSON.stringify({
-        ...existingUserData,
-        name: response?.data?.n || clientData?.n,
-        email: response?.data?.e || clientData?.e,
-        number: clientData?.number_without_CC,
-        country_code: clientData?.country_code,
-      }));
-    }
-    return response?.data;
+    return response?.data?.data;
   } catch (error: any) {
     errorToast(error?.response?.data?.message || "Failed to save client details");
     return null;
@@ -204,11 +241,11 @@ export async function getHelloChatHistoryApi(channelId: string, skip: number = 0
         page_size: PAGE_SIZE.hello,
         start_from: skip + 1 || 1,
         user_data: getUserData(),
-        is_anon: getLocalStorage("is_anon") == 'true',
+        // is_anon: getIsAnonValue(),
       },
       {
         headers: {
-          authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          authorization: getAuthorization(),
           "content-type": "application/json",
         },
       }
@@ -227,7 +264,7 @@ export async function initializeHelloChat(): Promise<any> {
       `${HELLO_HOST_URL}/widget-info/`,
       {
         "user_data": getUserData(),
-        "is_anon": getLocalStorage("is_anon") === 'true'
+        // "is_anon": getIsAnonValue()
       },
       {
         headers: {
@@ -244,7 +281,7 @@ export async function initializeHelloChat(): Promise<any> {
 }
 
 // Function to send message to Hello chat
-export async function sendMessageToHelloApi(message: string, attachment: Array<object> = [], channelDetail?: any, chat_id?: string): Promise<any> {
+export async function sendMessageToHelloApi(message: string, attachment: Array<object> = [], channelDetail?: any, chat_id?: string, helloVariables: any = {}): Promise<any> {
   let messageType = 'text'
   // Determine message type based on attachment and message content
   if (attachment?.length > 0) {
@@ -269,18 +306,19 @@ export async function sendMessageToHelloApi(message: string, attachment: Array<o
         chat_id: chat_id ? chat_id : null,
         session_id: null,
         user_data: getUserData(),
-        is_anon: getLocalStorage("is_anon") == 'true',
+        sessionVariables: helloVariables,
+        // is_anon: getIsAnonValue(),
       },
       {
         headers: {
-          authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          authorization: getAuthorization(),
           "content-type": "application/json",
         },
       }
     );
 
     if (channelDetail) {
-      setLocalStorage('is_anon', "false");
+      setLocalStorage('k_clientId', response?.data?.data?.uuid);
     }
     return response?.data?.data;
   } catch (error: any) {
@@ -300,7 +338,7 @@ export async function uploadAttachmentToHello(file: any, inboxId: string): Promi
       formData,
       {
         headers: {
-          'authorization': `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          'authorization': getAuthorization(),
           'content-type': 'multipart/form-data',
         }
       }
@@ -315,12 +353,13 @@ export async function uploadAttachmentToHello(file: any, inboxId: string): Promi
 // Get client token for WebRTC
 export async function getClientToken(): Promise<any> {
   try {
-    const isAnon = getLocalStorage("is_anon") == 'true';
+    // const isAnon = getIsAnonValue();
+    // `${HELLO_HOST_URL}/web-rtc/get-client-token/?is_anon=${isAnon}`,
     const response = await axios.get(
-      `${HELLO_HOST_URL}/web-rtc/get-client-token/?is_anon=${isAnon}`,
+      `${HELLO_HOST_URL}/web-rtc/get-client-token/`,
       {
         headers: {
-          authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          authorization: getAuthorization(),
         },
       }
     );
@@ -337,12 +376,13 @@ export async function getClientToken(): Promise<any> {
 // Get call token for WebRTC
 export async function getCallToken(): Promise<any> {
   try {
-    const isAnon = getLocalStorage("is_anon") == 'true';
+    // const isAnon = getIsAnonValue();
+    // `${HELLO_HOST_URL}/web-rtc/get-call-token/?is_anon=${isAnon}${channelId ? `&channel=${channelId}` : ''}`,
     const response = await axios.get(
-      `${HELLO_HOST_URL}/web-rtc/get-call-token/?is_anon=${isAnon}`,
+      `${HELLO_HOST_URL}/web-rtc/get-call-token/`,
       {
         headers: {
-          authorization: `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          authorization: getAuthorization(),
         },
       }
     );
@@ -357,21 +397,23 @@ export async function getCallToken(): Promise<any> {
 }
 
 // Function to add domain to Hello chat
-export async function addDomainToHello(domain?: string,userEvent = {}): Promise<any> {
+export async function addDomainToHello({ domain, userEvent = {} }: { domain?: string, userEvent?: Record<string, any> }): Promise<any> {
   try {
     const response = await axios.put(
       `${HELLO_HOST_URL}/add-domain/`,
       {
-        dom: domain,
+        dom: domain || undefined,
         user_data: {
           ...getUserData(),
-          ...userEvent
         },
-        is_anon: getLocalStorage("is_anon") == 'true'
+        event_data: Object.keys(userEvent || {})?.length > 0 ? {
+          ...userEvent
+        } : undefined,
+        // is_anon: getIsAnonValue()
       },
       {
         headers: {
-          'authorization': `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          'authorization': getAuthorization(),
           'content-type': 'application/json',
         }
       }
@@ -389,7 +431,7 @@ export async function deleteReadReceipt(channelId: string): Promise<any> {
       `${HELLO_HOST_URL}/read-receipt/${channelId}`,
       {
         headers: {
-          'authorization': `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          'authorization': getAuthorization(),
           'content-type': 'application/json'
         }
       }
@@ -400,7 +442,6 @@ export async function deleteReadReceipt(channelId: string): Promise<any> {
     return null;
   }
 }
-
 
 // Submit feedback for a conversation
 export async function submitFeedback(params: {
@@ -419,11 +460,11 @@ export async function submitFeedback(params: {
         type: "post-feedback",
         id: params.id,
         user_data: getUserData(),
-        is_anon: getLocalStorage("is_anon") == 'true'
+        // is_anon: getIsAnonValue()
       },
       {
         headers: {
-          'authorization': `${getLocalStorage('WidgetId')}:${getLocalStorage('k_clientId') || getLocalStorage('a_clientId')}`,
+          'authorization': getAuthorization(),
           'content-type': 'application/json'
         }
       }
@@ -432,5 +473,23 @@ export async function submitFeedback(params: {
   } catch (error: any) {
     errorToast(error?.message || "Failed to submit feedback");
     return null;
+  }
+}
+
+export async function subscribeForFCMPushNotification(data: Record<string, any>, jwtToken: string): Promise<any> {
+  try {
+    const response = await axios.post(
+      `${PUSH_NOTIFICATION_URL}/add-user-fcm-token/`,
+      data,
+      {
+        headers: {
+          'authorization': jwtToken,
+          'content-type': 'application/json'
+        }
+      }
+    );
+    return response?.data;
+  } catch (error: any) {
+    throw error;
   }
 }

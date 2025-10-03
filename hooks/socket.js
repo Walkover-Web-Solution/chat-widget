@@ -1,13 +1,14 @@
-import { useEffect } from "react";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
+import { getLocalStorage } from "@/utils/utilities";
+import { useEffect } from "react";
 import socketManager from "./socketManager"; // Import the singleton socket manager
 
-const useSocket = () => {
-  const { jwtToken, channelId, eventChannels, channelListData } = useCustomSelector((state) => ({
-    jwtToken: state.Hello?.socketJwt?.jwt,
-    channelId: state.Hello?.Channel?.channel || null,
-    channelListData: state.Hello?.channelListData?.channels || [],
-    eventChannels: state.Hello?.widgetInfo?.event_channels || [],
+const useSocket = ({ chatSessionId }) => {
+  const { jwtToken, eventChannels, channelListData, company_id } = useCustomSelector((state) => ({
+    jwtToken: state.Hello?.[chatSessionId]?.socketJwt?.jwt,
+    channelListData: state.Hello?.[chatSessionId]?.channelListData?.channels || [],
+    eventChannels: state.Hello?.[chatSessionId]?.widgetInfo?.event_channels || [],
+    company_id: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || [],
   }));
 
   useEffect(() => {
@@ -17,31 +18,31 @@ const useSocket = () => {
     socketManager.connect(jwtToken);
 
     // Setup channels for subscription
-    if (channelId) {
-      // Create array of channels to subscribe to
-      const channels = [];
-      
-      // Add channels from channelListData if available
-      if (channelListData && channelListData.length > 0) {
-        channels.push(...channelListData.map((channel) => channel?.channel).filter(Boolean));
-      } else if (channelId) {
-        // Otherwise use the single channelId
-        channels.push(channelId);
-      }
-      
-      // Add event channels if available
-      if (eventChannels && eventChannels.length > 0) {
-        channels.push(...eventChannels.filter(Boolean));
-      }
-      
-      // Subscribe to channels using the manager - no need to check isConnected
-      // since the subscribe method now handles waiting for connection
-      if (channels.length > 0) {
-        socketManager.subscribe(channels)
-          .catch(error => {
-            console.error("Failed to subscribe to channels:", error);
-          });
-      }
+    const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId')
+    // Create array of channels to subscribe to
+    const channels = [];
+
+    if (company_id && clientId) {
+      channels.push(`ch-comp-${company_id}-${clientId}`);
+    }
+
+    // Add channels from channelListData if available
+    if (channelListData && channelListData.length > 0) {
+      channels.push(...channelListData.map((channel) => channel?.channel).filter(Boolean));
+    }
+
+    // Add event channels if available
+    if (eventChannels && eventChannels.length > 0) {
+      channels.push(...eventChannels.filter(Boolean));
+    }
+
+    // Subscribe to channels using the manager - no need to check isConnected
+    // since the subscribe method now handles waiting for connection
+    if (channels.length > 0) {
+      socketManager.subscribe(channels)
+        .catch(error => {
+          console.error("Failed to subscribe to channels:", error);
+        });
     }
 
     // Cleanup function - no need to disconnect as the manager handles multiple components
@@ -49,7 +50,7 @@ const useSocket = () => {
       // We don't disconnect here as other components might be using the socket
       // The socket manager will handle cleanup when the app unmounts
     };
-  }, [jwtToken, channelId, eventChannels, channelListData]);
+  }, [jwtToken, eventChannels, channelListData, company_id]);
 
   return null;
 };

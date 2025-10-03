@@ -1,8 +1,8 @@
 // HelloVoiceService.ts
-import WebRTC from "msg91-webrtc-call";
-import { EventEmitter } from "events";
-import { getLocalStorage } from "@/utils/utilities";
 import { errorToast } from "@/components/customToast";
+import { getLocalStorage } from "@/utils/utilities";
+import { EventEmitter } from "events";
+import WebRTC from "msg91-webrtc-call";
 
 class HelloVoiceService {
     private static instance: HelloVoiceService | null = null;
@@ -38,6 +38,25 @@ class HelloVoiceService {
 
     private handleOutgoingCall = (call: any) => {
         if (call.type === "incoming-call") return;
+
+        console.log('visibility changed', document.visibilityState)
+        // if (this.currentCall) {
+        //     console.log('existing call ended, hanging call')
+        //     this.endCall();
+        //     this.resetCall();
+        // }
+
+        if (document.visibilityState === "hidden") {
+            console.log('Not in focus end call ending call')
+            // call.on("answered", (data: any) => {
+            //     console.log('answered while hidden, hanging call')
+            //     call.hang();
+            //     this.resetCall();
+            // });
+            return;
+        }
+
+        // Only persist the call if this tab is currently active
         this.currentCall = call;
         this.callState = "ringing";
         this.eventEmitter.emit("callStateChanged", { state: this.callState });
@@ -53,11 +72,13 @@ class HelloVoiceService {
         });
         // Set up event listeners for this call
         call.on("answered", (data: any) => {
+            console.log('call answered', data);
             this.callState = "connected";
             this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
         });
 
         call.on("connected", (mediaStream: any) => {
+            console.log('call connected');
             this.callState = "connected";
             this.eventEmitter.emit("callStateChanged", {
                 state: this.callState,
@@ -66,21 +87,27 @@ class HelloVoiceService {
         });
 
         call.on("ended", (data: any) => {
-            this.callState = "idle";
-            this.isMuted = false;
-            this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
-            this.eventEmitter.emit("muteStatusChanged", { muted: false });
-            this.currentCall = null;
+            console.log('call ended', data);
+            this.resetCall();
         });
 
         call.on("mute", ({ uid }: { uid: string }) => {
+            console.log('call mute', uid);
             this.isMuted = true;
             this.eventEmitter.emit("muteStatusChanged", { muted: true, uid });
         });
 
         call.on("unmute", ({ uid }: { uid: string }) => {
+            console.log('call unmute', uid);
             this.isMuted = false;
             this.eventEmitter.emit("muteStatusChanged", { muted: false, uid });
+        });
+
+        call.on("rejoined", (data: any) => {
+            console.log('call rejoin', data)
+            const summary = data?.summary;
+            this.callState = "rejoined";
+            this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
         });
     }
 
@@ -99,6 +126,20 @@ class HelloVoiceService {
         this.webrtc.call(callToken);
         this.callState = "ringing";
         this.eventEmitter.emit("callStateChanged", { state: this.callState });
+    }
+
+    public rejoinCall(callId: string): void {
+        if (!this.webrtc) {
+            console.warn("WebRTC not initialized. Call initialize() first.");
+            return;
+        }
+        this.callState = "ringing";
+        this.eventEmitter.emit("callStateChanged", { state: this.callState });
+
+        this.webrtc.rejoinCall(callId).catch((error: any) => {
+            console.log('rejoin call error', error)
+            this.resetCall();
+        });
     }
 
     public answerCall(): void {
@@ -145,6 +186,14 @@ class HelloVoiceService {
 
     public isInitialized(): boolean {
         return !!this.webrtc;
+    }
+
+    public resetCall(): void {
+        this.callState = "idle";
+        this.isMuted = false;
+        this.eventEmitter.emit("callStateChanged", { state: this.callState });
+        this.eventEmitter.emit("muteStatusChanged", { muted: false });
+        this.currentCall = null;
     }
 
     public cleanUp(): void {

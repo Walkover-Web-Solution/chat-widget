@@ -1,23 +1,22 @@
 // CallUI.tsx
-import React, { useContext, useEffect, useRef } from 'react';
-import { useCallUI } from '../Chatbot/hooks/useCallUI';
-import './CallUI.css';
 import { Mic, MicOff, Phone } from 'lucide-react';
-import { MessageContext } from '../Interface-Chatbot/InterfaceChatbot';
+import React, { useEffect, useRef } from 'react';
+import { useCallUI } from '../Chatbot/hooks/useCallUI';
+import { useScreenSize } from '../Chatbot/hooks/useScreenSize';
+import './CallUI.css';
 
 const CallUI: React.FC = () => {
     const {
         callState,
         isMuted,
         mediaStream,
-        makeCall,
-        answerCall,
         endCall,
-        toggleMute
+        toggleMute,
+        rejoinSummary
     } = useCallUI();
 
     const audioRef = useRef<HTMLAudioElement>(null);
-    const { isSmallScreen } = useContext(MessageContext);
+    const { isSmallScreen } = useScreenSize();
 
     // Connect media stream to audio element when available
     useEffect(() => {
@@ -35,7 +34,7 @@ const CallUI: React.FC = () => {
             case 'ringing':
                 return (
                     <div className="flex flex-row items-center w-full justify-between px-3">
-                        <h3 className="text-md">Calling...</h3>
+                        <h3 className="text-base">Calling...</h3>
                         <div className="flex items-center">
                             <div className="call-animation">
                                 <div className="ripple"></div>
@@ -54,11 +53,12 @@ const CallUI: React.FC = () => {
                 );
 
             case 'connected':
+            case 'rejoined':
                 return (
                     <div className="flex flex-row items-center justify-between px-3 w-full">
-                        <h3 className="text-md">Ongoing Call</h3>
+                        <h3 className="text-base">Ongoing Call</h3>
                         <div className="flex items-center">
-                            <CallTimer />
+                            <CallTimer answeredAt={rejoinSummary?.answeredAt} />
                         </div>
                         <div className="flex items-center space-x-4">
                             <button
@@ -123,8 +123,16 @@ const CallUI: React.FC = () => {
 };
 
 // Simple call timer component
-const CallTimer: React.FC = () => {
-    const [seconds, setSeconds] = React.useState(0);
+const CallTimer: React.FC<{ answeredAt: number }> = ({ answeredAt = 0 }) => {
+    const [seconds, setSeconds] = React.useState(() => {
+        if (answeredAt) {
+            const answeredTime = new Date(answeredAt).getTime();
+            const now = Date.now();
+            const diffInSeconds = Math.floor((now - answeredTime) / 1000);
+            return Math.max(diffInSeconds, 0);
+        }
+        return 0;
+    });
 
     useEffect(() => {
         const interval = setInterval(() => {

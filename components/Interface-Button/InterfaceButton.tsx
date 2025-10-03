@@ -1,8 +1,8 @@
-import { Button, ButtonProps } from "@mui/material";
-import React from "react";
-import { ParamsEnums } from "@/utils/enums";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { perFormAction } from "@/utils/ChatbotUtility";
+import { Button, ButtonProps } from "@mui/material";
+import React from "react";
+import { useSendMessage } from "../Chatbot/hooks/useChatActions";
 
 interface InterfaceButtonProps {
   props: ButtonProps | any;
@@ -14,8 +14,9 @@ interface InterfaceButtonProps {
 }
 // const urlPattern = /^(?:(?:https?|ftp):\/\/)?(?:www\.)?[^\s/$.?#].[^\s]*$/i
 
-function InterfaceButton({ props, action }: InterfaceButtonProps): JSX.Element {
+function InterfaceButton({ props, action, componentId }: InterfaceButtonProps): JSX.Element {
   delete props?.action;
+  const sendMessage = useSendMessage({});
   const validColors = ["default", "inherit", "primary", "secondary"];
   // If the color is valid, use it; otherwise, default to 'default'
   if (props.color) {
@@ -23,12 +24,13 @@ function InterfaceButton({ props, action }: InterfaceButtonProps): JSX.Element {
   }
   const handleOnClick = () => {
     // if (action?.actionId) {
-    perFormAction(action);
+    perFormAction(action, sendMessage, props);
     // }
   };
 
   return (
     <Button
+      key={`button-${componentId?.id}`}
       variant="contained"
       className="w-100 h-100 mb-1"
       {...props}
@@ -44,5 +46,5 @@ function InterfaceButton({ props, action }: InterfaceButtonProps): JSX.Element {
   );
 }
 export default React.memo(
-  addUrlDataHoc(React.memo(InterfaceButton), [ParamsEnums?.chatbotId])
+  addUrlDataHoc(React.memo(InterfaceButton))
 );

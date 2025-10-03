@@ -1,20 +1,38 @@
 'use client';
 import { ChatbotContext } from "@/components/context";
-import { SetSessionStorage } from "@/utils/ChatbotUtility";
+import { setDataInDraftReducer } from "@/store/draftData/draftDataSlice";
+import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility";
 import { EmbedVerificationStatus } from "@/utils/enums";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 export const runtime = "edge";
 
 export default function InterfaceEmbed() {
-    const { chatbot_id, userId, token, isHelloUser } = useContext(ChatbotContext);
+    const { chatbot_id, userId, token, isHelloUser, environment = null } = useContext(ChatbotContext);
     const router = useRouter();
     const [verifiedState, setVerifiedState] = useState(EmbedVerificationStatus.VERIFYING);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+
+        let tabSessionId = GetSessionStorageData('tab_session_id');
+
+        if (!tabSessionId) {
+            tabSessionId = Date.now().toString();
+            SetSessionStorage('tab_session_id', tabSessionId);
+        }
+
+        dispatch(setDataInDraftReducer({ tabSessionId }))
+
+    }, [])
+
     useEffect(() => {
         if (token) {
             SetSessionStorage("interfaceToken", token);
             SetSessionStorage("interfaceUserId", userId);
             setVerifiedState(EmbedVerificationStatus.VERIFIED);
+            dispatch(setDataInDraftReducer({ isHelloUser: false }))
         } else if (isHelloUser) {
             setVerifiedState(EmbedVerificationStatus.VERIFIED);
         }
@@ -22,10 +40,15 @@ export default function InterfaceEmbed() {
 
     useEffect(() => {
         if (verifiedState === EmbedVerificationStatus.VERIFIED && chatbot_id) {
+            dispatch(setDataInDraftReducer({ chatbotId: chatbot_id, chatSessionId: chatbot_id }))
             router.replace(`/chatbot/${chatbot_id}`);
         }
         if (isHelloUser && verifiedState === EmbedVerificationStatus.VERIFIED) {
-            router.replace(`/chatbot/hello`);
+            if (environment) {
+                router.replace(`/chatbot/hello?env=${environment}`);
+            } else {
+                router.replace(`/chatbot/hello`);
+            }
         }
     }, [verifiedState, chatbot_id, router, isHelloUser]);
 

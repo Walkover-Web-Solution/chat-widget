@@ -1,7 +1,7 @@
 export default interface actionType<T> {
   payload: T;
   type?: string;
-  urlData?: UrlDataType;
+  urlData: UrlDataType;
 }
 
 export interface UrlDataType {
@@ -20,5 +20,7 @@ export interface UrlDataType {
   sectionIdOrScriptId: string;
   versionIdOrStepId: string;
   versionId: string;
-  chatbotId: string;
+  chatSessionId: string
+  bridgeName: string
+  threadId: string
 }

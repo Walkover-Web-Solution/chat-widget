@@ -1,6 +1,4 @@
-import { GetSessionStorageData } from "@/utils/ChatbotUtility";
 import { convertChatHistoryToGenericFormat, convertEventMessageToGenericFormat } from "@/utils/dataConvertWrappers/makeGenericDataFormatUtility";
-import { generateNewId } from "@/utils/utilities";
 import { ChatAction, ChatActionTypes, ChatState } from './chatTypes';
 
 export const initialChatState: ChatState = {
@@ -25,11 +23,11 @@ export const initialChatState: ChatState = {
   headerButtons: [],
 
   // Chat Metadata
-  threadId: GetSessionStorageData("threadId") || "",
+  threadId: "",
   subThreadId: "",
-  bridgeName: GetSessionStorageData("bridgeName") || "root",
-  helloId: GetSessionStorageData("helloId") || null,
-  bridgeVersionId: GetSessionStorageData("version_id") || null,
+  bridgeName: "",
+  helloId: "",
+  bridgeVersionId: "",
 
   // Pagination & Message Handling
   currentPage: 1,
@@ -62,32 +60,37 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
         }
       }
     }
-    
+
     case ChatActionTypes.REMOVE_MESSAGES: {
-      const { numberOfMessages } = action.payload;
+      const { numberOfMessages = 1 } = action.payload || {};
       const subThreadId = state.subThreadId;
-      const updatedMapping = { ...state.msgIdAndDataMap[subThreadId] };
 
-      // Get the message IDs that will be removed
-      const messageIdsToRemove = state.messageIds?.[subThreadId].slice(-numberOfMessages);
+      // Safety guards
+      if (!subThreadId) return state;
 
-      // Remove these message IDs from the mapping
-      messageIdsToRemove.forEach(msgId => {
-        delete updatedMapping[msgId];
-      });
+      const currentIds = state.messageIds?.[subThreadId] || [];
+      if (!currentIds.length) return state;                   // nothing to delete
+
+      // Newest messages are at the front, so trim from the start
+      const messageIdsToRemove = currentIds.slice(0, numberOfMessages);
+
+      // Build a new mapping without those ids
+      const updatedMapping = { ...(state.msgIdAndDataMap[subThreadId] || {}) };
+      messageIdsToRemove.forEach(id => delete updatedMapping[id]);
 
       return {
         ...state,
         messageIds: {
           ...state.messageIds,
-          [subThreadId]: state.messageIds[subThreadId].slice(0, -numberOfMessages)
+          [subThreadId]: currentIds.slice(numberOfMessages)   // keep the rest
         },
         msgIdAndDataMap: {
           ...state.msgIdAndDataMap,
           [subThreadId]: updatedMapping
         }
-      }
-    }
+      };
+    };
+
     case ChatActionTypes.SET_LOADING:
       return {
         ...state,
@@ -280,7 +283,6 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
     case ChatActionTypes.SET_HELLO_EVENT_MESSAGE: {
       const subThreadId = action.payload?.subThreadId || state.subThreadId
       const messagesArray = convertEventMessageToGenericFormat(action.payload.message, state.isHelloUser)
-      // console.log(messagesArray[0],'messagesArray')
       if (subThreadId) {
         return {
           ...state,

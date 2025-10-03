@@ -1,21 +1,26 @@
-import { getUserData, saveClientDetails } from "@/config/helloApi";
-import { setHelloKeysData } from "@/store/hello/helloSlice";
-import { $ReduxCoreType } from "@/types/reduxCore";
-import { useCustomSelector } from "@/utils/deepCheckSelector";
-import { isColorLight } from "@/utils/themeUtility";
-import { useTheme } from "@mui/material";
-import { BookText, Mail, Phone, Send, User } from "lucide-react";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
 import countryCodes from "@/assests/countryCode.json";
-import { getLocalStorage } from "@/utils/utilities";
+import { saveClientDetails } from "@/config/helloApi";
+import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
+import { setOpenHelloForm } from "@/store/chat/chatSlice";
+import { setHelloClientInfo, setHelloKeysData } from "@/store/hello/helloSlice";
+import { GetSessionStorageData } from "@/utils/ChatbotUtility";
+import { useCustomSelector } from "@/utils/deepCheckSelector";
+import { splitNumber } from "@/utils/utilities";
+import { BookText, Loader2, Mail, Phone, Send, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { useColor } from "./Chatbot/hooks/useColor";
+import { useScreenSize } from "./Chatbot/hooks/useScreenSize";
 
+/**
+ * A component that displays a form for the user to enter their details.
+ * It includes fields for name, email, and phone number, and a submit button.
+ */
 interface FormComponentProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  isSmallScreen: boolean;
+  chatSessionId: string
 }
-
 interface FormData {
   name: string;
   email: string;
@@ -30,28 +35,38 @@ interface FormErrors {
   countryCode: string;
 }
 
-function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
-  const theme = useTheme();
-  const { showWidgetForm } = useCustomSelector((state: $ReduxCoreType) => ({
-    showWidgetForm: state.Hello.showWidgetForm
-  }));
+function FormComponent({ chatSessionId }: FormComponentProps) {
+  const { textColor, backgroundColor } = useColor();
   const dispatch = useDispatch();
-  const backgroundColor = theme.palette.primary.main;
-  const textColor = isColorLight(backgroundColor) ? "black" : "white";
-  const userData = JSON.parse(getLocalStorage("client") || "{}");
+  const { showWidgetForm, open, userData } = useCustomSelector((state) => ({
+    showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm ?? true,
+    open: state.Chat.openHelloForm,
+    userData: state.Hello?.[chatSessionId]?.clientInfo
+  }));
+  const scriptParams = JSON.parse(GetSessionStorageData('helloConfig') || '{}')
+  console.log('form')
+  const { isSmallScreen } = useScreenSize();
   const [formData, setFormData] = useState<FormData>({
-    name: userData?.name || "",
-    email: userData?.email || "",
-    number: userData?.number || "",
-    countryCode: userData?.country_code || "+91"
+    name: userData?.Name || "",
+    email: userData?.Email || "",
+    number: splitNumber(userData?.Phonenumber || "")?.number || "",
+    countryCode: splitNumber(userData?.Phonenumber || "")?.code || "+91"
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({
     name: "",
     email: "",
     number: "",
     countryCode: ""
   });
+
+  useEffect(() => {
+    setFormData({ ...formData, name: userData?.Name || "", email: userData?.Email || "", number: splitNumber(userData?.Phonenumber || "")?.number || "", countryCode: splitNumber(userData?.Phonenumber || "")?.code || "+91" });
+  }, [userData]);
+
+  const setOpen = (open: boolean) => {
+    dispatch(setOpenHelloForm(open));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -92,14 +107,11 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
+      setIsLoading(true);
       let clientData = {
-        n: formData?.name,
-        p: formData?.number ? `${formData?.countryCode}${formData?.number}` : undefined,
-        e: formData?.email,
-        country_code: formData?.countryCode,
-        number_without_CC : formData?.number,
-        user_data: getUserData(),
-        is_anon: false,
+        Name: formData?.name,
+        Phonenumber: formData?.number ? `${formData?.countryCode}${formData?.number}` : '',
+        Email: formData?.email
       }
 
       // Dispatch setHelloKeysData if all three fields are filled
@@ -109,6 +121,10 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
 
       saveClientDetails(clientData).then(() => {
         setOpen(false);
+        dispatch(setHelloClientInfo({ clientInfo: { ...clientData } }));
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
       })
     }
   };
@@ -116,10 +132,10 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
   if (!open && !showWidgetForm) return null;
   if (!open && showWidgetForm) return (
     <div
-      className={`bg-white p-2 px-4 cursor-pointer hover:shadow-md transition-all border border-gray-300 mx-auto rounded-br-md rounded-bl-md ${isSmallScreen ? 'w-full' : 'w-1/2 max-w-lg'}`}
+      className={`bg-white p-2 px-4 cursor-pointer z-[9999] hover:shadow-md transition-all mx-auto rounded-br-md rounded-bl-md ${isSmallScreen ? 'w-full' : 'w-1/2 max-w-lg'}`}
       onClick={() => setOpen(true)}
       style={{
-        backgroundColor: backgroundColor,
+        background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
         color: textColor
       }}
     >
@@ -128,28 +144,28 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
           <BookText className="h-7 w-7 mr-1" />
         </div>
         <div className="ml-2">
-          <span className="font-medium block">Enter your details</span>
-          <p className="text-xs opacity-80">Click here to provide your information</p>
+          <span className="font-medium block text-base">Enter your details</span>
+          <p className="text-xs opacity-90">Click here to provide your information</p>
         </div>
       </div>
     </div>
   );
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] overflow-y-auto flex items-start justify-center py-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 relative my-auto">
         {/* Card header */}
-        <div className="bg-primary text-white p-6 rounded-t-lg" style={{
-          backgroundColor: backgroundColor,
+        <div className="bg-primary text-white p-5 rounded-t-lg" style={{
+          background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
           color: textColor
         }}>
-          <h2 className="text-xl font-bold">Enter your details</h2>
+          <h2 className="text-lg font-bold">Enter your details</h2>
           <p className="text-sm opacity-90 mt-1">
             Please provide your information below
           </p>
         </div>
 
         {/* Form content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 gap-2 flex flex-col">
           {/* Name field */}
           <div className="form-control w-full">
             <label className="label">
@@ -165,6 +181,7 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter your name"
+                disabled={scriptParams?.name ? true : false}
                 className={`input input-bordered w-full pl-10 ${errors.name ? "input-error" : ""
                   }`}
                 required
@@ -191,6 +208,7 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={scriptParams?.mail || scriptParams?.Email ? true : false}
                 placeholder="Enter your email"
                 className={`input input-bordered w-full pl-10 ${errors.email ? "input-error" : ""}`}
               />
@@ -234,6 +252,7 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
                   name="number"
                   value={formData.number}
                   onChange={handleChange}
+                  disabled={scriptParams?.number || scriptParams?.Phonenumber ? true : false}
                   placeholder="Enter your phone number"
                   className={`input input-bordered w-full ${errors.number ? "input-error" : ""}`}
                 />
@@ -247,7 +266,7 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
           </div>
 
           {/* Submit button */}
-          <div className="mt-6 flex gap-3">
+          <div className="flex gap-3 mt-2">
             <button
               type="button"
               className="btn btn-outline flex-1"
@@ -256,15 +275,26 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
               Skip
             </button>
             <button
+              disabled={isLoading}
               type="submit"
               className="btn flex-1"
               style={{
+                opacity: isLoading ? 0.5 : 1,
                 backgroundColor: backgroundColor,
                 color: textColor
               }}
             >
-              <Send size={18} className="mr-2" />
-              Submit
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="animate-spin mr-2" />
+                  Submitting...
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <Send size={18} className="mr-2" />
+                  Submit
+                </div>
+              )}
             </button>
           </div>
         </form>
@@ -273,4 +303,4 @@ function FormComponent({ open, setOpen, isSmallScreen }: FormComponentProps) {
   );
 }
 
-export default FormComponent;
+export default React.memo(addUrlDataHoc(FormComponent));

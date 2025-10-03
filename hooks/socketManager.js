@@ -1,6 +1,9 @@
 import io from "socket.io-client";
 
-const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+const urlParams = new URLSearchParams(window.location.search);
+const env = urlParams.get('env');
+
+const socketUrl = env !== 'stage' ? process.env.NEXT_PUBLIC_SOCKET_URL : 'https://stagechat.phone91.com';
 
 class SocketManager {
   constructor() {
@@ -57,14 +60,14 @@ class SocketManager {
       console.log("Connected to WebSocket server");
       this.isConnected = true;
       this.connecting = false;
-      
+
       // Re-subscribe to all channels on reconnection
       if (this.channels.length > 0) {
-        this.subscribe(this.channels);
+        this.subscribe(this.channels, true);
       }
 
       // Execute any pending connection callbacks
-      this.connectionCallbacks.forEach(callback => callback());
+      this.connectionCallbacks?.forEach(callback => callback());
       this.connectionCallbacks = [];
     });
 
@@ -73,8 +76,12 @@ class SocketManager {
       this.isConnected = false;
     });
 
+    this.socket.io.on("reconnect", (attempt) => {
+      console.log("Reconnected to WebSocket server", attempt);
+    });
+
     this.socket.on("connect_error", (err) => {
-      console.error("Connection Error:", err);
+      console.error("Connection Error WebSocket server:", err);
       this.isConnected = false;
       this.connecting = false;
     });
@@ -85,7 +92,7 @@ class SocketManager {
    * @param {string|string[]} channels - Channel(s) to subscribe to
    * @returns {Promise<any>} - Response from server
    */
-  subscribe(channels) {
+  subscribe(channels, isReconnect = false) {
     // If not connected, queue a callback to run when connected
     if (!this.isConnected) {
       return new Promise((resolve, reject) => {
@@ -96,7 +103,7 @@ class SocketManager {
 
         // Add to connection callback queue if we're still connecting
         this.connectionCallbacks.push(() => {
-          this._doSubscribe(channels)
+          this._doSubscribe(channels, isReconnect)
             .then(resolve)
             .catch(reject);
         });
@@ -104,7 +111,7 @@ class SocketManager {
     }
 
     // If already connected, subscribe immediately
-    return this._doSubscribe(channels);
+    return this._doSubscribe(channels, isReconnect);
   }
 
   /**
@@ -113,7 +120,7 @@ class SocketManager {
    * @param {string|string[]} channels - Channel(s) to subscribe to
    * @returns {Promise<any>} - Response from server
    */
-  _doSubscribe(channels) {
+  _doSubscribe(channels, isReconnect = false) {
     return new Promise((resolve, reject) => {
       if (!this.socket || !this.isConnected) {
         reject(new Error("Socket is not connected"));
@@ -122,21 +129,28 @@ class SocketManager {
 
       // Convert single channel to array if needed
       const channelArray = Array.isArray(channels) ? channels : [channels];
-      
-      // Filter out duplicates and empty channels
-      const uniqueChannels = channelArray.filter(channel => 
-        channel && !this.channels.includes(channel)
-      );
-      
-      if (uniqueChannels.length === 0) {
-        resolve({ message: "No new channels to subscribe" });
-        return;
+
+      let channelsToSubscribe;
+
+      if (isReconnect) {
+        // During reconnection, subscribe to all provided channels (don't filter duplicates)
+        channelsToSubscribe = channelArray.filter(channel => channel);
+      } else {
+        // For normal subscription, filter out duplicates and empty channels
+        channelsToSubscribe = channelArray.filter(channel =>
+          channel && !this.channels.includes(channel)
+        );
+
+        if (channelsToSubscribe.length === 0) {
+          resolve({ message: "No new channels to subscribe" });
+          return;
+        }
+
+        // Add new channels to the tracking array
+        this.channels.push(...channelsToSubscribe);
       }
 
-      // Add new channels to the tracking array
-      // this.channels.push(...uniqueChannels);
-      
-      this.socket.emit("subscribe", { channel: uniqueChannels }, (data) => {
+      this.socket.emit("subscribe", { channel: channelsToSubscribe }, (data) => {
         console.log("Subscribed channels data:", data);
         resolve(data);
       });
@@ -178,10 +192,10 @@ class SocketManager {
       }
 
       const channelArray = Array.isArray(channels) ? channels : [channels];
-      
+
       // Remove channels from tracking array
       this.channels = this.channels.filter(ch => !channelArray.includes(ch));
-      
+
       this.socket.emit("unsubscribe", { channel: channelArray }, (data) => {
         console.log("Unsubscribed channels data:", data);
         resolve(data);
@@ -240,15 +254,15 @@ class SocketManager {
    */
   on(eventName, callback) {
     if (!this.socket) return this;
-    
+
     this.socket.on(eventName, callback);
-    
+
     // Track listeners for cleanup
     if (!this.listeners.has(eventName)) {
       this.listeners.set(eventName, []);
     }
     this.listeners.get(eventName).push(callback);
-    
+
     return this;
   }
 
@@ -260,18 +274,18 @@ class SocketManager {
    */
   off(eventName, callback) {
     if (!this.socket) return this;
-    
+
     this.socket.off(eventName, callback);
-    
+
     // Remove from tracked listeners
     if (this.listeners.has(eventName)) {
       const callbacks = this.listeners.get(eventName);
       this.listeners.set(
-        eventName, 
+        eventName,
         callbacks.filter(cb => cb !== callback)
       );
     }
-    
+
     return this;
   }
 
@@ -282,15 +296,15 @@ class SocketManager {
    */
   removeAllListeners(eventName) {
     if (!this.socket) return this;
-    
+
     this.socket.removeAllListeners(eventName);
-    
+
     if (eventName) {
       this.listeners.delete(eventName);
     } else {
       this.listeners.clear();
     }
-    
+
     return this;
   }
 

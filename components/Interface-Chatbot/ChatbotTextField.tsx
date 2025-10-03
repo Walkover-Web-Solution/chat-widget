@@ -1,71 +1,78 @@
 'use client';
 
-import { AiIcon, UserAssistant } from "@/assests/assestsIndex";
+import { AiIcon } from "@/assests/assestsIndex";
 import { errorToast } from "@/components/customToast";
 import { uploadImage } from "@/config/api";
 import { uploadAttachmentToHello } from "@/config/helloApi";
-import { $ReduxCoreType } from "@/types/reduxCore";
+import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
+import { useTypingStatus } from "@/hooks/socketEventEmitter";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
+import { ParamsEnums } from "@/utils/enums";
 import { isColorLight } from "@/utils/themeUtility";
 import { TextField, useTheme } from "@mui/material";
-import { ChevronDown, Send, Upload, X } from "lucide-react";
+import debounce from "lodash.debounce";
+import { ChevronDown, Paperclip, Send, Smile, X } from "lucide-react";
 import Image from "next/image";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useChatActions, useSendMessage } from "../Chatbot/hooks/useChatActions";
+import { useSendMessageToHello } from "../Chatbot/hooks/useHelloIntegration";
+import CallButton from "./CallButton";
+import EmojiSelector from "./EmojiSelector";
 import { MessageContext } from "./InterfaceChatbot";
-import { useTypingStatus } from "@/hooks/socketEventEmitter";
 import ImageWithFallback from "./Messages/ImageWithFallback";
-import { debounce } from "lodash";
 
 interface ChatbotTextFieldProps {
   className?: string;
+  chatSessionId: string
+  tabSessionId: string
+  subThreadId: string;
+  currentTeamId: string
+  currentChannelId: string
+  isVision: Record<string, any>
 }
 
 const MAX_IMAGES = 4;
 
-const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
+const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSessionId, tabSessionId, subThreadId, currentTeamId = "", currentChannelId = "", isVision: reduxIsVision = {} }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const theme = useTheme();
   const isLight = isColorLight(theme.palette.primary.main);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const emitTypingStatus = useTypingStatus();
+  const emitTypingStatus = useTypingStatus({ chatSessionId, tabSessionId });
 
-  const { IsHuman, mode, inbox_id, show_send_button, subThreadId, assigned_type, currentTeamId } = useCustomSelector((state: $ReduxCoreType) => ({
-    IsHuman: state.Hello?.isHuman,
-    mode: state.Hello?.mode || [],
-    inbox_id: state.Hello?.widgetInfo?.inbox_id,
-    show_send_button: typeof state.Hello?.helloConfig?.show_send_button === 'boolean' ? state.Hello?.helloConfig?.show_send_button : true,
-    subThreadId: state.appInfo?.subThreadId,
-    assigned_type: state.Hello?.channelListData?.channels?.find(
-      (channel: any) => channel?.channel === state?.Hello?.currentChannelId
-    )?.assigned_type || '',
-    currentTeamId: state.Hello.currentTeamId
+  const { isHelloUser, mode, inbox_id, show_send_button, assigned_type } = useCustomSelector((state) => ({
+    isHelloUser: state.draftData?.isHelloUser || false,
+    mode: state.Hello?.[chatSessionId]?.mode || [],
+    inbox_id: state.Hello?.[chatSessionId]?.widgetInfo?.inbox_id,
+    show_send_button: typeof state.Hello?.[chatSessionId]?.helloConfig?.show_send_button === 'boolean' ? state.Hello?.[chatSessionId]?.helloConfig?.show_send_button : true,
+    assigned_type: (() => {
+      const foundType = state.Hello?.[chatSessionId]?.channelListData?.channels?.find((channel: any) => channel?.channel === currentChannelId)?.assigned_type;
+      return foundType === undefined ? 'bot' : foundType;
+    })(),
   }));
 
-  const reduxIsVision = useCustomSelector(
-    (state: $ReduxCoreType) => state.Interface?.isVision || ""
-  );
+  const { messageRef } = useContext(MessageContext);
+  const sendMessageToHello = useSendMessageToHello({ messageRef });
 
-  const {
-    sendMessage,
-    sendMessageToHello,
-    loading,
-    messageRef,
-    disabled,
-    options = [],
-    images = [],
-    setImages,
-    isTyping
-  } = useContext(MessageContext);
+  const { setImages } = useChatActions();
+  const sendMessage = useSendMessage({});
+
+  const { images = [], options = [], loading } = useCustomSelector((state) => ({
+    images: state.Chat.images || [],
+    loading: state.Chat.loading,
+    options: state.Chat.options || [],
+  }))
 
   const isVisionEnabled = useMemo(() =>
-    (reduxIsVision?.vision || mode?.includes("vision")) || IsHuman,
-    [reduxIsVision, mode, IsHuman]
+    (reduxIsVision?.vision || mode?.includes("vision")) || isHelloUser,
+    [reduxIsVision, mode, isHelloUser]
   );
 
   const buttonDisabled = useMemo(() =>
-    ((IsHuman && (assigned_type && assigned_type !== 'bot' && assigned_type !== 'workflow')) ? false : loading) || isUploading || (!inputValue.trim() && images.length === 0),
-    [loading, isUploading, inputValue, images, assigned_type, IsHuman]
+    ((isHelloUser && (assigned_type !== 'bot' && assigned_type !== 'workflow')) ? false : loading) || isUploading || (!inputValue.trim() && images.length === 0),
+    [loading, isUploading, inputValue, images, assigned_type, isHelloUser]
   );
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -76,13 +83,14 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
   };
 
   const handleSendMessage = useCallback((messageObj: { message?: string } = {}) => {
-    if (IsHuman) {
+    setInputValue('');
+    if (isHelloUser) {
       sendMessageToHello?.();
       emitTypingStatus("not-typing");
     } else {
       sendMessage(messageObj);
     }
-  }, [IsHuman, sendMessage, sendMessageToHello]);
+  }, [isHelloUser, sendMessage, sendMessageToHello]);
 
   const handleMessage = useCallback((event: MessageEvent) => {
     if (event?.data?.type === "open") {
@@ -113,7 +121,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
 
     try {
       const uploadPromises = filesArray.map(async (file) => {
-        if (IsHuman) {
+        if (isHelloUser) {
           const response = await uploadAttachmentToHello(file, inbox_id);
           if (!response) {
             errorToast("Failed to upload images. Please try again.");
@@ -139,14 +147,16 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
         fileInputRef.current.value = '';
       }
     }
-  }, [images, setImages, IsHuman, inbox_id]);
+  }, [images, setImages, isHelloUser, inbox_id]);
 
   const handleRemoveImage = useCallback((index: number) => {
     setImages(images.filter((_, i) => i !== index));
   }, [images, setImages]);
 
   const focusTextField = useCallback(() => {
-    messageRef?.current?.focus();
+    setTimeout(() => {
+      messageRef?.current?.focus();
+    }, 0);
   }, [messageRef]);
 
   const scrollOptions = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
@@ -169,7 +179,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
     }
     setInputValue(value);
 
-    if (IsHuman) {
+    if (isHelloUser) {
       if (value.trim()) {
         emitTypingStatus("typing");
         debouncedStopTyping();
@@ -178,7 +188,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
         debouncedStopTyping.cancel();
       }
     }
-  }, [messageRef, IsHuman, emitTypingStatus, debouncedStopTyping]);
+  }, [messageRef, isHelloUser, emitTypingStatus, debouncedStopTyping]);
 
   useEffect(() => {
     return () => {
@@ -223,7 +233,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
           <div key={index} className="relative group">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105">
               <ImageWithFallback
-                src={IsHuman ? image?.path : image}
+                src={isHelloUser ? image?.path : image}
                 alt={`Uploaded Preview ${index + 1}`}
                 style={{ width: 128, height: 128 }}
                 canDownload={false}
@@ -241,11 +251,11 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
         ))}
       </div>
     );
-  }, [images, IsHuman, handleRemoveImage]);
+  }, [images, isHelloUser, handleRemoveImage]);
 
   const textFieldStyles = useMemo(() => ({
     '& .MuiOutlinedInput-root': {
-      padding: '8px',
+      padding: '4px 8px',
     },
     '& .MuiOutlinedInput-notchedOutline': {
       border: 'none',
@@ -259,23 +269,23 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
   }), []);
 
   const aiIconElement = useMemo(() => {
-    if (IsHuman) return null;
+    if (isHelloUser) return null;
 
     return (
-      <div className="relative w-7 h-7 z-[2]">
+      <div className="relative w-6 h-6 z-[2]">
         <Image
           src={AiIcon}
-          width={28}
-          height={28}
+          // width={28}
+          // height={28}
           alt="AI"
           className={`absolute transition-opacity duration-200 filter drop-shadow-pink`}
         />
       </div>
     );
-  }, [IsHuman]);
+  }, [isHelloUser]);
 
   const uploadButton = useMemo(() => {
-    if (!isVisionEnabled || (IsHuman && !subThreadId)) return null;
+    if (!isVisionEnabled || (isHelloUser && !subThreadId)) return null;
 
     return (
       <>
@@ -289,30 +299,53 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
           ref={fileInputRef}
         />
         <label htmlFor="upload-image" className="cursor-pointer">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition-all duration-200 group">
+          <div className="flex px-2 py-1.5 w-8 h-8 items-center group">
             {isUploading ? (
               <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
                 <span className="text-[10px] font-medium text-gray-600">Uploading...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-[10px] font-medium text-gray-700">Upload Files</span>
-              </div>
+              <Paperclip className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 text-gray-600" />
             )}
           </div>
         </label>
       </>
     );
-  }, [isVisionEnabled, isUploading, handleImageUpload]);
+  }, [isVisionEnabled, isUploading, handleImageUpload, subThreadId]);
+
+  const handleEmojiSelect = (data: { emoji: string }) => {
+    if (messageRef?.current) {
+      const currentValue = messageRef.current.value || '';
+      const start = messageRef.current?.selectionStart || 0;
+      const end = messageRef.current?.selectionEnd || 0;
+      const newValue = currentValue?.substring(0, start) + (data?.emoji || '') + currentValue?.substring(end);
+      messageRef.current.value = newValue;
+      setInputValue(newValue);
+      // Set the cursor position right after the inserted emoji
+      messageRef.current?.setSelectionRange(start + (data?.emoji || '')?.length, start + (data?.emoji || '')?.length);
+      // Trigger onChange event to sync with any other handlers
+      const event = new Event('input', { bubbles: true });
+      messageRef.current?.dispatchEvent(event);
+    }
+    setShowEmojiPicker(false);
+    // Focus back on the input field
+    setTimeout(() => {
+      focusTextField();
+    }, 50);
+  }
 
   return (
-    <div className={`relative w-full rounded-lg shadow-sm ${className}`}>
+    <div className={`relative w-full shadow-sm ${className}`}>
       {optionButtons}
       {imagePreviewsSection}
 
-      <div className="w-full h-full cursor-text" onClick={focusTextField}>
+      <div className="w-full h-full cursor-text relative" onClick={focusTextField}>
+        <EmojiSelector
+          isVisible={showEmojiPicker}
+          onEmojiSelect={handleEmojiSelect}
+          onClose={() => { setShowEmojiPicker(false); focusTextField(); }}
+        />
         <div
           className="relative flex-col h-full items-center justify-between gap-2 p-2 bg-white rounded-xl border border-gray-300 focus-within:outline focus-within:outline-2 focus-within:outline-offset-0"
           style={{ outlineColor: theme.palette.primary.main }}
@@ -325,32 +358,45 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
             fullWidth
             onKeyDown={handleKeyDown}
             placeholder="Message AI Assistant..."
-            disabled={disabled}
-            className="p-1 h-full min-h-[40px] max-h-[400px] bg-transparent focus:outline-none disabled:cursor-not-allowed"
+            className="h-full min-h-[10px] max-h-[400px] bg-transparent focus:outline-none disabled:cursor-not-allowed"
             maxRows={6}
             sx={textFieldStyles}
             autoFocus
+            inputMode="text"
+            type="text"
           />
 
-          <div className="flex flex-row justify-between gap-2 h-full self-end mr-2">
-            <div className="flex items-center gap-2">
+          <div className="flex justify-between items-center w-full">
+            {/* Left section: Upload, Emoji and AI icon */}
+            <div className="flex items-center">
               {aiIconElement}
+              <div
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowEmojiPicker(!showEmojiPicker) }}
+                className="group flex items-center justify-center w-8 h-8 cursor-pointer"
+                aria-label="Add emoji"
+              >
+                <Smile className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 text-gray-600" />
+              </div>
               {uploadButton}
             </div>
 
-            {show_send_button ? (
-              <button
-                onClick={() => !buttonDisabled && handleSendMessage()}
-                className="rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:scale-105 transition-transform duration-200"
-                disabled={buttonDisabled}
-                style={{
-                  backgroundColor: buttonDisabled ? '#d1d5db' : theme.palette.primary.main
-                }}
-                aria-label="Send message"
-              >
-                <Send className={`w-3 h-3 md:w-4 md:h-4 ${isLight ? 'text-black' : 'text-white'}`} />
-              </button>
-            ) : null}
+            {/* Right section: Call + Send button side by side */}
+            <div className="flex items-center gap-2">
+              <CallButton />
+              {show_send_button && (
+                <button
+                  onClick={() => !buttonDisabled && handleSendMessage()}
+                  className="rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:scale-105 transition-transform duration-200"
+                  disabled={buttonDisabled}
+                  style={{
+                    backgroundColor: buttonDisabled ? '#d1d5db' : theme.palette.primary.main
+                  }}
+                  aria-label="Send message"
+                >
+                  <Send className={`w-3 h-3 md:w-4 md:h-4 ${isLight ? 'text-black' : 'text-white'}`} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -358,4 +404,4 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className }) => {
   );
 };
 
-export default React.memo(ChatbotTextField);
+export default React.memo(addUrlDataHoc(ChatbotTextField, [ParamsEnums.subThreadId, ParamsEnums.currentTeamId, ParamsEnums.currentChannelId, ParamsEnums.isVision]));

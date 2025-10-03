@@ -236,13 +236,14 @@ export async function getHelloDetailsApi({
     helloId?: string | null;
     versionId: string | null;
 }): Promise<any> {
+    const data: any = {
+        slugName,
+    };
+    if (threadId !== null) data.threadId = threadId;
+    if (helloId !== null) data.helloId = helloId;
+    if (versionId !== null) data.versionId = versionId;
     try {
-        const response = await axios.post(`${URL}/hello/subscribe`, {
-            threadId,
-            slugName,
-            helloId,
-            versionId,
-        });
+        const response = await axios.post(`${URL}/hello/subscribe`, data);
         return response?.data;
     } catch (error) {
         console.error("Error getting hello details:", error);
@@ -296,7 +297,7 @@ export const createScripts = async (data: any, type = "flow") => {
 
 export const getAllThreadsApi = async ({ threadId = "" }) => {
     if (!threadId) {
-        console.error("Invalid threadId provided");
+        // console.error("Invalid threadId provided");
         return null;
     }
     try {
@@ -366,6 +367,29 @@ export const getAccessToken = async () => {
     try {
         const response = await axios.post(`${URL}/utility/get-token`);
         return response?.data?.data;
+    } catch (e) {
+        return e;
+    }
+};
+
+export const getTemplateFlowList = async (emebedToken: string) => {
+    try {
+        const response = await fetch(`https://flow-api.viasocket.com/projects/projUx2QVhnx/integrations`, {
+            headers: {
+                authorization: emebedToken,
+            },
+        });
+        const data = await response.json();
+        return data;
+    } catch (e) {
+        return e;
+    }
+};
+
+export const getEmebedToken = async () => {
+    try {
+        const response = await axios.get(`${URL}/rag/get-emebed-token`);
+        return response?.data?.token;
     } catch (e) {
         return e;
     }

@@ -1,13 +1,12 @@
 // useSocketEvents.ts
-import { ChatActionTypes, ChatState } from '@/components/Chatbot/hooks/chatTypes';
-import { useChatActions } from '@/components/Chatbot/hooks/useChatActions';
 import { useReduxStateManagement } from '@/components/Chatbot/hooks/useReduxManagement';
+import { setHelloEventMessage, setTyping } from '@/store/chat/chatSlice';
 import { changeChannelAssigned, setUnReadCount } from '@/store/hello/helloSlice';
-import { playMessageRecivedSound } from '@/utils/utilities';
+import { getLocalStorage, playMessageRecivedSound, setLocalStorage } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import socketManager from './socketManager';
-
+import { useTabVisibility } from '@/components/Chatbot/hooks/useTabVisibility';
 // Define types for better type safety
 export interface HelloMessage {
     role: string;
@@ -20,73 +19,63 @@ export interface HelloMessage {
 /**
  * Hook for handling socket events
  * @param options - Options for socket events
- * @param options.chatbotId - The chatbot ID
- * @param options.chatState - The current chat state
- * @param options.chatDispatch - Function to dispatch chat actions
- * @param options.messageRef - Reference to message element
- * @returns timeoutIdRef - Reference to timeout for cleanup
  */
 export const useSocketEvents = ({
-    chatbotId,
-    chatState,
-    chatDispatch,
-    messageRef,
-    fetchChannels
+    fetchChannels,
+    chatSessionId,
+    tabSessionId,
+    setLoading
 }: {
-    chatbotId: string,
-    chatState: ChatState,
-    chatDispatch: (action: { type: string; payload?: any }) => void,
-    messageRef: React.RefObject<HTMLDivElement>,
-    fetchChannels: () => void
+    fetchChannels: () => void,
+    setLoading: (data: boolean) => void
+    chatSessionId: string;
+    tabSessionId: string
 }) => {
     const dispatch = useDispatch();
-    // Reference to timeout for typing indicators
-    const { setLoading } = useChatActions({ chatbotId, chatDispatch, chatState });
-    const { isToggledrawer } = chatState;
-    const { currentChannelId, isSmallScreen } = useReduxStateManagement({ chatbotId, chatDispatch });
+    const { currentChannelId } = useReduxStateManagement({ chatSessionId, tabSessionId });
+    const { isTabVisible } = useTabVisibility();
     const addHelloMessage = (message: HelloMessage, subThreadId: string = '') => {
-        chatDispatch({ type: ChatActionTypes.SET_HELLO_EVENT_MESSAGE, payload: { message, subThreadId } });
-    }
-
-    function isSameChannel(channelId: string) {
-        return channelId === currentChannelId;
+        dispatch(setHelloEventMessage({ message, subThreadId }));
     }
     // Handler for new messages
     const handleNewMessage = useCallback((data: any) => {
         const { response } = data;
-        const { message, timetoken } = response || {};
+        const { message, timetoken, company_id = null } = response || {};
         if (message && timetoken) {
             message.timetoken = timetoken;
         }
         const { type } = message || {};
 
         // Handle unread count updates
-        if (message?.new_event && (type === 'chat' || type === 'feedback')) {
+        if (message?.new_event && (type === 'chat' || type === 'feedback') && !message?.chat_id) {
             const channelId = message?.channel;
-            const isCurrentChannel = isSameChannel(channelId);
-            const shouldResetCount = isCurrentChannel &&
-                ((isToggledrawer && !isSmallScreen) || (isSmallScreen && !isToggledrawer));
             dispatch(setUnReadCount({
                 channelId,
-                resetCount: shouldResetCount || false
+                resetCount: false
             }));
+
         }
 
         switch (type) {
             case 'chat': {
                 const { channel, chat_id, new_event } = message || {};
-                if (new_event && !chat_id) {
-                    setLoading(false);
+                if (new_event) {
+                    if (!chat_id) {
+                        setLoading(false);
 
-                    // Play notification sound when message is received
-                    playMessageRecivedSound();
+                        // Play notification sound when message is received
+                        playMessageRecivedSound();
 
-                    const messageId = response.timetoken || response.id;
-                    addHelloMessage({ ...message, id: messageId }, channel);
-                    chatDispatch({
-                        type: ChatActionTypes.SET_TYPING,
-                        payload: { data: false, subThreadId: channel }
-                    });
+                        const messageId = response.timetoken || response.id;
+                        addHelloMessage({ ...message, id: messageId }, channel);
+                        dispatch(setTyping({
+                            subThreadId: channel,
+                            data: false
+                        }));
+                    } else if (chat_id && !isTabVisible) {
+                        const messageId = response.timetoken || response.id;
+                        addHelloMessage({ ...message, id: messageId }, channel);
+                    }
                 }
                 break;
             }
@@ -100,13 +89,30 @@ export const useSocketEvents = ({
                 break;
             }
             case 'feedback': {
-                const { channel, channel_details } = message || {};
+                const { channel } = message || {};
                 if (message?.new_event) {
                     const messageId = response.timetoken || response.id;
                     addHelloMessage(
                         { ...message, id: messageId },
-                        channel_details?.channel
+                        channel
                     );
+                }
+                break;
+            }
+            case 'update': {
+                const { channel, client_id } = message || {};
+                if (message?.new_event) {
+                    if (client_id) {
+                        if (getLocalStorage('k_clientId')) {
+                            setLocalStorage('k_clientId', client_id);
+                        } else {
+                            setLocalStorage('a_clientId', client_id);
+                        }
+                        socketManager.unsubscribe([channel]);
+                        // Replace the old client id in the channel with the new client_id
+                        const newUserChannel = `ch-comp-${company_id}-${client_id}`;
+                        socketManager.subscribe([newUserChannel]);
+                    }
                 }
                 break;
             }
@@ -114,7 +120,7 @@ export const useSocketEvents = ({
                 // Handle other types if needed
                 break;
         }
-    }, [currentChannelId, setLoading, addHelloMessage, fetchChannels]);
+    }, [currentChannelId, setLoading, addHelloMessage, fetchChannels, isTabVisible]);
 
     // Handler for typing events
     const handleTyping = useCallback((data: any) => {
@@ -124,17 +130,17 @@ export const useSocketEvents = ({
             switch (action) {
                 case 'typing':
                     // Handle typing indicator logic here
-                    chatDispatch({ type: ChatActionTypes.SET_TYPING, payload: { data: true, subThreadId: channel } });
+                    dispatch(setTyping({ data: true, subThreadId: channel }));
                     break;
                 case 'not-typing':
                     // Handle not typing indicator logic here
-                    chatDispatch({ type: ChatActionTypes.SET_TYPING, payload: { data: false, subThreadId: channel } });
+                    dispatch(setTyping({ data: false, subThreadId: channel }));
                     break;
                 default:
                     break;
             }
         }
-    }, [currentChannelId, chatDispatch]);
+    }, [currentChannelId, dispatch]);
 
     useEffect(() => {
         // Subscribe to socket events

@@ -1,12 +1,11 @@
 'use client';
 
-import { lighten, useMediaQuery, useTheme } from "@mui/material";
+import { lighten } from "@mui/material";
 import { AlignLeft, ChevronRight, SquarePen, Users, X } from "lucide-react";
-import { memo, useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
 
 // API and Services
-import { deleteReadReceipt } from "@/config/helloApi";
 import helloVoiceService from "../Chatbot/hooks/HelloVoiceService";
 
 // HOCs and Hooks
@@ -17,115 +16,115 @@ import { useReduxStateManagement } from "../Chatbot/hooks/useReduxManagement";
 
 // Redux Actions
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
-import { setHelloKeysData, setUnReadCount } from "@/store/hello/helloSlice";
-import { setThreadId, setThreads } from "@/store/interface/interfaceSlice";
+import { setThreads } from "@/store/interface/interfaceSlice";
 
 // Utils and Types
-import { $ReduxCoreType } from "@/types/reduxCore";
-import { GetSessionStorageData } from "@/utils/ChatbotUtility";
 import { ParamsEnums } from "@/utils/enums";
+import { useChatActions } from "../Chatbot/hooks/useChatActions";
+import { useColor } from "../Chatbot/hooks/useColor";
+import { useScreenSize } from "../Chatbot/hooks/useScreenSize";
 import { MessageContext } from "./InterfaceChatbot";
-import { getLocalStorage } from "@/utils/utilities";
+import { getCallToken } from "@/config/helloApi";
 
 const createRandomId = () => Math.random().toString(36).substring(2, 15);
 
 interface ChatbotDrawerProps {
-  setLoading: (loading: boolean) => void;
-  chatbotId: string;
-  isToggledrawer: boolean;
-  setToggleDrawer: (isOpen: boolean) => void;
   preview?: boolean;
+  chatSessionId: string
+  tabSessionId: string
+  subThreadId?: string;
+  bridgeName: string;
+  threadId: string
 }
 
 const ChatbotDrawer = ({
-  chatbotId,
-  setToggleDrawer,
-  isToggledrawer,
-  preview = false
+  preview = false,
+  chatSessionId,
+  tabSessionId,
+  subThreadId,
+  bridgeName,
+  threadId
 }: ChatbotDrawerProps) => {
   const dispatch = useDispatch();
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery('(max-width:1023px)');
+  const { backgroundColor, textColor } = useColor();
 
+  console.log('chatbotdrawer')
   // Context hooks
-  const {
-    setNewMessage,
-    setOptions,
-    chatDispatch,
-    fetchHelloPreviousHistory,
-    images,
-    setImages,
-    fetchChannels,
-    allMessages,
-    allMessagesData,
-    messageRef,
-    setLoading,
-  } = useContext(MessageContext);
+  const { messageRef } = useContext(MessageContext);
+  const { isSmallScreen } = useScreenSize();
 
-  const { currentChatId, currentTeamId } = useReduxStateManagement({ chatbotId, chatDispatch });
+  const { setNewMessage, setOptions, setImages, setLoading, setToggleDrawer } = useChatActions();
+
+  const { images, allMessages, allMessagesData, isToggledrawer } = useCustomSelector((state) => ({
+    images: state.Chat.images || [],
+    allMessages: state.Chat.messageIds || [],
+    allMessagesData: state.Chat.msgIdAndDataMap || {},
+    isToggledrawer: state.Chat.isToggledrawer,
+  }))
+
+  const { currentChatId, currentTeamId } = useReduxStateManagement({ chatSessionId, tabSessionId });
   const { callState } = useCallUI();
 
   // Consolidated Redux state selection
   const {
-    reduxThreadId,
     subThreadList,
-    reduxSubThreadId,
-    reduxBridgeName,
     teamsList,
     channelList,
-    isHuman,
+    isHelloUser,
     Name,
     tagline,
     hideCloseButton,
-    voice_call_widget
-  } = useCustomSelector((state: $ReduxCoreType) => {
-    const bridgeName = GetSessionStorageData("bridgeName") || state.appInfo?.bridgeName || "root";
-    const threadId = GetSessionStorageData("threadId") || state.appInfo?.threadId || "";
-
+    voice_call_widget,
+    show_msg91
+  } = useCustomSelector((state) => {
+    const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
     return {
-      reduxThreadId: threadId,
-      reduxSubThreadId: state.appInfo?.subThreadId || "",
-      reduxBridgeName: bridgeName,
-      subThreadList: state.Interface?.interfaceContext?.[chatbotId]?.[bridgeName]?.threadList?.[threadId] || [],
-      teamsList: state.Hello?.widgetInfo?.teams || [],
-      channelList: state.Hello?.channelListData?.channels || [],
-      isHuman: state.Hello?.isHuman || false,
-      Name: JSON.parse(getLocalStorage("client") || '{}')?.name || state.Hello?.channelListData?.customer_name || '',
-      tagline: state.Hello?.widgetInfo?.tagline || '',
-      hideCloseButton: state.Interface.hideCloseButton || false,
-      voice_call_widget: state.Hello?.widgetInfo?.voice_call_widget || false
+      subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
+      teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
+      channelList: state.Hello?.[chatSessionId]?.channelListData?.channels || [],
+      isHelloUser: state.draftData?.isHelloUser || false,
+      Name: state?.Hello?.[chatSessionId]?.clientInfo?.Name || state.Hello?.[chatSessionId]?.channelListData?.customer_name || '',
+      tagline: state.Hello?.[chatSessionId]?.widgetInfo?.tagline || '',
+      hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : state.appInfo?.[tabSessionId]?.hideCloseButton || false,
+      voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
+      show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false
     };
   });
+
+  useEffect(() => {
+    if (chatSessionId) {
+      setToggleDrawer(true);
+    }
+  }, [chatSessionId])
 
   // Handlers
   const handleCreateNewSubThread = async () => {
     if (preview) return;
-    if (subThreadList?.[0]?.newChat){
+    if (subThreadList?.[0]?.newChat) {
       return;
     }
-    const newThreadData  = {
-        sub_thread_id: createRandomId(),
-        thread_id: reduxThreadId,
-        display_name: "New Chat",
-        newChat:"true"
+    const newThreadData = {
+      sub_thread_id: createRandomId(),
+      thread_id: threadId,
+      display_name: "New Chat",
+      newChat: "true"
     }
     if (!subThreadList?.[0]?.newChat) {
       dispatch(
         setThreads({
           newThreadData,
-          bridgeName: GetSessionStorageData("bridgeName") || reduxBridgeName,
-          threadId: reduxThreadId,
+          bridgeName: bridgeName,
+          threadId: threadId,
         })
 
       );
       setOptions([]);
-    
+
     }
   };
 
   const handleChangeSubThread = (sub_thread_id: string) => {
     setLoading(false);
-    dispatch(setThreadId({ subThreadId: sub_thread_id }));
     dispatch(setDataInAppInfoReducer({ subThreadId: sub_thread_id }));
     setNewMessage(true);
     setOptions([]);
@@ -142,28 +141,18 @@ const ChatbotDrawer = ({
     }
   }
 
-  const handleChangeChannel = async (channelId: string, chatId: string, teamId: string, widget_unread_count: number) => {
+  const handleChangeChannel = async (channelId: string, chatId: string, teamId: string) => {
     // Update redux state
-    dispatch(setHelloKeysData({ currentChannelId: channelId, currentChatId: chatId, currentTeamId: teamId }));
-    dispatch(setDataInAppInfoReducer({ subThreadId: channelId }));
-
-    // Fetch history and cleanup
-    fetchHelloPreviousHistory(channelId);
+    dispatch(setDataInAppInfoReducer({ subThreadId: channelId, currentChannelId: channelId, currentChatId: chatId, currentTeamId: teamId }));
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
 
-    // Handle unread messages
-    if (widget_unread_count > 0) {
-      await deleteReadReceipt(channelId);
-      dispatch(setUnReadCount({ channelId: channelId, resetCount: true }));
-    }
     focusTextField();
     setLoading(false);
   };
 
   const handleChangeTeam = (teamId: string) => {
-    dispatch(setHelloKeysData({ currentTeamId: teamId, currentChannelId: "", currentChatId: "" }));
-    dispatch(setDataInAppInfoReducer({ subThreadId: '' }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: teamId, currentChannelId: "", currentChatId: "" }));
 
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
@@ -176,13 +165,14 @@ const ChatbotDrawer = ({
   };
 
   const handleVoiceCall = () => {
-    helloVoiceService.initiateCall();
+    getCallToken().then(() => {
+      helloVoiceService.initiateCall();
+    })
     if (isSmallScreen) setToggleDrawer(false);
   };
 
   const handleSendMessageWithNoTeam = () => {
-    dispatch(setHelloKeysData({ currentTeamId: "", currentChannelId: "", currentChatId: "" }));
-    dispatch(setDataInAppInfoReducer({ subThreadId: '' }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: "", currentChannelId: "", currentChatId: "" }));
 
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
@@ -201,7 +191,7 @@ const ChatbotDrawer = ({
           {subThreadList.map((thread: any, index: number) => (
             <li key={`${thread?._id}-${index}`}>
               <a
-                className={`${thread?.sub_thread_id === reduxSubThreadId ? 'active' : ''}`}
+                className={`${thread?.sub_thread_id === subThreadId ? 'active' : ''}`}
                 onClick={() => handleChangeSubThread(thread?.sub_thread_id)}
               >
                 {thread?.display_name || thread?.sub_thread_id}
@@ -211,15 +201,15 @@ const ChatbotDrawer = ({
         </ul>
       )}
     </div>
-  ), [subThreadList, reduxSubThreadId, handleChangeSubThread]);
+  ), [subThreadList, subThreadId, handleChangeSubThread]);
 
   const TeamsList = useMemo(() => (
-    <div className="teams-container p-2 relative gap-6 flex flex-col">
+    <div className="teams-container pb-2 relative gap-6 flex flex-col">
       {/* Conversations Section */}
       {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
         <div className="conversations-section border-b">
-          <div className="conversations-header mb-1 pb-2">
-            <h3 className="text-md font-semibold">Continue Conversations</h3>
+          <div className="conversations-header pb-2">
+            <h3 className="text-base font-semibold">Continue Conversations</h3>
           </div>
           <div className="conversations-list space-y-2">
             {channelList
@@ -229,11 +219,11 @@ const ChatbotDrawer = ({
                   key={`${channel?._id}-${index}`}
                   className={`conversation-card max-h-16 h-full overflow-hidden text-ellipsis p-3 ${channel?.id === currentChatId ? 'border-2 border-primary' : ''} bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center`}
                   style={{
-                    borderColor: channel?.id === currentChatId ? theme.palette.primary.main : ''
+                    borderColor: channel?.id === currentChatId ? backgroundColor : ''
                   }}
-                  onClick={() => handleChangeChannel(channel?.channel, channel?.id, channel?.team_id, channel?.widget_unread_count)}
+                  onClick={() => handleChangeChannel(channel?.channel, channel?.id, channel?.team_id)}
                 >
-                  <div className="w-9 h-9 flex items-center justify-center text-xs font-bold rounded-full mr-3" style={{ background: lighten(theme.palette.primary.main, 0.9), color: "#606060" }}>
+                  <div className="w-9 h-9 flex items-center justify-center text-xs font-bold rounded-full mr-3" style={{ background: lighten(backgroundColor, 0.8), color: "#606060" }}>
                     {(() => {
                       if (channel?.assigned_to?.name) {
                         const name = channel.assigned_to.name.toString() || '';
@@ -253,11 +243,8 @@ const ChatbotDrawer = ({
                     })()}
                   </div>
                   <div className="conversation-info flex-1 min-w-0 pr-1">
-                    {/* <div className="conversation-name text-xs text-gray-400 break-words mb-1">
-                      Conversation
-                    </div> */}
                     {channel?.channel && allMessages && allMessagesData && (
-                      <div className="last-message text-sm text-black font-medium truncate flex flex-row items-center gap-1 text-ellipsis overflow-hidden">
+                      <div className="last-message text-sm font-medium truncate flex flex-row items-center gap-1 text-ellipsis overflow-hidden">
                         {(() => {
                           const channelMessages = allMessages[channel?.channel];
                           if (channelMessages && channelMessages?.length > 0) {
@@ -303,7 +290,7 @@ const ChatbotDrawer = ({
                   </div>
                   <div className="flex-shrink-0 flex items-center">
                     {channel?.widget_unread_count > 0 && (
-                      <div className="text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center mr-2" style={{ backgroundColor: theme.palette.primary.main }}>
+                      <div className="text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center mr-2" style={{ backgroundColor: backgroundColor, color: textColor }}>
                         {channel?.widget_unread_count}
                       </div>
                     )}
@@ -317,13 +304,13 @@ const ChatbotDrawer = ({
 
       {/* Teams Section */}
       <div className="teams-section">
-        <div className="teams-header mb-1 border-b pb-2 flex items-center">
-          <h3 className="text-lg font-semibold">Talk to our experts</h3>
+        <div className="teams-header pb-2 flex items-center">
+          <h3 className="text-base font-semibold">Talk to our experts</h3>
         </div>
         <div className="teams-list space-y-0">
           {teamsList.length === 0 ? (
             <div className="flex">
-              <button className="btn w-full" style={{ backgroundColor: theme.palette.primary.main, color: '#fff' }} onClick={handleSendMessageWithNoTeam}>Send us a message</button>
+              <button className="btn w-full" style={{ backgroundColor: backgroundColor, color: textColor }} onClick={handleSendMessageWithNoTeam}>Send us a message</button>
             </div>
           ) : (
             <div className="flex flex-col gap-1">
@@ -351,7 +338,7 @@ const ChatbotDrawer = ({
         </div>
       </div>
 
-      {voice_call_widget && <div className="marketing-banner mt-4 p-3 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg">
+      {voice_call_widget && <div className="marketing-banner p-3 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg">
         <p className="text-sm font-medium">Need specialized help?</p>
         <p className="text-xs">Our teams are ready to assist you with any questions</p>
         <button
@@ -370,7 +357,7 @@ const ChatbotDrawer = ({
     currentTeamId,
     callState,
     voice_call_widget,
-    theme.palette.primary.main,
+    backgroundColor,
     handleChangeChannel,
     handleChangeTeam,
     handleSendMessageWithNoTeam,
@@ -398,7 +385,7 @@ const ChatbotDrawer = ({
   }, [hideCloseButton, handleCloseChatbot]);
 
   return (
-    <div className="drawer z-[999]">
+    <div className={`drawer ${isSmallScreen ? 'z-[99999]' : 'z-[999]'}`}>
       <input
         id="chatbot-drawer"
         type="checkbox"
@@ -415,7 +402,7 @@ const ChatbotDrawer = ({
         />
       )}
 
-      <div className={`drawer-side ${isHuman && isSmallScreen ? '100%' : 'max-w-[286px]'} ${isToggledrawer ? 'lg:translate-x-0' : 'lg:-translate-x-full'} transition-transform duration-100`}>
+      <div className={`drawer-side ${isHelloUser && isSmallScreen ? '100%' : 'max-w-[286px]'} ${isToggledrawer ? 'lg:translate-x-0' : 'lg:-translate-x-full'} transition-transform duration-100`}>
         <div className="w-full h-full text-base-content relative bg-base-200 border-r-base-300 border flex flex-col">
           {/* Header with padding */}
           <div className="px-4 pt-4 pb-4">
@@ -439,7 +426,7 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end">
-                {isToggledrawer && !isHuman && (
+                {isToggledrawer && !isHelloUser && (
                   <div className="tooltip tooltip-bottom z-[9999]" data-tip="New Chat">
                     <button
                       className="p-2 hover:bg-gray-200 rounded-full transition-colors"
@@ -449,7 +436,7 @@ const ChatbotDrawer = ({
                     </button>
                   </div>
                 )}
-                {isHuman && CloseButton}
+                {isHelloUser && CloseButton}
               </div>
             </div>
           </div>
@@ -457,17 +444,28 @@ const ChatbotDrawer = ({
           {/* Content area with overflow handling - the scrollbar will appear at the edge */}
           <div className="flex-1 overflow-y-auto">
             <div className="px-4">
-              {!isHuman ? DrawerList : TeamsList}
+              {!isHelloUser ? DrawerList : TeamsList}
             </div>
           </div>
 
           {/* Footer with branding - always stays at bottom */}
           <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
             <div className="text-xs text-gray-500 flex items-baseline gap-1">
-              Powered by
-              {isHuman ? <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
-                <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
-              </a> : <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity"><span className="font-bold">GTWY</span></a>}
+              {isHelloUser && show_msg91 ? (
+                <>
+                  Powered by
+                  <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
+                    <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
+                  </a>
+                </>
+              ) : !isHelloUser ? (
+                <>
+                  Powered by
+                  <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity">
+                    <span className="font-bold">GTWY</span>
+                  </a>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
@@ -476,4 +474,4 @@ const ChatbotDrawer = ({
   );
 };
 
-export default addUrlDataHoc(memo(ChatbotDrawer), [ParamsEnums.chatbotId]);
+export default addUrlDataHoc(ChatbotDrawer, [ParamsEnums.subThreadId, ParamsEnums.bridgeName, ParamsEnums.threadId]);

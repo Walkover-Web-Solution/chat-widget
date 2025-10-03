@@ -3,19 +3,16 @@ import { useDispatch } from "react-redux";
 
 // App imports
 import { AiIcon, UserAssistant } from "@/assests/assestsIndex";
-import { setHuman } from "@/store/hello/helloSlice";
-import type { $ReduxCoreType } from "@/types/reduxCore";
+import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
+import { setOptions } from "@/store/chat/chatSlice";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
-import { useContext } from "react";
-import { MessageContext } from "./InterfaceChatbot";
-import { ChatActionTypes } from "../Chatbot/hooks/chatTypes";
+import React from "react";
 
-function ChatbotHeaderTab() {
-  const { chatDispatch } = useContext(MessageContext);
+function ChatbotHeaderTab({ chatSessionId }: { chatSessionId: string }) {
   const dispatch = useDispatch();
-  const { isHuman, mode } = useCustomSelector((state: $ReduxCoreType) => ({
-    isHuman: state.Hello?.isHuman || false,
-    mode: state.Hello?.mode || [],
+  const { isHelloUser, mode } = useCustomSelector((state) => ({
+    isHelloUser: state.draftData?.isHelloUser || false,
+    mode: state.Hello?.[chatSessionId]?.mode || [],
   }));
 
   // Early return if feature not enabled
@@ -24,12 +21,11 @@ function ChatbotHeaderTab() {
   }
 
   const handleTabClick = (isHumanTab: boolean) => {
-    dispatch(setHuman({ isHuman: isHumanTab }));
-    chatDispatch({ type: ChatActionTypes.SET_OPTIONS, payload: [] })
+    dispatch(setOptions([]));
   };
 
   const TabButton = ({ type, icon, label }: { type: 'AI' | 'Human', icon: any, label: string }) => {
-    const isActive = type === 'Human' ? isHuman : !isHuman;
+    const isActive = type === 'Human' ? isHelloUser : !isHelloUser;
 
     return (
       <button
@@ -74,4 +70,4 @@ function ChatbotHeaderTab() {
   );
 }
 
-export default ChatbotHeaderTab;
+export default React.memo(addUrlDataHoc(ChatbotHeaderTab));
