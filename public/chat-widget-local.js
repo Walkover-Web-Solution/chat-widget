@@ -34,7 +34,7 @@
                     window.CobrowseIO.license = "FZBGaF9-Od0GEQ"; // Replace with your actual license key
                     window.CobrowseIO.trustedOrigins = [
                         window?.origin,
-                        "http://localhost:3001/chatbot"
+                        "http://localhost:3000/chatbot"
                     ]
 
                     // Start CobrowseIO
@@ -207,7 +207,7 @@
             window.addEventListener('message', (event) => {
                 // Only process messages from trusted origins
                 const trustedOrigins = [
-                    'http://localhost:3001',
+                    'http://localhost:3000',
                     'http://localhost:3000',
                     window.location.origin
                 ];
@@ -375,10 +375,10 @@
             modalContainer.appendChild(closeButton);
 
             // Append the modal to the overlay
-            overlay.appendChild(modalContainer);
+            //overlay.appendChild(modalContainer);
 
             // Append the overlay to the body
-            //document.body.appendChild(overlay);
+            document.body.appendChild(modalContainer);
 
 
             // Once the iframe is added to the DOM, we can access its document
