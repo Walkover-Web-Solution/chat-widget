@@ -334,105 +334,189 @@
 
         handlePushNotification(data) {
             console.log("handlePushNotification", data);
-            // Create a full-screen transparent overlay
+            //const message_type = data.message_type;
+            const message_type = 'Custom';
             
-            /* const overlay = document.createElement('div');
-            overlay.id = 'notification-overlay';
-            overlay.classList.add('notification-overlay'); */
-
-            // Set position classes based on horizontal and vertical position values
-            const horizontalPosition = data.horizontal_position || 'center';
-            const verticalPosition = data.vertical_position || 'center';
-
-            // Add position classes
-            //overlay.classList.add(`h-${horizontalPosition}`, `v-${verticalPosition}`);
-
             // Create the modal container
             const modalContainer = document.createElement('div');
             modalContainer.classList.add('notification-modal');
-
-            const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            /* iframe.style.minHeight = '500px';
-            iframe.style.minWidth = '500px'; */
-            iframe.style.background = 'transparent';
-
-            modalContainer.appendChild(iframe);
-
+            
             // Create close button (cross icon)
             const closeButton = document.createElement('div');
             closeButton.innerHTML = '&times;';
             closeButton.classList.add('notification-close-btn');
-
-            // Add click event to close button
-            /* closeButton.addEventListener('click', () => {
-                this.removeNotification(overlay);
-            }); */
-
+            
+            // Create close button (cross icon)
+            const loader = document.createElement('div');
+            loader.innerHTML = 'Loading...';
+            loader.classList.add('msg-push-loader');            
+            
             // Add the close button to the modal container after content
             modalContainer.appendChild(closeButton);
+            modalContainer.appendChild(loader);
 
-            // Append the modal to the overlay
-            //overlay.appendChild(modalContainer);
+            const iframe = document.createElement('iframe');
+            iframe.classList.add('msg-push-hide');
 
-            // Append the overlay to the body
-            document.body.appendChild(modalContainer);
+            console.log('messaged_type', message_type);
 
+            if(message_type === 'Popup') {
+                // Create a full-screen transparent overlay                
+                const overlay = document.createElement('div');
+                overlay.id = 'notification-overlay';
+                overlay.classList.add('notification-overlay');
+                
+                // Add click event to close button
+                closeButton.addEventListener('click', () => {
+                    this.removeNotification(overlay);
+                });
 
-            // Once the iframe is added to the DOM, we can access its document
-            setTimeout(() => {
-                console.log("iframe---------------------------", iframe);
-                // Get reference to the iframe's document
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                // Set position classes based on horizontal and vertical position values
+                const horizontalPosition = data.horizontal_position || 'center';
+                const verticalPosition = data.vertical_position || 'center';
+    
+                // Add position classes
+                overlay.classList.add(`h-${horizontalPosition}`, `v-${verticalPosition}`);
+                
+                /* iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';                
+                iframe.style.background = 'transparent'; */
+    
+                modalContainer.appendChild(iframe);
+    
+                
+                
+                // Append the modal to the overlay
+                overlay.appendChild(modalContainer);
 
-                // Write the content to the iframe
-                iframeDoc.open();
-                iframeDoc.write(data.content);
-                iframeDoc.close();
+                // Append the overlay to the body
+                document.body.appendChild(overlay);
 
-                // Add external stylesheet if needed
-                if (this.urls && this.urls.styleSheet) {
-                    const externalStyle = iframeDoc.createElement('link');
-                    externalStyle.rel = 'stylesheet';
-                    externalStyle.href = this.urls.styleSheet;
-                    externalStyle.type = 'text/css';
-                    iframeDoc.head.appendChild(externalStyle);
-                }
+                // Once the iframe is added to the DOM, we can access its document
+                setTimeout(() => {                    
+                    // Get reference to the iframe's document
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                iframe.onload = function () {                
-                    const body = iframeDoc.body;
-                    let height = 0;
-                    let width = 0;
-                    let top = 0;
-                    const position = ['absolute','relative','fixed'];
-                    for (let i = 0; i < body.children.length; i++) {
-                        const el = body.children[i];
-                        height += el.getBoundingClientRect().height;
-                        if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
-                            const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
-                            if(height < combinedHeight){
-                                height = combinedHeight;
+                    // Write the content to the iframe
+                    iframeDoc.open();
+                    iframeDoc.write(data.content);
+                    iframeDoc.close();
+
+                    // Add external stylesheet if needed
+                    if (this.urls && this.urls.styleSheet) {
+                        const externalStyle = iframeDoc.createElement('link');
+                        externalStyle.rel = 'stylesheet';
+                        externalStyle.href = this.urls.styleSheet;
+                        externalStyle.type = 'text/css';
+                        iframeDoc.head.appendChild(externalStyle);
+                    }
+
+                    iframe.onload = function () {
+                        iframe.classList.remove('msg-push-hide');
+                        loader.classList.add('msg-push-hide');
+                        const body = iframeDoc.body;                        
+                        let height = 0, width = 0, top = 0;
+                        const position = ['absolute','relative','fixed'];
+                        for (let i = 0; i < body.children.length; i++) {
+                            const el = body.children[i];
+                            height += el.getBoundingClientRect().height;
+                            if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
+                                const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
+                                if(height < combinedHeight){
+                                    height = combinedHeight;
+                                }
+                                top = el.getBoundingClientRect().top;
                             }
-                            top = el.getBoundingClientRect().top;
+                            if(width < el.getBoundingClientRect().width) {
+                                width = el.getBoundingClientRect().width;
+                            }
                         }
-                        if(width < el.getBoundingClientRect().width) {
-                            width = el.getBoundingClientRect().width;
+                        
+                        if(window.innerHeight < height){
+                            overlay.classList.remove(`v-${verticalPosition}`);
                         }
-                    }
-    
-                    iframe.style.width = `${width}px`;
-                    iframe.style.height = `${height}px`;
-                    iframe.style.top = `${top}px`;
-                    iframe.style.position = 'relative';
-    
-                    if(body.children.length == 1){
-                        body.children[0].style.position = 'static';
-                    }
-                };
 
-            }, 0);
+                        iframe.style.width = `${width}px`;
+                        iframe.style.height = `${height}px`;                        
+                        modalContainer.style.height = `${height}px`;
+                        iframe.style.top = `${top}px`;
+                        iframe.style.position = 'relative';
+                        iframe.style.border = 'none';
+        
+                        if(body.children.length == 1){
+                            body.children[0].style.position = 'static';
+                        }
+                    };
+                }, 0);
+            }
+
+            if(message_type === 'Custom') {
+                
+                modalContainer.appendChild(iframe);                
+                document.body.appendChild(modalContainer);
+
+                // Once the iframe is added to the DOM, we can access its document
+                setTimeout(() => {                    
+                    // Get reference to the iframe's document
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                    // Write the content to the iframe
+                    iframeDoc.open();
+                    iframeDoc.write(data.content);
+                    iframeDoc.close();
+
+                    // Add external stylesheet if needed
+                    if (this.urls && this.urls.styleSheet) {
+                        const externalStyle = iframeDoc.createElement('link');
+                        externalStyle.rel = 'stylesheet';
+                        externalStyle.href = this.urls.styleSheet;
+                        externalStyle.type = 'text/css';
+                        iframeDoc.head.appendChild(externalStyle);
+                    }
+
+                    iframe.onload = function () {
+                        iframe.classList.remove('msg-push-hide');
+                        loader.classList.add('msg-push-hide');
+                        const body = iframeDoc.body;
+                        console.log('body', body);
+                        let height = 0, width = 0;
+                        const position = ['absolute','relative','fixed'];
+                        for (let i = 0; i < body.children.length; i++) {
+                            const el = body.children[i];
+                            height += el.getBoundingClientRect().height;
+                            if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
+                                const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
+                                if(height < combinedHeight){
+                                    height = combinedHeight;
+                                }
+                                const top = el.getBoundingClientRect().top;
+                            }
+                            if(width < el.getBoundingClientRect().width) {
+                                width = el.getBoundingClientRect().width;
+                            }
+                        }
+                        console.log('height', height);
+                        console.log('width', width);
+                        console.log('top', top);
+
+                        iframe.style.width = `${width}px`;
+                        iframe.style.height = `${height}px`;
+                        if(top){
+                            iframe.style.top = `${top}px`;
+                        }
+                        if(bottom){
+                            iframe.style.top = `${top}px`;
+                        }
+                        iframe.style.position = 'relative';
+                        iframe.style.border = 'none';
+        
+                        if(body.children.length == 1){
+                            body.children[0].style.position = 'static';
+                        }
+                    };
+                }, 0);
+            }            
         }
 
         removeNotification(overlayElement) {
@@ -1141,6 +1225,9 @@
             } else {
                 helloChatbotManager.openChatbot();
             }
+        },
+        handlePushNotification(data){
+            helloChatbotManager.handlePushNotification(data);
         }
     };
 
