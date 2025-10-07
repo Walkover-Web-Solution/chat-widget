@@ -218,8 +218,7 @@
             });
         }
 
-        handleIncomingMessages(event) {
-            console.log("handleIncomingMessages", event);
+        handleIncomingMessages(event) {            
             const { type, data } = event.data || {};
             switch (type) {
                 case 'MINIMIZE_CHATBOT':
@@ -332,33 +331,23 @@
             }
         }
 
-        handlePushNotification(data) {
-            console.log("handlePushNotification", data);
-            //const message_type = data.message_type;
-            const message_type = 'Custom';
+        handlePushNotification(data) {            
+            const message_type = data.message_type;            
             
             // Create the modal container
             const modalContainer = document.createElement('div');
             modalContainer.classList.add('notification-modal');
             
             // Create close button (cross icon)
-            const closeButton = document.createElement('div');
-            closeButton.innerHTML = '&times;';
-            closeButton.classList.add('notification-close-btn');
-            
-            // Create close button (cross icon)
             const loader = document.createElement('div');
             loader.innerHTML = 'Loading...';
             loader.classList.add('msg-push-loader');            
             
-            // Add the close button to the modal container after content
-            modalContainer.appendChild(closeButton);
+            // Add the close button to the modal container after content            
             modalContainer.appendChild(loader);
 
             const iframe = document.createElement('iframe');
-            iframe.classList.add('msg-push-hide');
-
-            console.log('messaged_type', message_type);
+            iframe.classList.add('msg-push-hide');        
 
             if(message_type === 'Popup') {
                 // Create a full-screen transparent overlay                
@@ -366,6 +355,13 @@
                 overlay.id = 'notification-overlay';
                 overlay.classList.add('notification-overlay');
                 
+                // Create close button (cross icon)
+                const closeButton = document.createElement('div');
+                closeButton.innerHTML = '&times;';
+                closeButton.classList.add('notification-close-btn');
+                
+                modalContainer.appendChild(closeButton);
+
                 // Add click event to close button
                 closeButton.addEventListener('click', () => {
                     this.removeNotification(overlay);
@@ -376,16 +372,9 @@
                 const verticalPosition = data.vertical_position || 'center';
     
                 // Add position classes
-                overlay.classList.add(`h-${horizontalPosition}`, `v-${verticalPosition}`);
-                
-                /* iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.style.border = 'none';                
-                iframe.style.background = 'transparent'; */
+                overlay.classList.add(`h-${horizontalPosition}`, `v-${verticalPosition}`);                            
     
-                modalContainer.appendChild(iframe);
-    
-                
+                modalContainer.appendChild(iframe);    
                 
                 // Append the modal to the overlay
                 overlay.appendChild(modalContainer);
@@ -420,7 +409,7 @@
                         const position = ['absolute','relative','fixed'];
                         for (let i = 0; i < body.children.length; i++) {
                             const el = body.children[i];
-                            height += el.getBoundingClientRect().height;
+                            height += el.getBoundingClientRect().height;                            
                             if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
                                 const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
                                 if(height < combinedHeight){
@@ -437,7 +426,7 @@
                             overlay.classList.remove(`v-${verticalPosition}`);
                         }
 
-                        iframe.style.width = `${width}px`;
+                        iframe.style.width = `${width}px`;                        
                         iframe.style.height = `${height}px`;                        
                         modalContainer.style.height = `${height}px`;
                         iframe.style.top = `${top}px`;
@@ -453,8 +442,10 @@
 
             if(message_type === 'Custom') {
                 
+
                 modalContainer.appendChild(iframe);                
                 document.body.appendChild(modalContainer);
+
 
                 // Once the iframe is added to the DOM, we can access its document
                 setTimeout(() => {                    
@@ -479,41 +470,44 @@
                         iframe.classList.remove('msg-push-hide');
                         loader.classList.add('msg-push-hide');
                         const body = iframeDoc.body;
-                        console.log('body', body);
-                        let height = 0, width = 0;
+                        let height = 0, width = 0, top = null, bottom = null;
                         const position = ['absolute','relative','fixed'];
                         for (let i = 0; i < body.children.length; i++) {
                             const el = body.children[i];
                             height += el.getBoundingClientRect().height;
-                            if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
+                            if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top >= 0) {
                                 const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
                                 if(height < combinedHeight){
                                     height = combinedHeight;
                                 }
-                                const top = el.getBoundingClientRect().top;
+                                top = el.getBoundingClientRect().top;
+                            }
+                            
+                            if(window.getComputedStyle(el).getPropertyValue('bottom')) {                                                                
+                                bottom = window.getComputedStyle(el).getPropertyValue('bottom');
                             }
                             if(width < el.getBoundingClientRect().width) {
                                 width = el.getBoundingClientRect().width;
                             }
-                        }
-                        console.log('height', height);
-                        console.log('width', width);
-                        console.log('top', top);
+                        }                        
 
+                        modalContainer.style.width = `${width}px`;
+                        modalContainer.style.height = `${height}px`;
+                        modalContainer.style.position = 'absolute';
                         iframe.style.width = `${width}px`;
                         iframe.style.height = `${height}px`;
-                        if(top){
-                            iframe.style.top = `${top}px`;
-                        }
-                        if(bottom){
-                            iframe.style.top = `${top}px`;
-                        }
-                        iframe.style.position = 'relative';
                         iframe.style.border = 'none';
-        
-                        if(body.children.length == 1){
-                            body.children[0].style.position = 'static';
+                        
+                        if(top){
+                            modalContainer.style.top = `${top}px`;
                         }
+                        if(bottom){                            
+                            modalContainer.style.bottom = bottom;
+                        }
+                        
+                        /* if(body.children.length == 1){
+                            body.children[0].style.position = 'static';
+                        } */
                     };
                 }, 0);
             }            
