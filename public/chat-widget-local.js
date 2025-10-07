@@ -333,6 +333,7 @@
 
         handlePushNotification(data) {            
             const message_type = data.message_type;            
+            //const message_type = 'Custom';            
             
             // Create the modal container
             const modalContainer = document.createElement('div');
@@ -387,38 +388,63 @@
                     // Get reference to the iframe's document
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                    // Write the content to the iframe
-                    iframeDoc.open();
-                    iframeDoc.write(data.content);
-                    iframeDoc.close();
-
-                    // Add external stylesheet if needed
-                    if (this.urls && this.urls.styleSheet) {
-                        const externalStyle = iframeDoc.createElement('link');
-                        externalStyle.rel = 'stylesheet';
-                        externalStyle.href = this.urls.styleSheet;
-                        externalStyle.type = 'text/css';
-                        iframeDoc.head.appendChild(externalStyle);
-                    }
-
+                    // Set iframe.onload handler BEFORE writing content to avoid missing the load event
                     iframe.onload = function () {
                         iframe.classList.remove('msg-push-hide');
                         loader.classList.add('msg-push-hide');
-                        const body = iframeDoc.body;                        
-                        let height = 0, width = 0, top = 0;
-                        const position = ['absolute','relative','fixed'];
-                        for (let i = 0; i < body.children.length; i++) {
-                            const el = body.children[i];
-                            height += el.getBoundingClientRect().height;                            
-                            if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
-                                const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
-                                if(height < combinedHeight){
-                                    height = combinedHeight;
+                        const body = iframeDoc.body;
+
+                        //without this scroller may seen
+                        body.style.setProperty('height', 'auto', 'important');
+                        body.style.setProperty('min-height', 'auto', 'important');
+                        body.style.setProperty('max-height', 'none', 'important');
+                        body.style.setProperty('line-height', 'normal', 'important');
+
+                        let height = 0, width = 0, top = 0, bgFound = false;
+                        const position = ['absolute','relative','fixed'];                        
+                        if(body.children.length){
+                            for (let i = 0; i < body.children.length; i++) {
+                                const el = body.children[i];
+                                height += el.getBoundingClientRect().height;                                
+                                if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
+                                    const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
+                                    if(height < combinedHeight){
+                                        height = combinedHeight;
+                                    }
+                                    top = el.getBoundingClientRect().top;
                                 }
-                                top = el.getBoundingClientRect().top;
+                                if(width < el.getBoundingClientRect().width) {
+                                    width = el.getBoundingClientRect().width;
+                                }                                
+                                const computedStyle = getComputedStyle(el);
+                                const bgColor = computedStyle.backgroundColor;
+                                const bgImage = computedStyle.backgroundImage;
+                                
+                                // Check if element has a visible background (not transparent/none)
+                                if ((bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') || 
+                                    (bgImage && bgImage !== 'none')) {
+                                    bgFound = true;
+                                }
+                            }                                                                                  
+
+                            if(body.getBoundingClientRect().height > height){
+                                height = body.getBoundingClientRect().height;
+                            }                                                        
+
+                            if(body.getBoundingClientRect().width > width){
+                                width = body.getBoundingClientRect().width;
                             }
-                            if(width < el.getBoundingClientRect().width) {
-                                width = el.getBoundingClientRect().width;
+                        } else {
+                            height += body.getBoundingClientRect().height;
+                            width += body.getBoundingClientRect().width;                            
+                            const bodyComputedStyle = getComputedStyle(body);
+                            const bodyBgColor = bodyComputedStyle.backgroundColor;
+                            const bodyBgImage = bodyComputedStyle.backgroundImage;
+                            
+                            // Check if body has a visible background (not transparent/none)
+                            if ((bodyBgColor && bodyBgColor !== 'rgba(0, 0, 0, 0)' && bodyBgColor !== 'transparent') || 
+                                (bodyBgImage && bodyBgImage !== 'none')) {
+                                bgFound = true;
                             }
                         }
                         
@@ -426,17 +452,37 @@
                             overlay.classList.remove(`v-${verticalPosition}`);
                         }
 
-                        iframe.style.width = `${width}px`;                        
-                        iframe.style.height = `${height}px`;                        
-                        modalContainer.style.height = `${height}px`;
+                        iframe.style.width = `${width}px`;                                                                        
                         iframe.style.top = `${top}px`;
                         iframe.style.position = 'relative';
                         iframe.style.border = 'none';
-        
-                        if(body.children.length == 1){
-                            body.children[0].style.position = 'static';
+                        
+                        iframe.style.height = (height < 32) ? '36px' : `${height}px`;
+                        modalContainer.style.height = `${height}px`;
+
+                        setTimeout(() => {
+                            //bad hack to fix height issue iframe.onload is not working properly
+                            height = body.getBoundingClientRect().height;
+                            iframe.style.height = (height < 32) ? '36px' : `${height}px`;
+                            modalContainer.style.height = `${height}px`;
+                        }, 1000);
+                        
+                        if(!bgFound){                            
+                            body.style.backgroundColor = '#ffffff';
                         }
                     };
+
+                    // Build complete HTML content with stylesheet if needed
+                    let htmlContent = '<!DOCTYPE html><html><head>';
+                    if (this.urls && this.urls.styleSheet) {
+                        htmlContent += `<link rel="stylesheet" href="${this.urls.styleSheet}" type="text/css">`;
+                    }
+                    htmlContent += `</head><body>${data.content}</body></html>`;                    
+                    
+                    // Write complete content in one operation
+                    iframeDoc.open();
+                    iframeDoc.write(htmlContent);
+                    iframeDoc.close();
                 }, 0);
             }
 
@@ -452,44 +498,36 @@
                     // Get reference to the iframe's document
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                    // Write the content to the iframe
-                    iframeDoc.open();
-                    iframeDoc.write(data.content);
-                    iframeDoc.close();
-
-                    // Add external stylesheet if needed
-                    if (this.urls && this.urls.styleSheet) {
-                        const externalStyle = iframeDoc.createElement('link');
-                        externalStyle.rel = 'stylesheet';
-                        externalStyle.href = this.urls.styleSheet;
-                        externalStyle.type = 'text/css';
-                        iframeDoc.head.appendChild(externalStyle);
-                    }
-
+                    // Set iframe.onload handler BEFORE writing content to avoid missing the load event
                     iframe.onload = function () {
                         iframe.classList.remove('msg-push-hide');
                         loader.classList.add('msg-push-hide');
                         const body = iframeDoc.body;
                         let height = 0, width = 0, top = null, bottom = null;
                         const position = ['absolute','relative','fixed'];
-                        for (let i = 0; i < body.children.length; i++) {
-                            const el = body.children[i];
-                            height += el.getBoundingClientRect().height;
-                            if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top >= 0) {
-                                const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
-                                if(height < combinedHeight){
-                                    height = combinedHeight;
+                        if(body.children.length){
+                            for (let i = 0; i < body.children.length; i++) {
+                                const el = body.children[i];
+                                height += el.getBoundingClientRect().height;
+                                if(position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top >= 0) {
+                                    const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
+                                    if(height < combinedHeight){
+                                        height = combinedHeight;
+                                    }
+                                    top = el.getBoundingClientRect().top;
                                 }
-                                top = el.getBoundingClientRect().top;
+                                
+                                if(window.getComputedStyle(el).getPropertyValue('bottom')) {                                                                
+                                    bottom = window.getComputedStyle(el).getPropertyValue('bottom');
+                                }
+                                if(width < el.getBoundingClientRect().width) {
+                                    width = el.getBoundingClientRect().width;
+                                }
                             }
-                            
-                            if(window.getComputedStyle(el).getPropertyValue('bottom')) {                                                                
-                                bottom = window.getComputedStyle(el).getPropertyValue('bottom');
-                            }
-                            if(width < el.getBoundingClientRect().width) {
-                                width = el.getBoundingClientRect().width;
-                            }
-                        }                        
+                        } else {
+                            height += body.getBoundingClientRect().height;
+                            width += body.getBoundingClientRect().width;
+                        }
 
                         modalContainer.style.width = `${width}px`;
                         modalContainer.style.height = `${height}px`;
@@ -505,10 +543,22 @@
                             modalContainer.style.bottom = bottom;
                         }
                         
-                        /* if(body.children.length == 1){
+                        if(body.children.length == 1){
                             body.children[0].style.position = 'static';
-                        } */
+                        }
                     };
+
+                    // Build complete HTML content with stylesheet if needed
+                    let htmlContent = '<!DOCTYPE html><html><head>';
+                    if (this.urls && this.urls.styleSheet) {
+                        htmlContent += `<link rel="stylesheet" href="${this.urls.styleSheet}" type="text/css">`;
+                    }
+                    htmlContent += `</head><body>${data.content}</body></html>`;
+                    
+                    // Write complete content in one operation
+                    iframeDoc.open();
+                    iframeDoc.write(htmlContent);
+                    iframeDoc.close();
                 }, 0);
             }            
         }
