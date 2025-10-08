@@ -34,7 +34,7 @@
                     window.CobrowseIO.license = "FZBGaF9-Od0GEQ"; // Replace with your actual license key
                     window.CobrowseIO.trustedOrigins = [
                         window?.origin,
-                        "http://localhost:3001/chatbot"
+                        "http://localhost:3000/chatbot"
                     ]
 
                     // Start CobrowseIO
@@ -103,9 +103,9 @@
                 buttonName: ''
             };
             this.urls = {
-                chatbotUrl: 'http://localhost:3001/chatbot',
-                styleSheet: 'http://localhost:3001/chat-widget-style.css',
-                urlMonitor: 'http://localhost:3001/urlMonitor.js'
+                chatbotUrl: 'http://localhost:3000/chatbot',
+                styleSheet: 'http://localhost:3000/chat-widget-style.css',
+                urlMonitor: 'http://localhost:3000/urlMonitor.js'
             };
             this.icons = {
                 white: this.makeImageUrl('b1357e23-2fc6-4dc3-855a-7a213b1fa100'),
@@ -207,7 +207,7 @@
             window.addEventListener('message', (event) => {
                 // Only process messages from trusted origins
                 const trustedOrigins = [
-                    'http://localhost:3001',
+                    'http://localhost:3000',
                     'http://localhost:3000',
                     window.location.origin
                 ];
@@ -331,7 +331,35 @@
             }
         }
 
+        getHTMLDimensions(htmlContent) {
+            // Create a temporary container
+            const tempContainer = document.createElement('body');
+            
+            // Style it to be invisible but measurable
+            tempContainer.style.position = 'absolute';            
+            
+            // Set the HTML content
+            tempContainer.innerHTML = htmlContent;
+            
+            // Append to body to trigger layout calculation
+            document.body.appendChild(tempContainer);
+            
+            // Get dimensions            
+            const rect = tempContainer.getBoundingClientRect();
+            console.log('rect', rect);
+            const dimensions = {
+                width: rect.width,
+                height: rect.height                
+            };
+            
+            // Clean up
+            document.body.removeChild(tempContainer);
+            
+            return dimensions;
+        }
+
         handlePushNotification(data) {
+            console.log('handlePushNotification --------- ');
             const message_type = data.message_type;
             //const message_type = 'Custom';            
 
@@ -351,6 +379,7 @@
             iframe.classList.add('msg-push-hide');
 
             if (message_type === 'Popup') {
+                console.log('popup --------- ');
                 // Create a full-screen transparent overlay                
                 const overlay = document.createElement('div');
                 overlay.id = 'notification-overlay';
@@ -392,13 +421,7 @@
                     iframe.onload = function () {
                         iframe.classList.remove('msg-push-hide');
                         loader.classList.add('msg-push-hide');
-                        const body = iframeDoc.body;
-
-                        //without this scroller may seen
-                        body.style.setProperty('height', 'auto', 'important');
-                        body.style.setProperty('min-height', 'auto', 'important');
-                        body.style.setProperty('max-height', 'none', 'important');
-                        body.style.setProperty('line-height', 'normal', 'important');
+                        const body = iframeDoc.body;                        
 
                         let height = 0, width = 0, top = 0, bgFound = false;
                         const position = ['absolute', 'relative', 'fixed'];
@@ -406,16 +429,23 @@
                             for (let i = 0; i < body.children.length; i++) {
                                 const el = body.children[i];
                                 height += el.getBoundingClientRect().height;
+                                const styleWidth = el.style.width;
+                                if (styleWidth) {
+                                    const match = styleWidth.match(/^([-+]?\d*\.?\d+)(.*)$/);
+                                    if (match) {
+                                        const value = parseFloat(match[1]); // number
+                                        const unit = match[2]; // unit like "px", "em", "%"
+                                        width += value;
+                                        console.log(`Height: ${value}${unit}`);
+                                    }
+                                }
                                 if (position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
                                     const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
                                     if (height < combinedHeight) {
                                         height = combinedHeight;
                                     }
                                     top = el.getBoundingClientRect().top;
-                                }
-                                if (width < el.getBoundingClientRect().width) {
-                                    width = el.getBoundingClientRect().width;
-                                }
+                                }                                                                
                                 const computedStyle = getComputedStyle(el);
                                 const bgColor = computedStyle.backgroundColor;
                                 const bgImage = computedStyle.backgroundImage;
@@ -452,7 +482,8 @@
                             overlay.classList.remove(`v-${verticalPosition}`);
                         }
 
-                        iframe.style.width = `${width}px`;
+
+                        /* iframe.style.width = `${width}px`;
                         iframe.style.top = `${top}px`;
                         iframe.style.position = 'relative';
                         iframe.style.border = 'none';
@@ -460,12 +491,12 @@
                         iframe.style.height = (height < 32) ? '36px' : `${height}px`;
                         modalContainer.style.height = `${height}px`;
 
-                        setTimeout(() => {
+                        setTimeout(() => {                            
                             //bad hack to fix height issue iframe.onload is not working properly
                             height = body.getBoundingClientRect().height;
                             iframe.style.height = (height < 32) ? '36px' : `${height}px`;
                             modalContainer.style.height = `${height}px`;
-                        }, 1000);
+                        }, 1000); */
 
                         if (!bgFound) {
                             body.style.backgroundColor = '#ffffff';
@@ -473,11 +504,33 @@
                     };
 
                     // Build complete HTML content with stylesheet if needed
-                    let htmlContent = '<!DOCTYPE html><html><head>';
+                    let htmlContent = '<!DOCTYPE html><html style="overflow: hidden;"><head>';
                     if (this.urls && this.urls.styleSheet) {
                         htmlContent += `<link rel="stylesheet" href="${this.urls.styleSheet}" type="text/css">`;
                     }
                     htmlContent += `</head><body>${data.content}</body></html>`;
+
+                    const dimensions = this.getHTMLDimensions(htmlContent);
+                    console.log('dimensions', dimensions);
+                    iframe.style.width = `${dimensions.width}px`;
+                    iframe.style.height = `${dimensions.height+46}px`;
+                    
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                          const el = iframeDoc.querySelector('body');
+                          const rect = el.getBoundingClientRect();
+                          const style = iframeDoc.defaultView.getComputedStyle(el);
+                    
+                          const fullHeight = rect.height +
+                            parseFloat(style.marginTop) +
+                            parseFloat(style.marginBottom);
+                          const fullWidth = rect.width +
+                            parseFloat(style.marginLeft) +
+                            parseFloat(style.marginRight);
+                    
+                          console.log('Full rendered size:', { fullWidth, fullHeight });
+                        }, 100); // small delay helps ensure CSS has painted
+                      });
 
                     // Write complete content in one operation
                     iframeDoc.open();
@@ -487,8 +540,6 @@
             }
 
             if (message_type === 'Custom') {
-
-
                 modalContainer.appendChild(iframe);
                 document.body.appendChild(modalContainer);
 
@@ -561,7 +612,7 @@
                     iframeDoc.close();
                 }, 0);
             }
-        }
+        }        
 
         removeNotification(overlayElement) {
             if (overlayElement && document.body.contains(overlayElement)) {
