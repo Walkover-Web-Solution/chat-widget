@@ -345,7 +345,7 @@
             document.body.appendChild(tempContainer);
             
             // Get dimensions            
-            const rect = tempContainer.getBoundingClientRect();            
+            const rect = tempContainer.getBoundingClientRect();
             const dimensions = {
                 width: rect.width,
                 height: rect.height                
@@ -470,17 +470,21 @@
                     iframe.style.height = `${dimensions.height}px`;
                     
                     requestAnimationFrame(() => {
-                        setTimeout(() => {                            
-                            const iframeBodyRect = iframe.contentDocument.body.getBoundingClientRect();
-                            iframe.style.height = `${iframeBodyRect.height}px`;                        
-                        }, 500);
+                        const checkHeight = setInterval(() => {
+                            const iframeBodyRect = iframeDoc.body.getBoundingClientRect();
+                            if (iframeBodyRect.height >= dimensions.height) {
+                                clearInterval(checkHeight);
+                                iframe.style.height = `${iframeBodyRect.height}px`;
+                                modalContainer.style.height = `${iframeBodyRect.height}px`;
+                            }
+                        }, 500);                        
                       });
 
-                    // Write complete content in one operation
-                    iframeDoc.open();
-                    iframeDoc.write(htmlContent);
-                    iframeDoc.close();
-                }, 0);
+                        // Write complete content in one operation
+                        iframeDoc.open();
+                        iframeDoc.write(htmlContent);
+                        iframeDoc.close();
+                    }, 100);
             }
 
             if (message_type === 'Custom') {
