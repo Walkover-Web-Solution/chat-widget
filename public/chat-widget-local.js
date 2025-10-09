@@ -345,8 +345,7 @@
             document.body.appendChild(tempContainer);
             
             // Get dimensions            
-            const rect = tempContainer.getBoundingClientRect();
-            console.log('rect', rect);
+            const rect = tempContainer.getBoundingClientRect();            
             const dimensions = {
                 width: rect.width,
                 height: rect.height                
@@ -358,8 +357,7 @@
             return dimensions;
         }
 
-        handlePushNotification(data) {
-            console.log('handlePushNotification --------- ');
+        handlePushNotification(data) {            
             const message_type = data.message_type;
             //const message_type = 'Custom';            
 
@@ -379,7 +377,6 @@
             iframe.classList.add('msg-push-hide');
 
             if (message_type === 'Popup') {
-                console.log('popup --------- ');
                 // Create a full-screen transparent overlay                
                 const overlay = document.createElement('div');
                 overlay.id = 'notification-overlay';
@@ -419,8 +416,8 @@
 
                     // Set iframe.onload handler BEFORE writing content to avoid missing the load event
                     iframe.onload = function () {
-                        iframe.classList.remove('msg-push-hide');
-                        loader.classList.add('msg-push-hide');
+                        iframe.classList.remove('msg-push-hide');    
+                        loader.classList.add('msg-push-hide');                    
                         const body = iframeDoc.body;                        
 
                         let height = 0, width = 0, top = 0, bgFound = false;
@@ -428,24 +425,6 @@
                         if (body.children.length) {
                             for (let i = 0; i < body.children.length; i++) {
                                 const el = body.children[i];
-                                height += el.getBoundingClientRect().height;
-                                const styleWidth = el.style.width;
-                                if (styleWidth) {
-                                    const match = styleWidth.match(/^([-+]?\d*\.?\d+)(.*)$/);
-                                    if (match) {
-                                        const value = parseFloat(match[1]); // number
-                                        const unit = match[2]; // unit like "px", "em", "%"
-                                        width += value;
-                                        console.log(`Height: ${value}${unit}`);
-                                    }
-                                }
-                                if (position.includes(getComputedStyle(el).position) && el.getBoundingClientRect().top > 0) {
-                                    const combinedHeight = el.getBoundingClientRect().height + el.getBoundingClientRect().top;
-                                    if (height < combinedHeight) {
-                                        height = combinedHeight;
-                                    }
-                                    top = el.getBoundingClientRect().top;
-                                }                                                                
                                 const computedStyle = getComputedStyle(el);
                                 const bgColor = computedStyle.backgroundColor;
                                 const bgImage = computedStyle.backgroundImage;
@@ -456,17 +435,7 @@
                                     bgFound = true;
                                 }
                             }
-
-                            if (body.getBoundingClientRect().height > height) {
-                                height = body.getBoundingClientRect().height;
-                            }
-
-                            if (body.getBoundingClientRect().width > width) {
-                                width = body.getBoundingClientRect().width;
-                            }
-                        } else {
-                            height += body.getBoundingClientRect().height;
-                            width += body.getBoundingClientRect().width;
+                        } else {                            
                             const bodyComputedStyle = getComputedStyle(body);
                             const bodyBgColor = bodyComputedStyle.backgroundColor;
                             const bodyBgImage = bodyComputedStyle.backgroundImage;
@@ -482,21 +451,7 @@
                             overlay.classList.remove(`v-${verticalPosition}`);
                         }
 
-
-                        /* iframe.style.width = `${width}px`;
-                        iframe.style.top = `${top}px`;
-                        iframe.style.position = 'relative';
-                        iframe.style.border = 'none';
-
-                        iframe.style.height = (height < 32) ? '36px' : `${height}px`;
-                        modalContainer.style.height = `${height}px`;
-
-                        setTimeout(() => {                            
-                            //bad hack to fix height issue iframe.onload is not working properly
-                            height = body.getBoundingClientRect().height;
-                            iframe.style.height = (height < 32) ? '36px' : `${height}px`;
-                            modalContainer.style.height = `${height}px`;
-                        }, 1000); */
+                        iframe.style.border = 'none';                        
 
                         if (!bgFound) {
                             body.style.backgroundColor = '#ffffff';
@@ -504,32 +459,21 @@
                     };
 
                     // Build complete HTML content with stylesheet if needed
-                    let htmlContent = '<!DOCTYPE html><html style="overflow: hidden;"><head>';
+                    let htmlContent = '<!DOCTYPE html><html><head>';
                     if (this.urls && this.urls.styleSheet) {
                         htmlContent += `<link rel="stylesheet" href="${this.urls.styleSheet}" type="text/css">`;
                     }
                     htmlContent += `</head><body>${data.content}</body></html>`;
 
                     const dimensions = this.getHTMLDimensions(htmlContent);
-                    console.log('dimensions', dimensions);
                     iframe.style.width = `${dimensions.width}px`;
-                    iframe.style.height = `${dimensions.height+46}px`;
+                    iframe.style.height = `${dimensions.height}px`;
                     
                     requestAnimationFrame(() => {
-                        setTimeout(() => {
-                          const el = iframeDoc.querySelector('body');
-                          const rect = el.getBoundingClientRect();
-                          const style = iframeDoc.defaultView.getComputedStyle(el);
-                    
-                          const fullHeight = rect.height +
-                            parseFloat(style.marginTop) +
-                            parseFloat(style.marginBottom);
-                          const fullWidth = rect.width +
-                            parseFloat(style.marginLeft) +
-                            parseFloat(style.marginRight);
-                    
-                          console.log('Full rendered size:', { fullWidth, fullHeight });
-                        }, 100); // small delay helps ensure CSS has painted
+                        setTimeout(() => {                            
+                            const iframeBodyRect = iframe.contentDocument.body.getBoundingClientRect();
+                            iframe.style.height = `${iframeBodyRect.height}px`;                        
+                        }, 500);
                       });
 
                     // Write complete content in one operation
