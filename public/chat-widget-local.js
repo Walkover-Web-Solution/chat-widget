@@ -477,14 +477,17 @@
                                 iframe.style.height = `${iframeBodyRect.height}px`;
                                 modalContainer.style.height = `${iframeBodyRect.height}px`;
                             }
-                        }, 500);                        
-                      });
+                        }, 500);
+                        setTimeout(() => {
+                            clearInterval(checkHeight);
+                        }, 10000);
+                    });
 
-                        // Write complete content in one operation
-                        iframeDoc.open();
-                        iframeDoc.write(htmlContent);
-                        iframeDoc.close();
-                    }, 100);
+                    // Write complete content in one operation
+                    iframeDoc.open();
+                    iframeDoc.write(htmlContent);
+                    iframeDoc.close();
+                }, 100);
             }
 
             if (message_type === 'Custom') {
