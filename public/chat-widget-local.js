@@ -1,11 +1,28 @@
 /* eslint-disable */
 // IIFE Scope ( for avoiding global scope pollution )
 (function () {
-    if (window.__HELLO_WIDGET_LOADED__) {
-        console.warn('[Hello Widget] Script already loaded. Skipping second initialization.');
+    // Create unique namespace based on script URL to avoid conflicts
+    const scriptUrl = document.currentScript.src;
+    const parsedUrl = new URL(scriptUrl);
+    const scriptOrigin = `${parsedUrl.protocol}//${parsedUrl.host}`;
+    const hostname = parsedUrl.hostname; // "blacksea.msg91.com"
+    let subdomain;
+
+    if (hostname === 'localhost') {
+        // Use port to distinguish environments
+        subdomain = `localhost:${parsedUrl.port}`; // e.g. "localhost-3000"
+    } else {
+        const parts = hostname.split('.');
+        subdomain = parts.length > 2 ? parts[0] : null;
+    }
+    const namespace = subdomain;
+    const loadedKey = `__HELLO_WIDGET_LOADED_${namespace}__`;
+
+    if (window[loadedKey]) {
+        console.warn(`[Hello Widget ${namespace}] Script already loaded. Skipping second initialization.`);
         return;
     }
-    window.__HELLO_WIDGET_LOADED__ = true;
+    window[loadedKey] = true;
     let block_chatbot = false;
 
     class CobrowseManager {
@@ -83,7 +100,10 @@
     const CBManager = new CobrowseManager()
     class HelloChatbotEmbedManager {
         constructor() {
-            this.prefix = 'hello-'
+            const scriptUrl = document.currentScript.src;
+            const parsedUrl = new URL(scriptUrl)
+            this.prefix = `${parsedUrl.host}-hello-`
+
             this.elements = {
                 chatbotIconContainer: `${this.prefix}chatbot-launcher-icon`,
                 chatbotIconImage: `${this.prefix}chatbot-icon-image`,
@@ -93,6 +113,15 @@
                 chatbotStyle: `${this.prefix}chatbot-style`,
                 unReadMsgCountBadge: `${this.prefix}unread-msg-count-badge`,
                 starterQuestionContainer: `${this.prefix}starter-question-container`,
+            }
+            this.classes = {
+                starterQuestion: `${this.prefix}starter-question`,
+                starterQuestionBubble: `${this.prefix}starter-question-bubble`,
+                starterQuestionText: `${this.prefix}starter-question-text`,
+                starterQuestionClose: `${this.prefix}starter-question-close`,
+                starterQuestionOptions: `${this.prefix}starter-question-options`,
+                starterQuestionOption: `${this.prefix}starter-question-option`,
+                badgeCount: `${this.prefix}badge-count`,
             }
             this.props = {};
             this.helloProps = null;
@@ -108,9 +137,9 @@
                 buttonName: ''
             };
             this.urls = {
-                chatbotUrl: 'http://localhost:3001/chatbot',
-                styleSheet: 'http://localhost:3001/chat-widget-style.css',
-                urlMonitor: 'http://localhost:3001/urlMonitor.js'
+                chatbotUrl: `${parsedUrl.protocol}//${parsedUrl.host}/chatbot`,
+                styleSheet: `${parsedUrl.protocol}//${parsedUrl.host}/chat-widget-style.css`,
+                urlMonitor: `${parsedUrl.protocol}//${parsedUrl.host}/urlMonitor.js`
             };
             this.icons = {
                 white: this.makeImageUrl('b1357e23-2fc6-4dc3-855a-7a213b1fa100'),
@@ -158,7 +187,7 @@
 
             const badgeElement = document.createElement('span');
             badgeElement.id = this.elements.unReadMsgCountBadge;
-            badgeElement.className = 'hello-badge-count';
+            badgeElement.className = this.classes.badgeCount;
             badgeElement.textContent = ''; // Will be populated dynamically
             imgElement.appendChild(badgeElement);
 
@@ -208,7 +237,7 @@
                         if (element) element.remove();
                     });
                 // Allow fresh initialization if the script is injected again
-                window.__HELLO_WIDGET_LOADED__ = false;
+                window[loadedKey] = false;
             } catch (e) {
                 // ignore cleanup errors
             }
@@ -218,8 +247,9 @@
             window.addEventListener('message', (event) => {
                 // Only process messages from trusted origins
                 const trustedOrigins = [
-                    'http://localhost:3001',
-                    'http://localhost:3000',
+                    scriptOrigin,
+                    // 'http://localhost:3001',
+                    // 'http://localhost:3000',
                     window.location.origin
                 ];
 
@@ -233,6 +263,7 @@
             const { type, data } = event.data || {};
             switch (type) {
                 case 'MINIMIZE_CHATBOT':
+                    console.log(namespace, 'namespace')
                     this.minimizeChatbot()
                     break;
                 case 'CLOSE_CHATBOT':
@@ -898,16 +929,16 @@
                 // Create starter question container
                 starterQuestionContainer = document.createElement('div');
                 starterQuestionContainer.id = this.elements.starterQuestionContainer;
-                starterQuestionContainer.className = 'hello-starter-question';
+                starterQuestionContainer.className = this.classes.starterQuestion;
 
                 // Add starter question content
                 const starterQuestionBubble = document.createElement('div');
-                starterQuestionBubble.className = 'hello-starter-question-bubble';
+                starterQuestionBubble.className = this.classes.starterQuestionBubble;
 
                 // Only create question text div if questionText is valid (not null, undefined, or empty)
                 if (questionText && questionText.trim() !== '') {
                     const starterQuestionText = document.createElement('span');
-                    starterQuestionText.className = 'hello-starter-question-text';
+                    starterQuestionText.className = this.classes.starterQuestionText;
                     starterQuestionText.textContent = questionText;
                     starterQuestionBubble.appendChild(starterQuestionText);
 
@@ -919,7 +950,7 @@
                 }
 
                 const starterQuestionClose = document.createElement('button');
-                starterQuestionClose.className = 'hello-starter-question-close';
+                starterQuestionClose.className = this.classes.starterQuestionClose;
                 starterQuestionClose.innerHTML = '×';
                 starterQuestionClose.setAttribute('aria-label', 'Close starter question');
 
@@ -928,11 +959,11 @@
 
                 if (options && options.length > 0) {
                     const optionsContainer = document.createElement('div');
-                    optionsContainer.className = 'hello-starter-question-options';
+                    optionsContainer.className = this.classes.starterQuestionOptions;
 
                     options.forEach((option, index) => {
                         const optionElement = document.createElement('button'); // use <button> for semantics and accessibility
-                        optionElement.className = 'hello-starter-question-option';
+                        optionElement.className = this.classes.starterQuestionOption;
                         optionElement.setAttribute('data-option-index', index);
                         optionElement.textContent = option;
 
@@ -1186,7 +1217,7 @@
         }
 
         updateStarterQuestionText(text) {
-            const starterQuestionText = document.querySelector('.hello-starter-question-text');
+            const starterQuestionText = document.querySelector(`.${this.classes.starterQuestionText}`);
             if (starterQuestionText && text) {
                 starterQuestionText.textContent = text;
             }
@@ -1336,8 +1367,35 @@
             window.postMessage(JSON.stringify(messageObj))
         }
     }
+    console.log(namespace, 234234)
+    // Initialize the widget function with unique name
+    window[`initChatWidget_${namespace}`] = (data, delay = 0) => {
+        if (block_chatbot) return;
+        if (data.previewLinks) {
+            helloChatbotManager.addUrlMonitor(data);
+        }
+        if (data) {
+            helloChatbotManager.helloProps = { ...data };
+            if ('hide_launcher' in data) {
+                helloChatbotManager.hideHelloIcon = data.hide_launcher || false;
+            }
+            if ('launch_widget' in data) {
+                helloChatbotManager.helloLaunchWidget = data.launch_widget || false;
+            }
+            if ('variables' in data) {
+                sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data });
+            }
+            // Only recreate iframe container if parentId is provided
+            if (data.parentId) {
+                SendDataToBot(data);
+            }
+        }
+        setTimeout(() => {
+            helloChatbotManager.state.delayElapsed = true;
+            helloChatbotManager.showIconIfReady(); // Check if both conditions are met
+        }, delay);
+    };
 
-    // Initialize the widget function
     window.initChatWidget = (data, delay = 0) => {
         if (block_chatbot) return;
         if (data.previewLinks) {
@@ -1365,7 +1423,40 @@
         }, delay);
     };
 
-    // Create chatWidget object with all widget control functions
+    // Create chatWidget object with all widget control functions using unique name
+    window[`chatWidget_${namespace}`] = {
+        SendDataToBot: (data) => {
+            // Check if data has variables - send to iframe
+            if (data && 'variables' in data) {
+                sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data });
+            } else {
+                // Handle parentId and other local operations
+                SendDataToBot(data);
+            }
+        },
+        addCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
+        modifyCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
+        addUserEvent: (data) => sendMessageToChatbot({ type: "ADD_USER_EVENT_SEGMENTO", data }),
+        open: () => helloChatbotManager.openChatbot(),
+        close: () => helloChatbotManager.closeChatbot(),
+        hide: () => {
+            helloChatbotManager.hideChatbotWithIcon();
+        },
+        show: () => {
+            helloChatbotManager.showChatbotIcon();
+        },
+        toggleWidget: () => {
+            const iframeContainer = document.getElementById(helloChatbotManager.elements.chatbotIframeContainer);
+            if (iframeContainer?.style?.display === 'block') {
+                helloChatbotManager.closeChatbot();
+            } else {
+                helloChatbotManager.openChatbot();
+            }
+        },
+        handlePushNotification(data) {
+            helloChatbotManager.handlePushNotification(data);
+        }
+    };
     window.chatWidget = {
         SendDataToBot: (data) => {
             // Check if data has variables - send to iframe
