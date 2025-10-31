@@ -1,7 +1,7 @@
 // useSocketEvents.ts
 import { useReduxStateManagement } from '@/components/Chatbot/hooks/useReduxManagement';
 import { setHelloEventMessage, setTyping } from '@/store/chat/chatSlice';
-import { changeChannelAssigned, setUnReadCount } from '@/store/hello/helloSlice';
+import { changeChannelAssigned, moveChannelToTop, setUnReadCount } from '@/store/hello/helloSlice';
 import { getLocalStorage, playMessageRecivedSound, setLocalStorage } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
@@ -53,7 +53,7 @@ export const useSocketEvents = ({
                 channelId,
                 resetCount: false
             }));
-
+            dispatch(moveChannelToTop({ channelId }));
         }
 
         switch (type) {
@@ -61,6 +61,7 @@ export const useSocketEvents = ({
                 const { channel, chat_id, new_event } = message || {};
                 if (new_event) {
                     if (!chat_id) {
+                        // assistant or human agent message
                         setLoading(false);
 
                         // Play notification sound when message is received
@@ -75,6 +76,9 @@ export const useSocketEvents = ({
                     } else if (chat_id && !isTabVisible) {
                         const messageId = response.timetoken || response.id;
                         addHelloMessage({ ...message, id: messageId }, channel);
+                    } else if (chat_id && isTabVisible) {
+                        // move channel to top on user message
+                        dispatch(moveChannelToTop({ channelId: channel }));
                     }
                 }
                 break;
