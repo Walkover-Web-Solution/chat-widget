@@ -531,8 +531,7 @@
                 });
 
                 iframe.style.height = '100vh';
-                iframe.style.width = '100vw';
-
+                iframe.style.width = '100vw';                
                 modalContainer.appendChild(iframe);
                 document.body.appendChild(modalContainer);
 
@@ -561,12 +560,13 @@
                             continue;
                         }
                         const rect = el.getBoundingClientRect();
-
+                        debugger;
+                        console.log(parseFloat(getComputedStyle(el).top), rect.top);
                         // Use inline styles if set, otherwise use computed styles                        
-                        top = parseFloat(getComputedStyle(el).top) ? parseFloat(getComputedStyle(el).top) : rect.top;
-                        bottom = parseFloat(getComputedStyle(el).bottom) ? parseFloat(getComputedStyle(el).bottom) : rect.bottom;
-                        left = parseFloat(getComputedStyle(el).left) ? parseFloat(getComputedStyle(el).left) : rect.left;
-                        right = parseFloat(getComputedStyle(el).right) ? parseFloat(getComputedStyle(el).right) : rect.right;
+                        top = !isNaN(parseFloat(getComputedStyle(el).top)) ? parseFloat(getComputedStyle(el).top) : rect.top;
+                        bottom = !isNaN(parseFloat(getComputedStyle(el).bottom)) ? parseFloat(getComputedStyle(el).bottom) : rect.bottom;
+                        left = !isNaN(parseFloat(getComputedStyle(el).left)) ? parseFloat(getComputedStyle(el).left) : rect.left;
+                        right = !isNaN(parseFloat(getComputedStyle(el).right)) ? parseFloat(getComputedStyle(el).right) : rect.right;
                         paddingTop = parseFloat(getComputedStyle(el).paddingTop);
                         paddingBottom = parseFloat(getComputedStyle(el).paddingBottom);
 
@@ -598,6 +598,7 @@
                     modalContainer.style.bottom = `${bottom}px`;
                     modalContainer.style.left = `${left}px`;
                     modalContainer.style.right = `${right}px`;
+                    modalContainer.style.zIndex = '9999';
 
                     iframe.style.width = `${width}px`;
                     iframe.style.height = `${height}px`;
