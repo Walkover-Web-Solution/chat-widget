@@ -578,7 +578,6 @@
                         width = Math.max(width, rect.width);
 
                         height += paddingTop + paddingBottom;
-                        console.log('top', top, 'bottom', bottom);
                         top = top > bottom ? 'unset' : top < 0 ? 0 : top;
                         bottom = bottom > top ? 'unset' : bottom < 0 ? 0 : bottom;
                         left = left > right ? 'unset' : left < 0 ? 0 : left;
@@ -599,7 +598,7 @@
                     modalContainer.style.bottom = `${bottom}px`;
                     modalContainer.style.left = `${left}px`;
                     modalContainer.style.right = `${right}px`;
-
+                    modalContainer.style.zIndex = '9999';                    
                     iframe.style.width = `${width}px`;
                     iframe.style.height = `${height}px`;
                     iframe.style.border = 'none';
