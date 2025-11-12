@@ -560,8 +560,6 @@
                             continue;
                         }
                         const rect = el.getBoundingClientRect();
-                        debugger;
-                        console.log(parseFloat(getComputedStyle(el).top), rect.top);
                         // Use inline styles if set, otherwise use computed styles                        
                         top = !isNaN(parseFloat(getComputedStyle(el).top)) ? parseFloat(getComputedStyle(el).top) : rect.top;
                         bottom = !isNaN(parseFloat(getComputedStyle(el).bottom)) ? parseFloat(getComputedStyle(el).bottom) : rect.bottom;
