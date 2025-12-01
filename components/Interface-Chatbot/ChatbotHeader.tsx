@@ -30,6 +30,7 @@ import { createRandomId, DEFAULT_AI_SERVICE_MODALS, ParamsEnums } from "@/utils/
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
 import { ChatbotContext } from "../context";
 import "./InterfaceChatbot.css";
+import helloVoiceService from "../Chatbot/hooks/HelloVoiceService";
 
 export function ChatbotHeaderPreview() {
 
@@ -405,9 +406,10 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
   // Close chatbot handler
   const handleCloseChatbot = (e: any) => {
-    e.stopPropagation();
-    if (!window?.parent) return;
-    window.parent.postMessage({ type: "CLOSE_CHATBOT" }, "*");
+    // e.stopPropagation();
+    // if (!window?.parent) return;
+    // window.parent.postMessage({ type: "CLOSE_CHATBOT" }, "*");
+    helloVoiceService.emitEvent('call-message', { message: { type: 'text', content: 'hello' }, from: 'bot' })
   };
 
   // Set team name when teams or currentTeamId changes
@@ -581,15 +583,16 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
   }, [hideCloseButton, handleCloseChatbot]);
 
   const handleToggleMinimize = () => {
-    if (!isChatbotMinimized && fullScreen) {
-      toggleFullScreen(false)
-    }
-    handleMinimizeChatbot(!isChatbotMinimized)
-    if (!isChatbotMinimized) {
-      emitEventToParent('MINIMIZE_CHATBOT')
-    } else {
-      toggleFullScreen(false)
-    }
+    // if (!isChatbotMinimized && fullScreen) {
+    //   toggleFullScreen(false)
+    // }
+    // handleMinimizeChatbot(!isChatbotMinimized)
+    // if (!isChatbotMinimized) {
+    //   emitEventToParent('MINIMIZE_CHATBOT')
+    // } else {
+    //   toggleFullScreen(false)
+    // }
+    helloVoiceService.emitEvent('call-message', { message: { type: 'button', options: [{ title: 'hello', value: 'hello' }, { title: 'hello', value: 'hello' }], content: 'hello' }, from: 'bot' })
   }
 
   const MinimizeButton = useMemo(() => {

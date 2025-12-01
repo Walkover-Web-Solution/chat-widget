@@ -50,10 +50,6 @@ export const useCallUI = () => {
     helloVoiceService.initiateCall();
   };
 
-  const answerCall = () => {
-    helloVoiceService.answerCall();
-  };
-
   const endCall = () => {
     helloVoiceService.endCall();
   };
@@ -67,7 +63,6 @@ export const useCallUI = () => {
     isMuted,
     mediaStream,
     makeCall,
-    answerCall,
     endCall,
     toggleMute,
     rejoinSummary

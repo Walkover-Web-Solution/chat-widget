@@ -51,7 +51,7 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
     })(),
     greetingMessage: state.Hello?.[chatSessionId]?.greeting
   }));
-  
+
   const themePalette = useMemo(() => ({
     "--primary-main": lighten(backgroundColor, 0.4),
   }), [backgroundColor]);

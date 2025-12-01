@@ -15,6 +15,7 @@ import { useDispatch } from 'react-redux';
 import { useChatActions } from './useChatActions';
 import { useReduxStateManagement } from './useReduxManagement';
 import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
+import helloVoiceService from './HelloVoiceService';
 
 interface HelloMessage {
   role: string;
@@ -350,6 +351,42 @@ export const useOnSendHello = () => {
   ]);
 };
 
+export const useSendBotCallMessage = () => {
+  const { chatSessionId } = useHelloContext();
+  const { addHelloMessage } = useHelloMessages();
+  const { setNewMessage } = useChatActions();
+  const globalDispatch = useAppDispatch();
+
+  const { currentChannelId } = useReduxStateManagement({
+    chatSessionId,
+    tabSessionId: useHelloContext().tabSessionId
+  });
+
+  const { images } = useCustomSelector((state) => ({
+    images: state.Chat.images,
+  }));
+
+  return useCallback((textMessage: string, newMessage: any) => {
+    if (helloVoiceService.isBotCallConnected()) {
+      const payload: any[] = [];
+      if (textMessage) {
+        payload.push({ type: 'text', content: textMessage });
+      }
+      if (images && images.length > 0) {
+        images.forEach((img: any) => {
+          payload.push({ type: 'image', content: img?.path || img?.url || img });
+        });
+      }
+      addHelloMessage(newMessage, currentChannelId);
+      helloVoiceService.sendMessageOnCall(payload);
+      setNewMessage(true);
+      globalDispatch(setImages([]));
+      return true;
+    }
+    return false;
+  }, [addHelloMessage, currentChannelId, images, setNewMessage]);
+};
+
 export const useSendMessageToHello = ({
   messageRef: propMessageRef,
   replyToMessageId,
@@ -363,6 +400,7 @@ export const useSendMessageToHello = ({
   const { setNewMessage } = useChatActions();
   const { addHelloMessage } = useHelloMessages();
   const onSendHello = useOnSendHello();
+  const sendBotCallMessage = useSendBotCallMessage();
 
   const { currentChatId, currentChannelId } = useReduxStateManagement({
     chatSessionId,
@@ -403,19 +441,29 @@ export const useSendMessageToHello = ({
     // Always add message to chat so user can see it immediately
     // addHelloMessage(newMessage, channelIdToUse);
 
-    // Send message to API
-    onSendHello(textMessage, newMessage, false, undefined, undefined, undefined, replyToMessageId);
     setNewMessage(true);
-
-    // Clear input field
-    if (messageRef?.current) {
-      if ('value' in messageRef.current) {
-        messageRef.current.value = '';
-      } else if (messageRef.current instanceof HTMLDivElement) {
-        messageRef.current.textContent = '';
-      }
+    if (helloVoiceService.isBotCallConnected()) {
+      sendBotCallMessage(textMessage, newMessage);
+      clearInputField({ messageRef });
+      return true;
     }
 
+    // Send message to API
+    onSendHello(textMessage, newMessage, false, undefined, undefined, undefined, replyToMessageId);
+
+    // Clear input field
+    clearInputField({ messageRef });
+
     return true;
-  }, [onSendHello, addHelloMessage, images, messageRef, currentChannelId, currentChatId, setNewMessage, replyToMessageId]);
+  }, [onSendHello, addHelloMessage, images, messageRef, currentChannelId, currentChatId, setNewMessage, replyToMessageId, sendBotCallMessage]);
 };
+
+export const clearInputField = ({ messageRef }: { messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null> }) => {
+  if (messageRef?.current) {
+    if ('value' in messageRef.current) {
+      messageRef.current.value = '';
+    } else if (messageRef.current instanceof HTMLDivElement) {
+      messageRef.current.textContent = '';
+    }
+  }
+}

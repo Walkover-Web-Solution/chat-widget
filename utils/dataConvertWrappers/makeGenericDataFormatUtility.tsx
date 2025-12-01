@@ -127,7 +127,7 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
         return [{
             role: "Human",
             from_name: message?.dynamic_values?.agent_name,
-            id: message?.id || message?.message?.id|| message?.timetoken,
+            id: message?.id || message?.message?.id || message?.timetoken,
             message_type: 'feedback',
             token: message?.token,
             dynamic_values: message?.dynamic_values,
@@ -158,7 +158,7 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
 
     // Handle regular messages
     return [{
-        role: sender_id === "user" ? "user" : (sender_id === "bot" || sender_id === "workflow") ? "Bot" : sender_id ? "Human" : is_auto_response ? "Bot" : "user",
+        role: sender_id === "user" ? "user" : (sender_id === "bot" || sender_id === "workflow") ? "Bot" : sender_id === "bot_call" ? "bot_call" : sender_id ? "Human" : is_auto_response ? "Bot" : "user",
         from_name,
         content: content?.body?.text || content?.text,
         urls: content?.body?.attachment || content?.attachment,

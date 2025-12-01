@@ -17,10 +17,13 @@ interface ChatContextType {
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
+import { useCallMessageListener } from "../Chatbot/hooks/useCallMessageListener";
+
 // Create a separate component for the hooks that need context
 function ChatbotWithHooks({ tabSessionId, chatSessionId }: { tabSessionId: string, chatSessionId: string }) {
   useEmbeddingScriptEventHandler(tabSessionId);
   useLocalStorageEventHandler(tabSessionId);
+  useCallMessageListener();
 
   if (!chatSessionId) {
     return null

@@ -2,15 +2,16 @@
 import { errorToast } from "@/components/customToast";
 import { getLocalStorage } from "@/utils/utilities";
 import { EventEmitter } from "events";
-import WebRTC from "msg91-webrtc-call";
+import WebRTC, { AnsweredPayload, CALL_EVENT, EndedPayload, ErrorPayload, MessagePayload, MutePayload, OutgoingCall, RejoinedPayload, UnmutePayload, WebRTC_EVENT } from "msg91-webrtc-call";
 
 class HelloVoiceService {
     private static instance: HelloVoiceService | null = null;
     private webrtc: any = null;
     private eventEmitter: EventEmitter;
-    private currentCall: any = null;
+    private currentCall: OutgoingCall | null = null;
     private callState: string = "idle"; // idle, ringing, connected, ended
     private isMuted: boolean = false;
+    private isBotCall: boolean = false;
 
     private constructor() {
         this.eventEmitter = new EventEmitter();
@@ -31,52 +32,46 @@ class HelloVoiceService {
         if (!clientToken) return;
 
         this.webrtc = WebRTC(clientToken, 'test');
-        this.webrtc.on("call", this.handleOutgoingCall);
+        this.webrtc.on(WebRTC_EVENT.OUTGOING_CALL, this.handleOutgoingCall);
     }
 
-    private handleOutgoingCall = (call: any) => {
-        if (call.type === "incoming-call") return;
+    private handleOutgoingCall = (call: OutgoingCall) => {
+        const isBotCall = true;
+        this.isBotCall = isBotCall;
 
-        const isBotCall = call.type === "bot-call";
-        console.log('visibility changed', document.visibilityState)
         if (this.currentCall && isBotCall) {
-            console.log('existing call ended, hanging call')
+            // console.log('existing call ended, hanging call')
             this.endCall();
             this.resetCall();
         }
 
         if (document.visibilityState === "hidden" && isBotCall) {
-            console.log('Not in focus end call ending call')
-            call.on("answered", (data: any) => {
-                console.log('answered while hidden, hanging call')
+            call.on(CALL_EVENT.ANSWERED, (data: AnsweredPayload) => {
+                // console.log('answered Not in focus end call ending call')
                 call.hang();
                 this.resetCall();
             });
             return;
         }
+
         // Only persist the call if this tab is currently active
         this.currentCall = call;
         this.callState = "ringing";
         this.eventEmitter.emit("callStateChanged", { state: this.callState });
 
-        call.on("error", (error: any) => {
+        // Set up event listeners for this call
+        call.on(CALL_EVENT.ERROR, (error: ErrorPayload) => {
             console.log("call error", error);
             errorToast(error?.message || "Something went wrong");
-            this.callState = "idle";
-            this.isMuted = false;
-            this.eventEmitter.emit("callStateChanged", { state: this.callState });
-            this.eventEmitter.emit("muteStatusChanged", { muted: false });
-            this.currentCall = null;
+            this.resetCall();
         });
-        // Set up event listeners for this call
-        call.on("answered", (data: any) => {
-            console.log('call answered', data);
+
+        call.on(CALL_EVENT.ANSWERED, (data: AnsweredPayload) => {
             this.callState = "connected";
             this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
         });
 
-        call.on("connected", (mediaStream: any) => {
-            console.log('call connected');
+        call.on(CALL_EVENT.CONNECTED, (mediaStream: MediaStream) => {
             this.callState = "connected";
             this.eventEmitter.emit("callStateChanged", {
                 state: this.callState,
@@ -84,29 +79,55 @@ class HelloVoiceService {
             });
         });
 
-        call.on("ended", (data: any) => {
-            console.log('call ended', data);
+        call.on(CALL_EVENT.ENDED, (data: EndedPayload) => {
             this.resetCall();
         });
 
-        call.on("mute", ({ uid }: { uid: string }) => {
-            console.log('call mute', uid);
+        call.on(CALL_EVENT.MESSAGE, (data: MessagePayload) => {
+            this.eventEmitter.emit("call-message", data);
+        });
+
+        call.on(CALL_EVENT.MUTE, ({ uid }: MutePayload) => {
             this.isMuted = true;
             this.eventEmitter.emit("muteStatusChanged", { muted: true, uid });
         });
 
-        call.on("unmute", ({ uid }: { uid: string }) => {
-            console.log('call unmute', uid);
+        call.on(CALL_EVENT.UNMUTE, ({ uid }: UnmutePayload) => {
             this.isMuted = false;
             this.eventEmitter.emit("muteStatusChanged", { muted: false, uid });
         });
 
-        call.on("rejoined", (data: any) => {
-            console.log('call rejoin', data)
-            const summary = data?.summary;
+        call.on(CALL_EVENT.REJOINED, (data: RejoinedPayload) => {
             this.callState = "rejoined";
             this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
         });
+
+    }
+
+    public sendMessageOnCall(
+        // payload: Array<{ type: 'text' | 'image' | 'button' | 'redirect'; content?: string; options?: Array<{ title: string }> }> | string,
+        payload: any,
+        context: boolean = false
+    ): any {
+        try {
+            payload?.map((item: any) => {
+                if (item?.type === 'image') {
+                    context = true
+                    // item.content = item.content?.trim();
+                } else {
+                    context = false
+                }
+                if (this.currentCall) {
+                    const response = this.currentCall?.sendMessage([item], context);
+                    return response;
+                } else {
+                    console.warn('No active call to send message');
+                    return null;
+                }
+            })
+        } catch (e) {
+            console.error('Failed to send message on call', e);
+        }
     }
 
     public initiateCall(channelCallToken: string | null = null): void {
@@ -140,12 +161,6 @@ class HelloVoiceService {
         });
     }
 
-    public answerCall(): void {
-        if (this.currentCall && this.callState === "ringing") {
-            this.currentCall.accept();
-        }
-    }
-
     public endCall(): void {
         if (this.currentCall) {
             this.currentCall.hang();
@@ -171,7 +186,7 @@ class HelloVoiceService {
     }
 
     public getMediaStream(): any {
-        return this.currentCall ? this.currentCall.getMedia() : null;
+        return this.currentCall ? this.currentCall.getMediaStream() : null;
     }
 
     public addEventListener(event: string, callback: (...args: any[]) => void): void {
@@ -196,6 +211,7 @@ class HelloVoiceService {
         this.eventEmitter.emit("callStateChanged", { state: this.callState });
         this.eventEmitter.emit("muteStatusChanged", { muted: false });
         this.currentCall = null;
+        this.isBotCall = false;
     }
 
     public cleanUp(): void {
@@ -204,6 +220,10 @@ class HelloVoiceService {
             this.webrtc = null;
         }
         // this.eventEmitter.removeAllListeners();
+    }
+
+    public isBotCallConnected(): boolean {
+        return this.isBotCall && this.callState === "connected";
     }
 }
 
