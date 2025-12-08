@@ -151,7 +151,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
   );
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] overflow-y-auto flex items-start justify-center py-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 relative my-auto">
+      <div className="rounded-lg shadow-xl w-full max-w-md mx-4 relative my-auto" style={{ backgroundColor: 'var(--background)' }}>
         {/* Card header */}
         <div className="bg-primary text-white p-5 rounded-t-lg" style={{
           background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
