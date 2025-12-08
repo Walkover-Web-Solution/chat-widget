@@ -202,12 +202,16 @@
   }
 }
 
-
 .link-text {
-  color: #0000EE;
+  color: var(--link-text-color, #0000EE);
   text-decoration: none;
+}
 
-  &:hover {
-    text-decoration: underline;
-  }
+.link-text:hover {
+  text-decoration: underline;
+}
+
+[data-theme="dark"] {
+  --link-text-color: #90CAF9;
+  /* A light blue for dark themes */
 }

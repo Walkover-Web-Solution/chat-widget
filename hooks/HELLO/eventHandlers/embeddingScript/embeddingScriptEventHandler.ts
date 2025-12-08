@@ -22,7 +22,7 @@ const helloToChatbotPropsMap: Record<string, string> = {
 const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventRegistryInstance) => {
     const sendMessageToHello = useSendMessageToHello({});
     const dispatch = useDispatch()
-    const { handleThemeChange } = useContext(ThemeContext)
+    const { handleThemeChange, handleModeChange } = useContext(ThemeContext);
 
     const handleParentRouteChanged = (event: MessageEvent) => {
         if (event?.data?.data?.websiteUrl) {
@@ -93,6 +93,11 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         // Apply theme if present
         if (sdkConfig?.customTheme) {
             handleThemeChange(sdkConfig.customTheme);
+        }
+
+        const themeMode = event.data.data.theme || sdkConfig?.theme;
+        if (themeMode && ['light', 'dark', 'system'].includes(themeMode)) {
+            handleModeChange(themeMode);
         }
 
         // Store variables in redux

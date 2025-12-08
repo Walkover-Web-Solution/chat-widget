@@ -306,7 +306,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
                 <span className="text-[10px] font-medium text-gray-600">Uploading...</span>
               </div>
             ) : (
-              <Paperclip className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 text-gray-600" />
+              <Paperclip className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 icn" />
             )}
           </div>
         </label>
@@ -347,7 +347,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
           onClose={() => { setShowEmojiPicker(false); focusTextField(); }}
         />
         <div
-          className="relative flex-col h-full items-center justify-between gap-2 p-2 bg-white rounded-xl border border-gray-300 focus-within:outline focus-within:outline-2 focus-within:outline-offset-0"
+          className="relative flex-col h-full items-center justify-between gap-2 p-2 bg-white dark:bg-[rgb(48,48,48)] rounded-xl border border-gray-300 focus-within:outline focus-within:outline-2 focus-within:outline-offset-0"
           style={{ outlineColor: theme.palette.primary.main }}
         >
           <TextField
@@ -375,7 +375,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
                 className="group flex items-center justify-center w-8 h-8 cursor-pointer"
                 aria-label="Add emoji"
               >
-                <Smile className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 text-gray-600" />
+                <Smile className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 icn" />
               </div>
               {uploadButton}
             </div>
