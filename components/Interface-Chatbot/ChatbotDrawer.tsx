@@ -406,7 +406,7 @@ const ChatbotDrawer = ({
 
     return (
       <div
-        className="cursor-pointer p-2 hover:bg-gray-200 rounded-full transition-colors"
+        className="cursor-pointer p-2 hover:bg-gray-200 rounded-full transition-colors icn"
         onClick={handleCloseChatbot}
       >
         <X size={22} color="var(--icon-color)" />

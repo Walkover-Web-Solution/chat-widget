@@ -206,6 +206,9 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         if ('variables' in data) {
             dispatch(setVariablesForHelloBot(data.variables))
         }
+        if ('fullScreen' in data) {
+            dispatch(setWidgetInfo({ fullScreen: data.fullScreen }))
+        }
     }
 
     function handleShowTicket(event: MessageEvent) {
