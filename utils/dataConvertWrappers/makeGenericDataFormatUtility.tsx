@@ -35,7 +35,8 @@ function convertChatHistoryToGenericFormat(history: any, isHello: boolean = fals
                             channel: chat?.message?.channel,
                             time: chat?.timetoken || null,
                             replied_msg_content: chat?.message?.replied_msg_content,
-                            replied_msg_sender_id: chat?.message?.replied_msg_sender_id
+                            replied_msg_sender_id: chat?.message?.replied_msg_sender_id,
+                            replied_msg_type: chat?.message?.replied_msg_type
                         };
                     }
                     if (chat?.message?.message_type === 'voice_call') {
@@ -50,7 +51,8 @@ function convertChatHistoryToGenericFormat(history: any, isHello: boolean = fals
                             time: chat?.timetoken || null,
                             is_auto_response: chat?.message?.is_auto_response,
                             replied_msg_content: chat?.message?.replied_msg_content,
-                            replied_msg_sender_id: chat?.message?.replied_msg_sender_id
+                            replied_msg_sender_id: chat?.message?.replied_msg_sender_id,
+                            replied_msg_type: chat?.message?.replied_msg_type
                         };
                     }
 
@@ -67,7 +69,8 @@ function convertChatHistoryToGenericFormat(history: any, isHello: boolean = fals
                         time: chat?.timetoken,
                         is_auto_response: chat?.message?.is_auto_response,
                         replied_msg_content: chat?.message?.replied_msg_content,
-                        replied_msg_sender_id: chat?.message?.replied_msg_sender_id
+                        replied_msg_sender_id: chat?.message?.replied_msg_sender_id,
+                        replied_msg_type: chat?.message?.replied_msg_type
                     };
                 })
 
@@ -127,7 +130,7 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
         return [{
             role: "Human",
             from_name: message?.dynamic_values?.agent_name,
-            id: message?.id || message?.message?.id|| message?.timetoken,
+            id: message?.id || message?.message?.id || message?.timetoken,
             message_type: 'feedback',
             token: message?.token,
             dynamic_values: message?.dynamic_values,
@@ -136,7 +139,8 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
             time: message?.timetoken || null,
             is_auto_response,
             replied_msg_content: message?.replied_msg_content,
-            replied_msg_sender_id: message?.replied_msg_sender_id
+            replied_msg_sender_id: message?.replied_msg_sender_id,
+            replied_msg_type: message?.replied_msg_type
         }];
     }
 
@@ -152,7 +156,8 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
             time: message?.timetoken || null,
             is_auto_response,
             replied_msg_content: message?.replied_msg_content,
-            replied_msg_sender_id: message?.replied_msg_sender_id
+            replied_msg_sender_id: message?.replied_msg_sender_id,
+            replied_msg_type: message?.replied_msg_type
         }];
     }
 
@@ -168,7 +173,8 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
         time: message?.timetoken || null,
         is_auto_response,
         replied_msg_content: message?.replied_msg_content,
-        replied_msg_sender_id: message?.replied_msg_sender_id
+        replied_msg_sender_id: message?.replied_msg_sender_id,
+        replied_msg_type: message?.replied_msg_type
     }];
 }
 

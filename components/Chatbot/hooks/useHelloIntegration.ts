@@ -1,5 +1,7 @@
 import { ChatContext } from '@/components/Chatbot-Wrapper/ChatbotWrapper';
+import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
 import { MessageContext } from '@/components/Interface-Chatbot/InterfaceChatbot';
+import { MESSAGE_TYPES } from '@/components/Interface-Chatbot/Messages/MessageType';
 import { getAllChannels, getHelloChatHistoryApi, sendMessageToHelloApi } from '@/config/helloApi';
 import socketManager from '@/hooks/socketManager';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
@@ -14,7 +16,6 @@ import { useCallback, useContext, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useChatActions } from './useChatActions';
 import { useReduxStateManagement } from './useReduxManagement';
-import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
 
 interface HelloMessage {
   role: string;
@@ -244,7 +245,9 @@ export const useOnSendHello = () => {
           replied_msg_content: replyToMessage ? {
             text: getMessageContent(replyToMessage.content),
             attachment: replyToMessage.urls || []
-          } : null
+          } : null,
+          replied_msg_type: replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : undefined,
+          replied_msg_sender_id: replyToMessage ? (replyToMessage.is_auto_response || !replyToMessage.from_name ? 'bot' : replyToMessage.sender_id || replyToMessage.from_name) : null,
         } : newMessage;
         addHelloMessage(messageWithReply, workingChannelId);
       }

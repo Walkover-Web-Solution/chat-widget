@@ -9,6 +9,7 @@ import { useReplyContext } from "../contexts/ReplyContext";
 import ImageWithFallback from './ImageWithFallback';
 import "./Message.css";
 import MessageTime from './MessageTime';
+import RepliedMessage from './RepliedMessage';
 
 /**
  * A component that displays a user message card.
@@ -42,35 +43,6 @@ const UserMessageCard = React.memo(({ message, backgroundColor, textColor, chatS
         });
     }, [message, setReplyToMessage]);
 
-    const renderReplySection = () => {
-        if (!message?.replied_msg_content?.text &&
-            !(message?.replied_msg_content?.attachment && message?.replied_msg_content?.attachment?.length > 0)) {
-            return null;
-        }
-        return (
-            <div className="w-full mb-2 p-2 bg-black bg-opacity-10 rounded-md border-l-2 border-white border-opacity-30">
-                <div className="text-xs opacity-75 mb-1">Replying to message:</div>
-                <div className="text-sm opacity-90" dangerouslySetInnerHTML={{
-                    __html: (() => {
-                        if (typeof message.replied_msg_content === 'string') {
-                            return message.replied_msg_content;
-                        }
-                        const replyText = message.replied_msg_content?.text || '';
-                        const hasAttachment = message.replied_msg_content?.attachment &&
-                            message.replied_msg_content.attachment.length > 0;
-                        if (replyText.trim()) {
-                            return replyText;
-                        }
-                        if (hasAttachment) {
-                            return "Attachment";
-                        }
-                        return "Message";
-                    })()
-                }}></div>
-            </div>
-        );
-    };
-
     return (
         <div
             className="flex flex-col items-end w-full pb-3 animate-slide-left"
@@ -98,7 +70,7 @@ const UserMessageCard = React.memo(({ message, backgroundColor, textColor, chatS
                         onClick={() => setShowSenderTime(!showSenderTime)}
                     >
                         <div className="card-body p-0">
-                            {renderReplySection()}
+                            <RepliedMessage message={message} />
 
                             {Array.isArray(message?.urls) && message.urls.length > 0 && (
                                 <div className="w-full my-2">
