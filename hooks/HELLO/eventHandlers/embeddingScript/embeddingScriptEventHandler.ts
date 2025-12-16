@@ -4,6 +4,7 @@ import { addDomainToHello, saveClientDetails } from "@/config/helloApi";
 import { CBManger } from "@/hooks/coBrowser/CBManger";
 import { EmbeddingScriptEventRegistryInstance } from "@/hooks/CORE/eventHandlers/embeddingScript/embeddingScriptEventHandler";
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
+import { setToggleDrawer } from "@/store/chat/chatSlice";
 import { setDataInDraftReducer, setVariablesForHelloBot } from "@/store/draftData/draftDataSlice";
 import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo } from "@/store/hello/helloSlice";
 import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
@@ -175,6 +176,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
                 }
             } as MessageEvent;
             handleShowTicket(mockEvent);
+            dispatch(setToggleDrawer(false));
         }
     }
 
