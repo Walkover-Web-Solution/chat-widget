@@ -8,6 +8,7 @@ interface ReplyMessage {
   from_name?: string;
   is_auto_response?: boolean;
   message_id?: string;
+  sender_id?: number
 }
 
 interface ReplyContextType {
@@ -32,7 +33,6 @@ interface ReplyProviderProps {
 
 export const ReplyProvider: React.FC<ReplyProviderProps> = ({ children }) => {
   const [replyToMessage, setReplyToMessage] = useState<ReplyMessage | null>(null);
-
   const clearReply = () => setReplyToMessage(null);
 
   const value = {
