@@ -234,6 +234,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
             currentChatId: currentChatIdToDispatch,
             overrideChannelId: ticketId,
         }));
+        dispatch(setToggleDrawer(false));
     }
 
     function handleGetTicketUnreadCount(event: MessageEvent) {
