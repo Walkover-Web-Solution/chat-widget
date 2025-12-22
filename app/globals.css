@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@plugin "daisyui";
 
 :root {
   --background: #ffffff;
@@ -11,7 +12,7 @@
 }
 
 [data-theme="dark"] {
-  --background: #0a0a0a;
+  --background: #121212;
   --foreground: #ededed;
   --message-card-background: #1f1f1f;
   --icon-color: #ffffff;
