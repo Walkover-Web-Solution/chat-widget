@@ -315,7 +315,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
             {isUploading ? (
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
-                <span className="text-[10px] font-medium text-gray-600">Uploading...</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-white">Uploading...</span>
               </div>
             ) : (
               <Paperclip className="w-4 h-4 group-hover:scale-110 transition-transform duration-200 icn" />

@@ -49,7 +49,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
     if (!isVisible) return null;
 
     return (
-        <div ref={emojiPickerRef} className="absolute bottom-full left-0 mb-2 z-50">
+        <div ref={emojiPickerRef} className="absolute bottom-full left-0 mb-2 z-[10000]">
             <EmojiPicker.Root onEmojiSelect={onEmojiSelect} className="isolate flex h-[368px] w-fit flex-col bg-base-100 dark:bg-slate-900 border-2 rounded-lg shadow-xl">
                 <EmojiPicker.Search ref={emojiSearchRef} className="z-10 mx-2 mt-2 appearance-none rounded-md bg-neutral-100 dark:bg-slate-800 px-2.5 py-2 text-sm focus text-base-content dark:text-slate-100" />
                 <EmojiPicker.Viewport className="relative flex-1 outline-hidden">
