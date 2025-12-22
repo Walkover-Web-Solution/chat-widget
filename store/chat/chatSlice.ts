@@ -36,7 +36,9 @@ export const {
     setInitialMessages,
     setPaginateMessages,
     setHelloEventMessage,
-    resetState
+    resetState,
+    addCallVoiceEntry,
+    clearCallVoiceHistory,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

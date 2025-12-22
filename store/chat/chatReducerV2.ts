@@ -44,6 +44,10 @@ interface ChatState {
     // Additional properties that might be needed
     open?: boolean;
     isHelloUser?: boolean;
+    callVoiceHistory?: Array<{
+        from: 'user' | 'bot';
+        messages: Array<{ type: 'text' | 'image' | 'button' | 'redirect'; content?: string; options?: Array<{ title: string }> }>;
+    }>;
 }
 export const initialChatState: ChatState = {
     // Messages and Conversations
@@ -75,13 +79,14 @@ export const initialChatState: ChatState = {
 
     // Pagination & Message Handling
     currentPage: 1,
-    hasMoreMessages: false,
+    hasMoreMessages: true,
     newMessage: false,
     skip: 1,
 
     // Options & Media
     options: [],
     images: [],
+    callVoiceHistory: [],
 };
 
 export const chatReducerV2 = {
@@ -284,6 +289,18 @@ export const chatReducerV2 = {
                 }, {})
             );
         }
+    },
+
+    addCallVoiceEntry: (state, action: PayloadAction<{
+        from: 'user' | 'bot';
+        messages: Array<{ type: 'text' | 'image' | 'button'; content?: string; options?: Array<{ title: string }> }>;
+    }>) => {
+        if (!state.callVoiceHistory) state.callVoiceHistory = [];
+        state.callVoiceHistory.push(action.payload);
+    },
+
+    clearCallVoiceHistory: (state) => {
+        state.callVoiceHistory = [];
     },
 
     resetState: (state) => {
