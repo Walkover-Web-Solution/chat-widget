@@ -207,6 +207,11 @@
   text-decoration: none;
 }
 
+.user-message-bubble .link-text {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .link-text:hover {
   text-decoration: underline;
 }
