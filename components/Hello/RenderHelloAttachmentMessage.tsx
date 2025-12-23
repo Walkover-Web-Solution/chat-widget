@@ -1,6 +1,5 @@
-import { useMediaQuery } from "@mui/material";
-import ImageWithFallback from "../Interface-Chatbot/Messages/ImageWithFallback";
 import { linkify } from "@/utils/utilities";
+import ImageWithFallback from "../Interface-Chatbot/Messages/ImageWithFallback";
 
 function RenderHelloAttachmentMessage({ message }: { message: any }) {
 
@@ -29,7 +28,7 @@ function RenderHelloAttachmentMessage({ message }: { message: any }) {
       {caption && (
         <div className="flex justify-between items-center w-full mt-1">
           <div className="prose max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: linkify(message?.content) }}></div>
+            <div dangerouslySetInnerHTML={{ __html: linkify(message?.content || caption) }}></div>
           </div>
         </div>
       )}
