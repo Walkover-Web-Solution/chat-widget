@@ -9,6 +9,7 @@ interface ReplyPreviewProps {
     urls?: string[];
     from_name?: string;
     is_auto_response?: boolean;
+    message_type?: string;
   } | null;
   onCloseReply: () => void;
 }
@@ -38,6 +39,9 @@ const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseRepl
   const getDisplayContent = (): string => {
     const messageContent = getMessageContent(replyToMessage.content);
     const hasAttachments = replyToMessage.urls && replyToMessage.urls.length > 0;
+    if (replyToMessage?.message_type === "video_call") {
+      return "Video Call: Click here to join Meet";
+    }
     if (messageContent.trim()) {
       return messageContent;
     }

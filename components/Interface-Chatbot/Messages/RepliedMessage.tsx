@@ -1,5 +1,6 @@
 import RenderHelloAttachmentMessage from "@/components/Hello/RenderHelloAttachmentMessage";
 import RenderHelloInteractiveMessage from "@/components/Hello/RenderHelloInteractiveMessage";
+import RenderHelloVedioCallMessage from "@/components/Hello/RenderHelloVedioCallMessage";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { $ReduxCoreType } from "@/types/reduxCore";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
@@ -58,26 +59,27 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
             ) :
                 message.replied_msg_type === MESSAGE_TYPES.ATTACHMENT || message.replied_msg_type === MESSAGE_TYPES.TEXT_ATTACHMENT ? (
                     <RenderHelloAttachmentMessage message={{ messageJson: message.replied_msg_content }} />
-                ) : (
-                    <div className={`text-sm text-gray-700 ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`} dangerouslySetInnerHTML={{
-                        __html: (() => {
-                            if (typeof message.replied_msg_content === 'string') {
-                                return message.replied_msg_content;
-                            }
-                            const replyText = message.replied_msg_content?.text || '';
-                            const hasAttachment = message.replied_msg_content?.attachment &&
-                                message.replied_msg_content.attachment.length > 0;
+                ) : message.replied_msg_type === MESSAGE_TYPES.VIDEO_CALL ? (<RenderHelloVedioCallMessage message={{ messageJson: message.replied_msg_content }} />)
+                    : (
+                        <div className={`text-sm text-gray-700 ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`} dangerouslySetInnerHTML={{
+                            __html: (() => {
+                                if (typeof message.replied_msg_content === 'string') {
+                                    return message.replied_msg_content;
+                                }
+                                const replyText = message.replied_msg_content?.text || '';
+                                const hasAttachment = message.replied_msg_content?.attachment &&
+                                    message.replied_msg_content.attachment.length > 0;
 
-                            if (replyText.trim()) {
-                                return replyText;
-                            }
-                            if (hasAttachment) {
-                                return "Attachment";
-                            }
-                            return "Message";
-                        })()
-                    }}></div>
-                )}
+                                if (replyText.trim()) {
+                                    return replyText;
+                                }
+                                if (hasAttachment) {
+                                    return "Attachment";
+                                }
+                                return "Message";
+                            })()
+                        }}></div>
+                    )}
         </div>
     );
 }
