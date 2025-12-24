@@ -273,9 +273,9 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
                             {message?.from_name && !message?.is_auto_response && (
                                 <div className="text-xs">{message.from_name} •</div>
                             )}
-                            {message?.is_auto_response && (
+                            {/* {message?.is_auto_response && (
                                 <div className="text-xs">Bot •</div>
-                            )}
+                            )} */}
                             <MessageTime message={message} tooltipPosition="tooltip-right" />
                         </div>
                     </div>
