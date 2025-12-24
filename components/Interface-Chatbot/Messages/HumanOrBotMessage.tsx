@@ -242,14 +242,7 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
 
     const handleReplyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
-        setReplyToMessage({
-            id: message?.message_id || message?.id,
-            content: message?.content,
-            urls: message?.urls || [],
-            from_name: message?.from_name,
-            is_auto_response: message?.is_auto_response,
-            message_id: message?.message_id || message?.id
-        });
+        setReplyToMessage(message);
     }, [message, setReplyToMessage]);
 
     return (
