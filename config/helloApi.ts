@@ -88,10 +88,10 @@ export async function getAllChannels(): Promise<any> {
     const kClientId = getLocalStorage('k_clientId');
     let authorization = widgetId;
 
-    if (kClientId) {
+    if (kClientId && !hasUserIdentity) {
       // For known users and registered users (msg sent), use k_clientId if available
       authorization = `${widgetId}:${kClientId}`;
-    } else if (aClientId) {
+    } else if (aClientId && !hasUserIdentity) {
       // For anonymous users (msg not sent), use a_clientId if available
       authorization = `${widgetId}:${aClientId}`;
     }
@@ -104,6 +104,9 @@ export async function getAllChannels(): Promise<any> {
         number,
         unique_id,
         user_data: getUserData(),
+        ...(kClientId || aClientId
+          ? { anon_client_uuid: kClientId || aClientId }
+          : {}),
         // is_anon: isAnon,
         // ...(isAnon ? { anonymous_client_uuid: aClientId, uuid: aClientId } : {})
       },
@@ -297,7 +300,7 @@ export async function sendMessageToHelloApi(message: string, attachment: Array<o
       `${HELLO_HOST_URL}/v2/send/`,
       {
         type: !demo_widget ? "widget" : "trial_bot",
-        widget_msg_id : widget_msg_id ? widget_msg_id : "",
+        widget_msg_id: widget_msg_id ? widget_msg_id : "",
         message_type: messageType,
         content: {
           text: message,

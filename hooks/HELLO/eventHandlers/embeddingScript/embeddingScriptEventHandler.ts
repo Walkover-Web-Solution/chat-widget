@@ -91,7 +91,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
             ...restProps
         } = event.data.data;
 
-        const fullWidgetToken = unique_id ? `${widgetToken}_${unique_id}` : widgetToken;
+        const fullWidgetToken = widgetToken;
         const prevWidgetId = GetSessionStorageData('widgetToken');
 
         // Save current widget token
