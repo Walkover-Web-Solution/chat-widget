@@ -265,7 +265,7 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
                                 }`}
                             aria-label="Reply to message"
                         >
-                            <Reply className="w-4 h-4 text-gray-600" />
+                            <Reply className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                         </button>}
                     </div>
                     <div className={`transition-all duration-300 ease-in-out ${showSenderTime ? 'opacity-100 max-h-12' : 'opacity-0 max-h-0'}`}>
