@@ -1,6 +1,9 @@
 ## Architecture Overview
-
 This project uses an embedded setup with a client website and a chatbot running inside an iframe.
+
+## Key Features
+- Screen sharing
+- Push Notifications
 
 ## Tech Stack
 
@@ -24,6 +27,6 @@ Real-time: Socket.io
 
 ## Major features 
 
-- voice calling - using WEB RTC
-- swipe reply to message
+- docs/FEATURE_VOICE_CALLING.md — voice calling feature overview
+- docs/FEATURE_SWIPE_REPLY.md — swipe reply feature overview
 
