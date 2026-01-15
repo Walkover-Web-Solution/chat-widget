@@ -35,3 +35,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## Documentation Reading Order (Required)
+
+AI tools and contributors must read the following documents
+in order before making any code changes:
+
+1. docs/ARCHITECTURE.md — High level architecture overview of the project
+2. docs/AI_INSTRUCTIONS.md — mandatory AI and contributor rules
+3. docs/FEATURE_SWIPE_REPLY.md — swipe reply feature overview
+4. docs/FEATURE_VOICE_CALLING.md — voice calling feature overview
