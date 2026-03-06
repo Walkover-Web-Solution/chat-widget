@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Documentation Reading Order (Required)
+
+AI tools and contributors must read the following documents
+in order before making any code changes:
+
+1. docs/ARCHITECTURE.md — system boundaries and data flow
+2. docs/AI_INSTRUCTIONS.md — mandatory AI and contributor rules
+3. docs/MODULE_CHAT_WIDGET.md — chat widget module overview
+4. Feature-level documentation under docs/ (e.g. MODULE_CHAT_WIDGET_*.md)
+
 ## Getting Started
 
 First, run the development server:
@@ -35,3 +45,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## Documentation
+
+The following documents provide a high-level and detailed understanding of the product, its architecture, and major modules.
+
+- **Architecture Overview**: `docs/ARCHITECTURE.md`
+- **AI / Contributor Instructions**: `docs/AI_INSTRUCTIONS.md`
+- **Module Documentation**:
+  - Chat Widget: `docs/MODULE_CHAT_WIDGET.md`
