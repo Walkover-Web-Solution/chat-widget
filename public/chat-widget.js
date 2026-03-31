@@ -1203,6 +1203,9 @@
             } else {
                 helloChatbotManager.openChatbot();
             }
+        },
+        shutdown() {
+            sendMessageToChatbot({ type: "SHUTDOWN_CHATBOT" })
         }
     };
 
