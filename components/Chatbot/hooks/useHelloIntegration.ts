@@ -242,11 +242,15 @@ export const useOnSendHello = () => {
         };
         const messageWithReply = typeof newMessage === 'object' ? {
           ...newMessage,
-          replied_msg_content: replyToMessage ? {
-            text: getMessageContent(replyToMessage.content),
-            attachment: replyToMessage.urls || []
-          } : null,
-          replied_msg_type: replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : undefined,
+          replied_msg_content: replyToMessage && replyToMessage?.messageJson?.category ? {
+            ...replyToMessage?.messageJson,
+            text: replyToMessage?.content,
+            attachment: replyToMessage?.urls || []
+          } : {
+            text: getMessageContent(replyToMessage?.content),
+            attachment: replyToMessage?.urls || []
+          },
+          replied_msg_type: replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : replyToMessage?.messageJson?.category ? MESSAGE_TYPES.INTERACTIVE : undefined,
           replied_msg_sender_id: replyToMessage ? (replyToMessage.is_auto_response || !replyToMessage.from_name ? 'bot' : replyToMessage.sender_id || replyToMessage.from_name) : null,
           replied_from_name: replyToMessage ? replyToMessage.from_name : null,
         } : newMessage;
