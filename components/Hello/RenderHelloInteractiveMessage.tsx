@@ -306,16 +306,10 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             )}
 
             {locRequest && (
-              <button
-                className="btn btn-sm btn-outline w-fit rounded-md normal-case justify-start px-4 font-medium text-inherit border-current flex items-center gap-2 mt-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sendMessageToHello?.(locRequest.text_to_show || locRequest.text || "Share Location")
-                }}
-              >
+              <div className="flex items-center gap-2 mt-1 text-sm font-medium text-inherit">
                 <MapPin size={16} strokeWidth={2} />
-                {locRequest.text_to_show || locRequest.text || "Share Location"}
-              </button>
+                <span>{locRequest.text_to_show || locRequest.text || "Share Location"}</span>
+              </div>
             )}
 
             {messageJson.footer?.text && (
