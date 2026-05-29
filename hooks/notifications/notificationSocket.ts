@@ -25,7 +25,7 @@ const useNotificationSocket = ({ chatSessionId }: { chatSessionId: string }) => 
           console.error("Failed to subscribe to channels:", error);
         });
       if (isMobileSDK && pushConfig) {
-        console.log('callling subscribeForFCMPushNotification')
+        console.log('callling subscribeForFCMPushNotification', { ...pushConfig, user_channel: socketChannel })
         subscribeForFCMPushNotification({ ...pushConfig, user_channel: socketChannel }, jwtToken)
           .catch(error => {
             console.log("Failed to subscribe to channels FOR FCM:", error);
@@ -37,7 +37,7 @@ const useNotificationSocket = ({ chatSessionId }: { chatSessionId: string }) => 
       // We don't disconnect here as other components might be using the socket
       // The socket manager will handle cleanup when the app unmounts
     };
-  }, [jwtToken, company_id, pushConfig,isMobileSDK]);
+  }, [jwtToken, company_id, pushConfig, isMobileSDK]);
 
   return null;
 };
