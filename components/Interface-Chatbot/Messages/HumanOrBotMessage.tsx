@@ -223,7 +223,7 @@ const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: bo
                 );
 
             default:
-                if (isBot) {
+                if (isBot && !message?.is_auto_response) {
                     return (
                         <InterfaceMarkdown>
                             {message?.content}
