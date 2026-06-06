@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { supportsLookbehind } from "@/utils/appUtility";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { Anchor, Code } from "./MarkdownUtitily";
 
@@ -13,7 +14,7 @@ function InterfaceMarkdown({ children, className }: InterfaceMarkdownProps) {
   return (
     <div className={`prose prose-sm md:prose-base max-w-none text-inherit dark:prose-invert${className ? ` ${className}` : ""}`}>
       <ReactMarkdown
-        {...(!supportsLookbehind() ? {} : { remarkPlugins: [remarkGfm] })}
+        {...(!supportsLookbehind() ? { remarkPlugins: [remarkBreaks] } : { remarkPlugins: [remarkGfm, remarkBreaks] })}
         components={{
           code: Code,
           a: Anchor,

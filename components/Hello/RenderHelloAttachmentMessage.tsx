@@ -1,4 +1,4 @@
-import { linkify } from "@/utils/utilities";
+import InterfaceMarkdown from "@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown";
 import ImageWithFallback from "../Interface-Chatbot/Messages/ImageWithFallback";
 
 function RenderHelloAttachmentMessage({ message }: { message: any }) {
@@ -25,13 +25,9 @@ function RenderHelloAttachmentMessage({ message }: { message: any }) {
           {renderAttachment(item)}
         </div>
       ))}
-      {caption && (
-        <div className="flex justify-between items-center w-full mt-1">
-          <div className="prose max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: linkify(message?.content || caption) }}></div>
-          </div>
-        </div>
-      )}
+      <InterfaceMarkdown className="mb-1">
+        {caption}
+      </InterfaceMarkdown>
     </div>
   );
 }
