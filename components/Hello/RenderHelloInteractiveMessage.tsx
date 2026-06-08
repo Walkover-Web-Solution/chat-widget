@@ -1,5 +1,4 @@
 import InterfaceMarkdown from '@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown';
-import { linkify } from '@/utils/utilities';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { useColor } from '../Chatbot/hooks/useColor';
 import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
@@ -255,17 +254,15 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
 
             <div className="px-1 space-y-1 mt-1">
               {messageJson.body?.text && (
-                <div
-                  className="text-sm text-inherit leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: linkify(messageJson?.body?.text) }}
-                ></div>
+                <InterfaceMarkdown className="text-sm text-inherit leading-relaxed">
+                  {messageJson.body.text}
+                </InterfaceMarkdown>
               )}
 
               {messageJson.footer?.text && (
-                <div
-                  className="text-[10px] opacity-70 italic"
-                  dangerouslySetInnerHTML={{ __html: linkify(messageJson?.footer?.text) }}
-                ></div>
+                <InterfaceMarkdown className="text-[10px] opacity-70 italic">
+                  {messageJson.footer.text}
+                </InterfaceMarkdown>
               )}
             </div>
 
@@ -290,9 +287,9 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             {messageJson.header && renderHeader(messageJson.header)}
 
             {messageJson.body?.text && (
-              <div className="mb-1">
-                <div dangerouslySetInnerHTML={{ __html: linkify(messageJson.body.text) }}></div>
-              </div>
+              <InterfaceMarkdown className="mb-1">
+                {messageJson.body.text}
+              </InterfaceMarkdown>
             )}
 
             {locRequest && (
@@ -303,9 +300,9 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             )}
 
             {messageJson.footer?.text && (
-              <div className="text-xs opacity-70 mt-1">
-                <div dangerouslySetInnerHTML={{ __html: linkify(messageJson.footer.text) }}></div>
-              </div>
+              <InterfaceMarkdown className="text-xs opacity-70 mt-1">
+                {messageJson.footer.text}
+              </InterfaceMarkdown>
             )}
           </div>
         );

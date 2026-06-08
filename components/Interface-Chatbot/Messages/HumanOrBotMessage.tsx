@@ -208,7 +208,7 @@ const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: bo
 
             case MESSAGE_TYPES.ATTACHMENT:
             case MESSAGE_TYPES.TEXT_ATTACHMENT:
-                return <RenderHelloAttachmentMessage message={message} />;
+                return <RenderHelloAttachmentMessage message={message} isBot={isBot} />;
 
             case MESSAGE_TYPES.FEEDBACK:
                 return <RenderHelloFeedbackMessage message={message} />;
