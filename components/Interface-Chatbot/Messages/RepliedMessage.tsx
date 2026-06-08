@@ -3,6 +3,7 @@ import RenderHelloInteractiveMessage from "@/components/Hello/RenderHelloInterac
 import RenderHelloVedioCallMessage from "@/components/Hello/RenderHelloVedioCallMessage";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import React from "react";
+import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
 import { MESSAGE_TYPES } from "./MessageType";
 
 const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; message: any }) => {
@@ -56,27 +57,35 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
                 <RenderHelloInteractiveMessage message={{ messageJson: message.replied_msg_content }} />
             ) :
                 message.replied_msg_type === MESSAGE_TYPES.ATTACHMENT || message.replied_msg_type === MESSAGE_TYPES.TEXT_ATTACHMENT ? (
-                    <RenderHelloAttachmentMessage message={{ messageJson: message.replied_msg_content }} />
+                    <RenderHelloAttachmentMessage message={{ messageJson: message.replied_msg_content }} isBot={message.replied_msg_sender_id || false} />
                 ) : message.replied_msg_type === MESSAGE_TYPES.VIDEO_CALL ? (<RenderHelloVedioCallMessage message={{ messageJson: message.replied_msg_content }} />)
                     : (
-                        <div className={`text-sm text-gray-700 ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`} dangerouslySetInnerHTML={{
-                            __html: (() => {
-                                if (typeof message.replied_msg_content === 'string') {
-                                    return message.replied_msg_content;
-                                }
-                                const replyText = message.replied_msg_content?.text || '';
-                                const hasAttachment = message.replied_msg_content?.attachment &&
-                                    message.replied_msg_content.attachment.length > 0;
+                        <div className={`text-sm text-gray-700 ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`}>
+                            {(() => {
+                                const isBotMessage = senderId && typeof senderId === 'string' && senderId.toLowerCase() !== 'user';
+                                const replyContent = (() => {
+                                    if (typeof message.replied_msg_content === 'string') {
+                                        return message.replied_msg_content;
+                                    }
+                                    const replyText = message.replied_msg_content?.text || '';
+                                    const hasAttachment = message.replied_msg_content?.attachment &&
+                                        message.replied_msg_content.attachment.length > 0;
 
-                                if (replyText.trim()) {
-                                    return replyText;
+                                    if (replyText.trim()) {
+                                        return replyText;
+                                    }
+                                    if (hasAttachment) {
+                                        return "Attachment";
+                                    }
+                                    return "Message";
+                                })();
+
+                                if (isBotMessage) {
+                                    return <InterfaceMarkdown>{replyContent}</InterfaceMarkdown>;
                                 }
-                                if (hasAttachment) {
-                                    return "Attachment";
-                                }
-                                return "Message";
-                            })()
-                        }}></div>
+                                return <div dangerouslySetInnerHTML={{ __html: replyContent }}></div>;
+                            })()}
+                        </div>
                     )}
         </div>
     );
