@@ -62,7 +62,7 @@ const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseRepl
         </div>
         <div className="text-sm text-gray-600 leading-relaxed truncate">
           {/* {getMessagePreview(messageContent)} */}
-          <div className="prose max-w-none">
+          <div className="max-w-none">
             <div dangerouslySetInnerHTML={{ __html: (getMessagePreview(displayContent)) }}></div>
           </div>
         </div>
