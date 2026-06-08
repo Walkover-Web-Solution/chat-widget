@@ -1,5 +1,4 @@
 import InterfaceMarkdown from '@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown';
-import { linkify } from '@/utils/utilities';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { useColor } from '../Chatbot/hooks/useColor';
 import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
@@ -265,17 +264,15 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
 
             <div className="px-1 space-y-1 mt-1">
               {messageJson.body?.text && (
-                <div
-                  className="text-sm text-inherit leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: linkify(messageJson?.body?.text) }}
-                ></div>
+                <InterfaceMarkdown className="text-sm text-inherit leading-relaxed">
+                  {messageJson.body.text}
+                </InterfaceMarkdown>
               )}
 
               {messageJson.footer?.text && (
-                <div
-                  className="text-[10px] opacity-70 italic"
-                  dangerouslySetInnerHTML={{ __html: linkify(messageJson?.footer?.text) }}
-                ></div>
+                <InterfaceMarkdown className="text-[10px] opacity-70 italic">
+                  {messageJson.footer.text}
+                </InterfaceMarkdown>
               )}
             </div>
 
@@ -300,9 +297,9 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             {messageJson.header && renderHeader(messageJson.header)}
 
             {messageJson.body?.text && (
-              <div className="mb-1">
-                <div dangerouslySetInnerHTML={{ __html: linkify(messageJson.body.text) }}></div>
-              </div>
+              <InterfaceMarkdown className="mb-1">
+                {messageJson.body.text}
+              </InterfaceMarkdown>
             )}
 
             {locRequest && (
@@ -313,9 +310,9 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             )}
 
             {messageJson.footer?.text && (
-              <div className="text-xs opacity-70 mt-1">
-                <div dangerouslySetInnerHTML={{ __html: linkify(messageJson.footer.text) }}></div>
-              </div>
+              <InterfaceMarkdown className="text-xs opacity-70 mt-1">
+                {messageJson.footer.text}
+              </InterfaceMarkdown>
             )}
           </div>
         );
@@ -336,12 +333,9 @@ function CarouselMessage({ messageJson, backgroundColor, textColor, sendMessageT
   return (
     <div className="flex flex-col gap-2 max-w-[320px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px]">
       {messageJson.body?.text && (
-        <div className="mb-2 px-1">
-          <div
-            className="text-sm"
-            dangerouslySetInnerHTML={{ __html: linkify(messageJson.body.text) }}
-          ></div>
-        </div>
+        <InterfaceMarkdown className="mb-2 px-1 text-sm">
+          {messageJson.body.text}
+        </InterfaceMarkdown>
       )}
 
       <div className="carousel rounded-box w-full max-w-fit overflow-x-auto gap-3 py-2 px-1">
@@ -352,9 +346,9 @@ function CarouselMessage({ messageJson, backgroundColor, textColor, sendMessageT
 
               <div className="flex flex-col flex-grow">
                 {card.body?.text && (
-                  <div className="text-sm text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-wrap">
-                    <div dangerouslySetInnerHTML={{ __html: linkify(card.body.text) }}></div>
-                  </div>
+                  <InterfaceMarkdown className="text-sm text-gray-800 dark:text-gray-200 mb-4">
+                    {card.body.text}
+                  </InterfaceMarkdown>
                 )}
 
                 <div className="flex flex-col gap-2 mt-auto pb-1 z-10 w-full min-h-min">
@@ -393,9 +387,9 @@ function CarouselMessage({ messageJson, backgroundColor, textColor, sendMessageT
       </div>
 
       {messageJson.footer?.text && (
-        <div className="text-xs text-gray-500 mt-1 px-1 italic">
-          <div dangerouslySetInnerHTML={{ __html: linkify(messageJson.footer.text) }}></div>
-        </div>
+        <InterfaceMarkdown className="text-xs text-gray-500 mt-1 px-1 italic">
+          {messageJson.footer.text}
+        </InterfaceMarkdown>
       )}
     </div>
   );
