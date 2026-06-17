@@ -1,20 +1,11 @@
 /* eslint-disable */
 // IIFE Scope ( for avoiding global scope pollution )
 (function () {
-    // data-widget-id is required on the <script> tag for async/defer loads (document.currentScript is null then)
-    const currentScript = document.currentScript ||
-        document.querySelector('script[src*="chat-widget"]');
-    if (!currentScript || !currentScript.src) {
-        console.error('[Hello Widget] Error: Could not detect chat-widget script. Make sure the script has a valid src attribute.');
+    if (window.__HELLO_WIDGET_LOADED__) {
+        console.warn('[Hello Widget] Script already loaded. Skipping second initialization.');
         return;
     }
-
-    const scriptUrl = new URL(currentScript.src);
-    const subdomain = scriptUrl.hostname === 'localhost'
-        ? scriptUrl.port
-        : scriptUrl.hostname.split('.')[0];
-    const scriptOrigin = scriptUrl.origin;
-
+    window.__HELLO_WIDGET_LOADED__ = true;
     let block_chatbot = false;
 
     class CobrowseManager {
@@ -28,20 +19,6 @@
                 console.log("[CoBrowse PARENT] No device ID provided, aborting script injection");
                 return;
             }
-
-            // Check if CobrowseIO is already loaded (multi-widget scenario)
-            if (window.CobrowseIO || document.getElementById('CBParentScript')) {
-                console.log("[CoBrowse PARENT] CobrowseIO already loaded, skipping injection");
-                this.scriptInjected = true;
-                // Update device ID if CobrowseIO is already available
-                if (window.CobrowseIO) {
-                    window.CobrowseIO.customData = {
-                        device_id: uuid
-                    };
-                }
-                return;
-            }
-
             this.scriptInjected = true;
             // Create and load the CobrowseIO script for parent window
             const script = document.createElement('script');
@@ -105,9 +82,8 @@
 
     const CBManager = new CobrowseManager()
     class HelloChatbotEmbedManager {
-        constructor(subdomain = "ctest") {
-            this.subdomain = subdomain
-            this.prefix = `${this.subdomain}-hello-`
+        constructor() {
+            this.prefix = 'hello-'
             this.elements = {
                 chatbotIconContainer: `${this.prefix}chatbot-launcher-icon`,
                 chatbotIconImage: `${this.prefix}chatbot-icon-image`,
@@ -132,9 +108,9 @@
                 buttonName: ''
             };
             this.urls = {
-                chatbotUrl: `${scriptOrigin}/chatbot`,
-                styleSheet: `${scriptOrigin}/chat-widget-style.css`,
-                urlMonitor: `${scriptOrigin}/urlMonitor.js`
+                chatbotUrl: 'https://ctest.msg91.com/chatbot',
+                styleSheet: 'https://ctest.msg91.com/chat-widget-style.css',
+                urlMonitor: 'https://ctest.msg91.com/urlMonitor.js'
             };
             this.icons = {
                 white: this.makeImageUrl('b1357e23-2fc6-4dc3-855a-7a213b1fa100'),
@@ -240,9 +216,12 @@
 
         setupMessageListeners() {
             window.addEventListener('message', (event) => {
+                // Only process messages from trusted origins
                 const trustedOrigins = [
-                    scriptOrigin,           // Origin where script was loaded from
-                    window.location.origin  // Origin of the parent page
+                    'http://localhost:3001',
+                    'http://localhost:3000',
+                    'https://ctest.msg91.com',
+                    window.location.origin
                 ];
 
                 if (trustedOrigins.includes(event.origin)) {
@@ -253,14 +232,6 @@
 
         handleIncomingMessages(event) {
             const { type, data } = event.data || {};
-            // Get MY iframe's window object
-            const myIframe = document.getElementById(this.elements.chatbotIframeComponent);
-            const myIframeWindow = myIframe?.contentWindow;
-            // Check: Did MY iframe send this message?
-            if (event.source !== myIframeWindow) {
-                // Message is from a DIFFERENT iframe, ignore it
-                return;
-            }
             switch (type) {
                 case 'MINIMIZE_CHATBOT':
                     this.minimizeChatbot()
@@ -429,7 +400,7 @@
 
         handlePushNotification(data) {
             const message_type = data.message_type;
-            //const message_type = 'Custom';
+            //const message_type = 'Custom';            
 
             // Create the modal container
             const modalContainer = document.createElement('div');
@@ -440,14 +411,14 @@
             loader.innerHTML = 'Loading...';
             loader.classList.add('msg-push-loader');
 
-            // Add the close button to the modal container after content
+            // Add the close button to the modal container after content            
             modalContainer.appendChild(loader);
 
             const iframe = document.createElement('iframe');
             iframe.classList.add('msg-push-hide');
 
             if (message_type === 'Popup') {
-                // Create a full-screen transparent overlay
+                // Create a full-screen transparent overlay                
                 const overlay = document.createElement('div');
                 overlay.id = 'notification-overlay';
                 overlay.classList.add('notification-overlay');
@@ -604,7 +575,7 @@
                         }
                         const rect = el.getBoundingClientRect();
 
-                        // Use inline styles if set, otherwise use computed styles
+                        // Use inline styles if set, otherwise use computed styles                        
                         top = parseFloat(getComputedStyle(el).top) ? parseFloat(getComputedStyle(el).top) : rect.top;
                         bottom = parseFloat(getComputedStyle(el).bottom) ? parseFloat(getComputedStyle(el).bottom) : rect.bottom;
                         left = parseFloat(getComputedStyle(el).left) ? parseFloat(getComputedStyle(el).left) : rect.left;
@@ -822,7 +793,7 @@
                 const interfaceEmbed = document.getElementById(this.elements.chatbotIconContainer);
                 if (interfaceEmbed) {
                     interfaceEmbed.style.display =
-                        (this.props.hide_launcher === true || this.props.hide_launcher === 'true' || this.hideHelloIcon || this.helloProps?.hide_launcher === true || this.helloProps?.hide_launcher === 'true' || this.helloProps?.isMobileSDK)
+                        (this.props.hide_launcher === true || this.props.hide_launcher === 'true' || this.hideHelloIcon || this.helloProps?.hide_launcher === true || this.helloProps?.hide_launcher === 'true' || helloChatbotManager.helloProps?.isMobileSDK)
                             ? 'none'
                             : 'unset';
                 }
@@ -868,9 +839,10 @@
 
         loadContent() {
             if (this.state.bodyLoaded) return;
+
             const { chatBotIcon } = this.createChatbotIcon();
             document.body.appendChild(chatBotIcon);
-            document.head.appendChild(this.createStyleLink());
+            document.head.appendChild(this.createStyleLink()); // load the External Css for script
 
             this.attachIconEvents(chatBotIcon);
             this.createIframeContainer();
@@ -937,7 +909,7 @@
                     : `${config.height}${config.heightUnit || ''}` || '70vh';
                 parentContainer.style.width = `${config?.width}${config?.widthUnit || ''}` || '40vw';
                 // Reset parentId in props since container doesn't exist
-                // this.updateProps({ parentId: null });
+                // this.updateProps({ parentId: null });               
                 document.body.appendChild(parentContainer);
             }
         }
@@ -945,7 +917,7 @@
         attachIconEvents(chatBotIcon) {
             const children = chatBotIcon.querySelectorAll('*'); // Select all descendant elements
             children.forEach(child => {
-                child.addEventListener('click', () => this.openChatbot());
+                child.addEventListener('click', () => helloChatbotManager.openChatbot());
             });
         }
 
@@ -976,8 +948,8 @@
 
                     // Add event listeners for starter question text
                     starterQuestionText.addEventListener('click', () => {
-                        this.openChatbot();
-                        this.hideStarterQuestion();
+                        helloChatbotManager.openChatbot();
+                        helloChatbotManager.hideStarterQuestion();
                     });
                 }
 
@@ -1008,8 +980,8 @@
                             e.stopPropagation();
                             // Send the new event for starter question option click
                             sendMessageToChatbot({ type: 'STARTER_QUESTION_OPTION_CLICKED', data: { option: option } });
-                            this.openChatbot();
-                            this.hideStarterQuestion();
+                            helloChatbotManager.openChatbot();
+                            helloChatbotManager.hideStarterQuestion();
                         });
 
                         optionsContainer.appendChild(optionElement);
@@ -1022,7 +994,7 @@
 
                 starterQuestionClose.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.hideStarterQuestion();
+                    helloChatbotManager.hideStarterQuestion();
                 });
             }
 
@@ -1160,19 +1132,19 @@
             }
             if (this.state.interfaceLoaded && this.state.delayElapsed) {
                 const interfaceEmbed = document.getElementById(this.elements.chatbotIconContainer);
-                if (!this.hideHelloIcon && (this.helloProps?.hide_launcher !== undefined && (this.helloProps?.hide_launcher === false || this.helloProps?.hide_launcher === 'false')) && !this.helloProps?.isMobileSDK) {
+                if (!this.hideHelloIcon && (this.helloProps?.hide_launcher !== undefined && (this.helloProps?.hide_launcher === false || this.helloProps?.hide_launcher === 'false')) && !helloChatbotManager.helloProps?.isMobileSDK) {
                     if (interfaceEmbed) interfaceEmbed.style.display = 'block';
                 }
-                if (this.helloLaunchWidget) this.openChatbot()
-                if (this.helloProps?.icon_position === 'left') {
+                if (this.helloLaunchWidget) helloChatbotManager.openChatbot()
+                if (helloChatbotManager.helloProps?.icon_position === 'left') {
                     interfaceEmbed.classList.add('left_all_child')
                     document.getElementById(this.elements.chatbotIframeContainer).classList.add('left_all_child')
                 }
-                if (this.helloProps?.icon_position === 'right') {
+                if (helloChatbotManager.helloProps?.icon_position === 'right') {
                     interfaceEmbed.classList.add('right_all_child')
                     document.getElementById(this.elements.chatbotIframeContainer).classList.add('right_all_child')
                 }
-                const bottomMargin = this.helloProps?.icon_bottom_margin
+                const bottomMargin = helloChatbotManager.helloProps?.icon_bottom_margin
                 if (bottomMargin) {
                     interfaceEmbed.style.bottom = typeof bottomMargin === 'number'
                         ? `${bottomMargin}px`
@@ -1246,11 +1218,11 @@
             }
             if ('hide_launcher' in data) {
                 propsToUpdate.hide_launcher = data.hide_launcher || false;
-                this.hideHelloIcon = data.hide_launcher || false;
+                helloChatbotManager.hideHelloIcon = data.hide_launcher || false;
             }
             if ('launch_widget' in data) {
                 propsToUpdate.launch_widget = data.launch_widget || false;
-                this.helloLaunchWidget = data.launch_widget || false;
+                helloChatbotManager.helloLaunchWidget = data.launch_widget || false;
             }
             if ('parentId' in data) {
                 propsToUpdate.parentId = data.parentId || '';
@@ -1261,25 +1233,25 @@
             if ('starter_question' in data) {
                 if (data.starter_question === true || data.starter_question === 'true') {
                     const questionText = data.starter_question_text || 'How can I help you today?';
-                    this.createAndShowStarterQuestion(questionText);
+                    helloChatbotManager.createAndShowStarterQuestion(questionText);
                 } else {
-                    this.hideStarterQuestion();
+                    helloChatbotManager.hideStarterQuestion();
                 }
             }
 
             if ('starter_question_text' in data && data.starter_question_text) {
-                this.updateStarterQuestionText(data.starter_question_text);
+                helloChatbotManager.updateStarterQuestionText(data.starter_question_text);
             }
 
             // Update props in a single call if we have any
             if (Object.keys(propsToUpdate).length > 0) {
-                this.updateProps(propsToUpdate);
+                helloChatbotManager.updateProps(propsToUpdate);
             }
 
             // Send general data
             if (data) {
-                this.state.tempDataToSend = {
-                    ...this.state.tempDataToSend,
+                helloChatbotManager.state.tempDataToSend = {
+                    ...helloChatbotManager.state.tempDataToSend,
                     ...data
                 };
                 sendMessageToChatbot({ type: 'helloRunTimeData', data: data });
@@ -1292,9 +1264,9 @@
 
             // Handle config updates
             if ('config' in data && data.config) {
-                const newConfig = { ...this.config, ...data.config };
-                this.applyConfig(newConfig);
-                this.updateProps({ config: newConfig });
+                const newConfig = { ...helloChatbotManager.config, ...data.config };
+                helloChatbotManager.applyConfig(newConfig);
+                helloChatbotManager.updateProps({ config: newConfig });
             }
         }
 
@@ -1315,11 +1287,7 @@
         }
     }
 
-    /// Create subdomain-specific manager instance
-    const manager = new HelloChatbotEmbedManager(subdomain);
-
-    // Store in subdomain-specific namespace
-    window[`${subdomain}_helloChatbotManager`] = manager;
+    const helloChatbotManager = new HelloChatbotEmbedManager();
 
     function SendDataToBot(dataToSend) {
         // Parse string data if needed
@@ -1333,47 +1301,47 @@
         }
 
         // Send to React Native if available
-        if (manager.helloProps?.isMobileSDK) {
+        if (helloChatbotManager.helloProps?.isMobileSDK) {
             sendDataToMobileSDK({ type: 'data', data: dataToSend })
         }
 
         // Handle parent container changes
         if ('parentId' in dataToSend) {
-            manager.state.tempDataToSend = {
-                ...manager.state.tempDataToSend,
+            helloChatbotManager.state.tempDataToSend = {
+                ...helloChatbotManager.state.tempDataToSend,
                 ...dataToSend
             };
-            manager.helloProps = {
-                ...manager.helloProps,
+            helloChatbotManager.helloProps = {
+                ...helloChatbotManager.helloProps,
                 ...dataToSend
             }
-            const previousParentId = manager.helloProps['parentId'];
+            const previousParentId = helloChatbotManager.helloProps['parentId'];
             const existingParent = document.getElementById(previousParentId);
-            if (existingParent?.contains(manager.parentContainer)) {
+            if (existingParent?.contains(helloChatbotManager.parentContainer)) {
                 if (previousParentId !== dataToSend.parentId) {
                     if (previousParentId) {
-                        if (existingParent && manager.parentContainer && existingParent.contains(manager.parentContainer)) {
-                            existingParent.removeChild(manager.parentContainer);
+                        if (existingParent && helloChatbotManager.parentContainer && existingParent.contains(helloChatbotManager.parentContainer)) {
+                            existingParent.removeChild(helloChatbotManager.parentContainer);
                         }
-                    } else if (manager.parentContainer && document.body.contains(manager.parentContainer)) {
-                        document.body.removeChild(manager.parentContainer);
+                    } else if (helloChatbotManager.parentContainer && document.body.contains(helloChatbotManager.parentContainer)) {
+                        document.body.removeChild(helloChatbotManager.parentContainer);
                     }
-                    manager.updateProps({ parentId: dataToSend.parentId });
-                    manager.changeContainer(dataToSend.parentId || '');
+                    helloChatbotManager.updateProps({ parentId: dataToSend.parentId });
+                    helloChatbotManager.changeContainer(dataToSend.parentId || '');
                 }
             } else {
-                manager.updateProps({ parentId: dataToSend.parentId });
-                manager.changeContainer(dataToSend.parentId || '');
+                helloChatbotManager.updateProps({ parentId: dataToSend.parentId });
+                helloChatbotManager.changeContainer(dataToSend.parentId || '');
             }
         }
 
         // Process other properties
-        manager.processDataProperties(dataToSend);
+        helloChatbotManager.processDataProperties(dataToSend);
     };
 
     // Helper function to send messages to the iframe
     function sendMessageToChatbot(messageObj) {
-        const iframeComponent = document.getElementById(manager.elements.chatbotIframeComponent);
+        const iframeComponent = document.getElementById(helloChatbotManager.elements.chatbotIframeComponent);
         if (iframeComponent?.contentWindow) {
             iframeComponent?.contentWindow?.postMessage(messageObj, '*');
         }
@@ -1385,18 +1353,19 @@
         }
     }
 
-    const subdomainInitFunction = (data, delay = 0) => {
+    // Initialize the widget function
+    window.initChatWidget = (data, delay = 0) => {
         if (block_chatbot) return;
         if (data.previewLinks) {
-            manager.addUrlMonitor(data);
+            helloChatbotManager.addUrlMonitor(data);
         }
         if (data) {
-            manager.helloProps = { ...data };
+            helloChatbotManager.helloProps = { ...data };
             if ('hide_launcher' in data) {
-                manager.hideHelloIcon = data.hide_launcher || false;
+                helloChatbotManager.hideHelloIcon = data.hide_launcher || false;
             }
             if ('launch_widget' in data) {
-                manager.helloLaunchWidget = data.launch_widget || false;
+                helloChatbotManager.helloLaunchWidget = data.launch_widget || false;
             }
             if ('variables' in data) {
                 sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data: { ...data, name: 'initChatwidget' } });
@@ -1407,13 +1376,13 @@
             }
         }
         setTimeout(() => {
-            manager.state.delayElapsed = true;
-            manager.showIconIfReady();
+            helloChatbotManager.state.delayElapsed = true;
+            helloChatbotManager.showIconIfReady(); // Check if both conditions are met
         }, delay);
     };
 
-    const windowMethods = {
-        initChatWidget: (data, delay = 0) => subdomainInitFunction(data, delay),
+    // Create chatWidget object with all widget control functions
+    window.chatWidget = {
         SendDataToBot: (data) => {
             // Check if data has variables - send to iframe
             if (data && 'variables' in data) {
@@ -1426,36 +1395,36 @@
         addCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
         modifyCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
         addUserEvent: (data) => sendMessageToChatbot({ type: "ADD_USER_EVENT_SEGMENTO", data }),
-        open: (id = "") => manager.openChatbot(id),
-        close: () => manager.closeChatbot(),
+        open: (id = "") => helloChatbotManager.openChatbot(id),
+        close: () => helloChatbotManager.closeChatbot(),
         hide: () => {
-            manager.hideChatbotWithIcon();
+            helloChatbotManager.hideChatbotWithIcon();
         },
         show: () => {
-            manager.showChatbotIcon();
+            helloChatbotManager.showChatbotIcon();
         },
         toggleWidget: () => {
-            const iframeContainer = document.getElementById(manager.elements.chatbotIframeContainer);
+            const iframeContainer = document.getElementById(helloChatbotManager.elements.chatbotIframeContainer);
             if (iframeContainer?.style?.display === 'block') {
-                manager.closeChatbot();
+                helloChatbotManager.closeChatbot();
             } else {
-                manager.openChatbot();
+                helloChatbotManager.openChatbot();
             }
         },
         handlePushNotification(data) {
-            manager.handlePushNotification(data);
+            helloChatbotManager.handlePushNotification(data);
         },
         showTicket: (id) => sendMessageToChatbot({ type: "SHOW_TICKET", data: { id } }),
         getTicketUnreadCount: (id) => {
             return new Promise((resolve, reject) => {
                 // Store the resolver so handleIncomingMessages can call it
-                manager.state.unreadCountResolver = resolve;
+                helloChatbotManager.state.unreadCountResolver = resolve;
 
                 // Set a timeout to clean up and resolve with 0 if no response
                 setTimeout(() => {
-                    if (manager.state.unreadCountResolver) {
-                        manager.state.unreadCountResolver(0);
-                        manager.state.unreadCountResolver = null;
+                    if (helloChatbotManager.state.unreadCountResolver) {
+                        helloChatbotManager.state.unreadCountResolver(0);
+                        helloChatbotManager.state.unreadCountResolver = null;
                     }
                 }, 5000);
 
@@ -1463,22 +1432,9 @@
             });
         },
         shutdown() {
-            sendMessageToChatbot({ type: "SHUTDOWN_CHATBOT" });
-        },
+            sendMessageToChatbot({ type: "SHUTDOWN_CHATBOT" })
+        }
     };
 
-    window.chatWidget = window.chatWidget || {};
-    window.chatWidget[subdomain] = windowMethods;
-
-    // For ctest, also expose methods flat on window.chatWidget (backward compat)
-    if (subdomain == 'ctest') {
-        Object.assign(window.chatWidget, windowMethods);
-    }
-
-    // Generic initChatWidget that routes to subdomain-specific function
-    window.initChatWidget = (data, delay = 0) => {
-        window.chatWidget[subdomain].initChatWidget(data, delay);
-    };
-
-    manager.initializeChatbot();
+    helloChatbotManager.initializeChatbot();
 })();
