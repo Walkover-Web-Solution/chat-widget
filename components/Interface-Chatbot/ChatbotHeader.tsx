@@ -29,6 +29,7 @@ import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent
 import { createRandomId, DEFAULT_AI_SERVICE_MODALS, ParamsEnums } from "@/utils/enums";
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
 import { ChatbotContext } from "../context";
+import QuickActionsMenu from "./QuickActionsMenu";
 import "./InterfaceChatbot.css";
 
 export function ChatbotHeaderPreview() {
@@ -609,6 +610,62 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     );
   }, [isHelloUser, isChatbotMinimized, fullScreen, toggleFullScreen])
 
+  // Expand button for the collapsed header — un-minimizes the chat back to default size
+  const ExpandButton = useMemo(() => {
+    if (!isChatbotMinimized) return null;
+    return (
+      <div
+        className="cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        onClick={(e) => { e.stopPropagation(); handleToggleMinimize(); }}
+      >
+        <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} />
+      </div>
+    );
+  }, [isChatbotMinimized, handleToggleMinimize])
+
+  // Determine which quick-action items are available
+  const hasMinimizeAction = !!MinimizeButton;
+  const hasFullScreenAction = !!ScreenSizeToggleButton && !isFullScreen;
+  const hasExitFullScreenAction = !!ScreenSizeToggleButton && isFullScreen;
+  const hasCloseAction = !!CloseButton;
+  const hasNewConversationAction = !!CreateThreadButton;
+
+  const showQuickActions = (
+    hasMinimizeAction ||
+    hasFullScreenAction ||
+    hasExitFullScreenAction ||
+    hasCloseAction ||
+    hasNewConversationAction
+  );
+
+  const QuickActionsMenuComponent = useMemo(() => (
+    <QuickActionsMenu
+      isChatbotMinimized={isChatbotMinimized}
+      fullScreen={fullScreen}
+      showMinimize={hasMinimizeAction}
+      showFullScreen={hasFullScreenAction || hasExitFullScreenAction}
+      showNewConversation={hasNewConversationAction}
+      showClose={hasCloseAction}
+      onMinimize={handleToggleMinimize}
+      onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
+      onNewConversation={handleCreateNewSubThread}
+      onClose={handleCloseChatbot}
+      position={isChatbotMinimized ? 'top' : 'bottom'}
+    />
+  ), [
+    isChatbotMinimized,
+    fullScreen,
+    hasMinimizeAction,
+    hasFullScreenAction,
+    hasExitFullScreenAction,
+    hasCloseAction,
+    hasNewConversationAction,
+    handleToggleMinimize,
+    toggleFullScreen,
+    handleCreateNewSubThread,
+    handleCloseChatbot
+  ])
+
   return isChatbotMinimized ?
     <div className="px-2 sm:py-4 py-3 w-full cursor-pointer" onClick={handleToggleMinimize}>
       <div className="flex items-center w-full relative px-2">
@@ -616,8 +673,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
           {HeaderTitleSection}
         </div>
         <div className="flex justify-end items-center gap-1 flex-1 sm:absolute sm:right-0">
-          <div className="flex items-center">
-            {MinimizeButton}
+          <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+            {ExpandButton}
             {CloseButton}
           </div>
         </div>
@@ -654,10 +711,11 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
             </React.Fragment>
           ))}
 
-          {!isFullScreen && <div className="flex items-center">
-            {ScreenSizeToggleButton}
-            {(isMobileSDK || !isHelloUser) ? CloseButton : MinimizeButton}
-          </div>}
+          {showQuickActions && (
+            <div className="flex items-center">
+              {QuickActionsMenuComponent}
+            </div>
+          )}
         </div>
       </div>
     </div>

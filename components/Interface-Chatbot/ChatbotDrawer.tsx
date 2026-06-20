@@ -1,8 +1,8 @@
 'use client';
 
 import { lighten } from "@mui/material";
-import { AlignLeft, ChevronRight, SquarePen, Users, X } from "lucide-react";
-import { useContext, useEffect, useMemo } from "react";
+import { AlignLeft, ChevronRight, SquarePen, Users } from "lucide-react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
 // API and Services
@@ -16,6 +16,7 @@ import { useReduxStateManagement } from "../Chatbot/hooks/useReduxManagement";
 
 // Redux Actions
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
+import { setDataInDraftReducer } from "@/store/draftData/draftDataSlice";
 import { setThreads } from "@/store/interface/interfaceSlice";
 
 // Utils and Types
@@ -25,6 +26,8 @@ import { useColor } from "../Chatbot/hooks/useColor";
 import { useScreenSize } from "../Chatbot/hooks/useScreenSize";
 import { MessageContext } from "./InterfaceChatbot";
 import { useOnSendHello } from "../Chatbot/hooks/useHelloIntegration";
+import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
+import QuickActionsMenu from "./QuickActionsMenu";
 
 const createRandomId = () => Math.random().toString(36).substring(2, 15);
 
@@ -75,9 +78,13 @@ const ChatbotDrawer = ({
     tagline,
     hideCloseButton,
     voice_call_widget,
-    show_msg91
+    show_msg91,
+    isChatbotMinimized,
+    isMobileSDK,
+    isFullScreen
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
+    const helloFullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
     return {
       subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
       teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
@@ -87,7 +94,10 @@ const ChatbotDrawer = ({
       tagline: state.Hello?.[chatSessionId]?.widgetInfo?.tagline || '',
       hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : state.appInfo?.[tabSessionId]?.hideCloseButton || false,
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
-      show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false
+      show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
+      isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
+      isMobileSDK: state.Hello?.[chatSessionId]?.helloConfig?.isMobileSDK || false,
+      isFullScreen: (helloFullScreen === true || helloFullScreen === 'true') ?? false
     };
   });
 
@@ -401,18 +411,70 @@ const ChatbotDrawer = ({
     window.parent.postMessage({ type: "CLOSE_CHATBOT" }, "*");
   };
 
-  const CloseButton = useMemo(() => {
-    if (hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen) return null;
+  const handleMinimizeChatbot = (value: boolean) => {
+    dispatch(setDataInDraftReducer({ isChatbotMinimized: value }));
+  };
+
+  const [fullScreen, setFullScreen] = useState(false);
+
+  const toggleFullScreen = (enter: boolean) => {
+    if (!window?.parent) return;
+    setFullScreen(enter);
+    const message = enter
+      ? { type: "ENTER_FULL_SCREEN_CHATBOT" }
+      : { type: "EXIT_FULL_SCREEN_CHATBOT" };
+    window.parent.postMessage(message, "*");
+  };
+
+  const handleToggleMinimize = () => {
+    if (!isChatbotMinimized && fullScreen) {
+      toggleFullScreen(false);
+    }
+    handleMinimizeChatbot(!isChatbotMinimized);
+    if (!isChatbotMinimized) {
+      emitEventToParent('MINIMIZE_CHATBOT');
+    } else {
+      toggleFullScreen(false);
+    }
+  };
+
+  // Quick Actions dropdown for the drawer header
+  const canMinimize = isHelloUser && !isMobileSDK;
+  const canFullScreen = !isMobileSDK && !isFullScreen;
+
+  const DrawerQuickActionsMenu = useMemo(() => {
+    if (!isToggledrawer) return null;
 
     return (
-      <div
-        className="cursor-pointer p-2 hover:bg-gray-200 rounded-full transition-colors icn"
-        onClick={handleCloseChatbot}
-      >
-        <X size={22} color="var(--icon-color)" />
-      </div>
+      <QuickActionsMenu
+        isChatbotMinimized={isChatbotMinimized}
+        fullScreen={fullScreen}
+        showMinimize={canMinimize}
+        showFullScreen={canFullScreen}
+        showNewConversation={!isHelloUser}
+        showClose={!hideCloseButton}
+        onMinimize={handleToggleMinimize}
+        onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
+        onNewConversation={handleCreateNewSubThread}
+        onClose={() => handleCloseChatbot()}
+        triggerClassName="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+        menuClassName="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999] py-1"
+        useIconColor
+      />
     );
-  }, [hideCloseButton, handleCloseChatbot]);
+  }, [
+    isToggledrawer,
+    isHelloUser,
+    isChatbotMinimized,
+    fullScreen,
+    canMinimize,
+    canFullScreen,
+    hideCloseButton,
+    handleToggleMinimize,
+    toggleFullScreen,
+    handleCreateNewSubThread,
+    handleCloseChatbot
+  ]);
 
   return (
     <div className={`drawer ${isSmallScreen ? 'z-[99999]' : 'z-[999]'}`}>
@@ -456,17 +518,7 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end">
-                {isToggledrawer && !isHelloUser && (
-                  <div className="tooltip tooltip-bottom z-[9999]" data-tip="New Chat">
-                    <button
-                      className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                      onClick={handleCreateNewSubThread}
-                    >
-                      <SquarePen size={22} color="var(--icon-color)" />
-                    </button>
-                  </div>
-                )}
-                {isHelloUser && CloseButton}
+                {isToggledrawer && DrawerQuickActionsMenu}
               </div>
             </div>
           </div>
