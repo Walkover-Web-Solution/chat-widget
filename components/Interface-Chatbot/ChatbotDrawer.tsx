@@ -1,7 +1,7 @@
 'use client';
 
 import { lighten } from "@mui/material";
-import { AlignLeft, ChevronRight, SquarePen, Users } from "lucide-react";
+import { AlignLeft, ChevronRight, SquarePen, Users, Phone, Send } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -243,7 +243,9 @@ const ChatbotDrawer = ({
   ), [subThreadList, subThreadId, handleChangeSubThread]);
 
   const TeamsList = useMemo(() => (
-    <div className="teams-container pb-2 relative gap-6 flex flex-col">
+  <>
+  {((channelList?.length > 0 && channelList.some((thread: any) => thread?.id)) || teamsList?.length > 0) && (
+    <div className="teams-container pb-2 relative gap-4 flex flex-col h-[calc(100vh - 185px)] overflow-y-auto">
       {/* Conversations Section */}
       {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
         <div className="conversations-section">
@@ -342,16 +344,12 @@ const ChatbotDrawer = ({
       )}
 
       {/* Teams Section */}
+      {(teamsList || []).length > 0 && (
       <div className="teams-section">
         <div className="teams-header pb-2 flex items-center">
           <h3 className="text-base font-semibold">Talk to our experts</h3>
         </div>
         <div className="teams-list space-y-0">
-          {teamsList.length === 0 ? (
-            <div className="flex">
-              <button className="btn w-full" style={{ backgroundColor: backgroundColor, color: textColor }} onClick={handleSendMessageWithNoTeam}>Send us a message</button>
-            </div>
-          ) : (
             <div className="flex flex-col gap-1">
               {teamsList.map((team: any, index: number) => (
                 <div
@@ -373,23 +371,45 @@ const ChatbotDrawer = ({
                 </div>
               ))}
             </div>
+        </div>
+      </div>
+      )}
+    </div>
+    )}
+
+    {/* Voice Call Section */}
+    {voice_call_widget && (
+      <div className="marketing-banner mt-auto sticky bottom-0 bg-[var(--drawer-color)] pt-3">
+        <h3 className="text-base font-semibold">Talk to Our Teams</h3>
+        <div className="flex gap-2 mt-3">
+          <button
+            className={`grid place-items-center flex-1 text-xs p-3 rounded-md transition-colors ${
+              callState !== "idle"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-primaryTheme hover:bg-primaryTheme/80"
+            }`}
+            style={{ color: textColor, borderRadius: "14px" }}
+            onClick={handleVoiceCall}
+            disabled={callState !== "idle"}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Phone size={18} />
+              <strong>Call Us</strong>
+            </span>
+          </button>
+          {/*Send Message button in case of no team assign */}
+          { (teamsList || []).length ===  0 && (
+            <button className="grid place-items-center flex-1 text-xs p-3 rounded-md transition-colors" style={{ border: "2px solid " + backgroundColor, color: backgroundColor, borderRadius: "14px" }} onClick={handleSendMessageWithNoTeam}>
+              <span className="inline-flex items-center gap-2">
+                <Send size={18} />
+                <strong>Send Message</strong>
+              </span>
+            </button>
           )}
         </div>
       </div>
-
-      {voice_call_widget && <div className="marketing-banner p-3 bg-gradient-to-r from-primaryTheme/20 to-secondaryTheme/20 rounded-lg">
-        <p className="text-sm font-medium">Need specialized help?</p>
-        <p className="text-xs">Our teams are ready to assist you with any questions</p>
-        <button
-          className={`mt-2 text-xs py-1 px-3 rounded-md transition-colors ${callState !== "idle" ? "bg-gray-400 cursor-not-allowed" : "bg-primaryTheme hover:bg-primaryTheme/80"}`}
-          style={{ color: textColor }}
-          onClick={handleVoiceCall}
-          disabled={callState !== "idle"}
-        >
-          Call Us
-        </button>
-      </div>}
-    </div >
+    )}
+    </>
   ), [
     channelList,
     teamsList,
@@ -439,7 +459,7 @@ const ChatbotDrawer = ({
   };
 
   // Quick Actions dropdown for the drawer header
-  const canMinimize = isHelloUser && !isMobileSDK;
+  const canMinimize = false; //isHelloUser && !isMobileSDK;
   const canFullScreen = !isMobileSDK && !isFullScreen;
 
   const DrawerQuickActionsMenu = useMemo(() => {
@@ -524,10 +544,8 @@ const ChatbotDrawer = ({
           </div>
 
           {/* Content area with overflow handling - the scrollbar will appear at the edge */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-4">
+          <div className="flex-1 overflow-y-auto flex flex-col px-4">
               {!isHelloUser ? DrawerList : TeamsList}
-            </div>
           </div>
 
           {/* Footer with branding - always stays at bottom */}
