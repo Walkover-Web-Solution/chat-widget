@@ -1,12 +1,12 @@
 import { ThemeContext } from "@/components/AppWrapper";
 import { useSendMessageToHello } from "@/components/Chatbot/hooks/useHelloIntegration";
-import { addDomainToHello, saveClientDetails } from "@/config/helloApi";
+import { addDomainToHello, getAllChannels, initializeHelloChat, saveClientDetails } from "@/config/helloApi";
 import { CBManger } from "@/hooks/coBrowser/CBManger";
 import { EmbeddingScriptEventRegistryInstance } from "@/hooks/CORE/eventHandlers/embeddingScript/embeddingScriptEventHandler";
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
 import { setToggleDrawer } from "@/store/chat/chatSlice";
 import { setDataInDraftReducer, setVariablesForHelloBot } from "@/store/draftData/draftDataSlice";
-import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo } from "@/store/hello/helloSlice";
+import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo, setChannelListData } from "@/store/hello/helloSlice";
 import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
 import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
@@ -176,9 +176,31 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         }
     };
 
-    function handleChatbotVisibility(isChatbotOpen = false, id = "") {
+    const isFetchingHelloData = useRef(false);
+
+    async function handleChatbotVisibility(isChatbotOpen = false, id = "") {
         dispatch(setDataInAppInfoReducer({ isChatbotOpen }))
         dispatch(setDataInDraftReducer({ isChatbotMinimized: false }))
+        if (isChatbotOpen) {
+            try {
+                if (isFetchingHelloData.current) return;
+                isFetchingHelloData.current = true;
+                const [channelsData, widgetInfo] = await Promise.all([
+                    getAllChannels(),
+                    initializeHelloChat()
+                ]);
+                if (channelsData) {
+                    dispatch(setChannelListData(channelsData));
+                }
+                if (widgetInfo) {
+                    dispatch(setWidgetInfo(widgetInfo));
+                }
+            } catch (error) {
+                console.error("Failed to fetch chatbot data on open:", error);
+            } finally {
+                isFetchingHelloData.current = false;
+            }
+        }
         if (id) {
             // Create a mock MessageEvent to pass to handleShowTicket
             const mockEvent = {

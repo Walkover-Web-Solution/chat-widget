@@ -34,25 +34,36 @@ export const useReduxStateManagement = ({
     currentTeamId,
     isDefaultNavigateToChatScreen,
     overrideChannelId
-  } = useCustomSelector((state) => ({
-    interfaceContextData: state.Interface?.[chatSessionId]?.interfaceContext?.variables,
-    isHelloUser: state.draftData?.isHelloUser || false,
-    uuid: state.Hello?.[chatSessionId]?.channelListData?.uuid,
-    unique_id: state.Hello?.[chatSessionId]?.channelListData?.unique_id,
-    presence_channel: state.Hello?.[chatSessionId]?.channelListData?.presence_channel,
-    team_id: state.Hello?.[chatSessionId]?.widgetInfo?.team?.[0]?.id,
-    isDefaultNavigateToChatScreen: isDefaultNavigateToChatScreenFn(state, chatSessionId),
-    chat_id: state.Hello?.[chatSessionId]?.Channel?.id,
-    channelId: state.Hello?.[chatSessionId]?.Channel?.channel || null,
-    mode: state.Hello?.[chatSessionId]?.mode || [],
-    selectedAiServiceAndModal: state.Interface?.[chatSessionId]?.selectedAiServiceAndModal || null,
-    unique_id_hello: state?.Hello?.[chatSessionId]?.helloConfig?.unique_id,
-    widgetToken: state?.Hello?.[chatSessionId]?.helloConfig?.widgetToken,
-    currentChatId: state?.appInfo?.[tabSessionId]?.currentChatId,
-    currentChannelId: state?.appInfo?.[tabSessionId]?.currentChannelId,
-    currentTeamId: state?.appInfo?.[tabSessionId]?.currentTeamId,
-    overrideChannelId: state?.appInfo?.[tabSessionId]?.overrideChannelId,
-  }));
+  } = useCustomSelector((state) => {
+    const channels = state.Hello?.[chatSessionId]?.channelListData?.channels || [];
+    const fallbackChat = (() => {
+      if (!channels?.length) return null;
+      const openChats = channels
+        .filter((ch: any) => !ch.is_closed)
+        .sort((a: any, b: any) => (b.last_message?.timetoken || 0) - (a.last_message?.timetoken || 0));
+      return openChats[0] || channels[0];
+    })();
+
+    return {
+      interfaceContextData: state.Interface?.[chatSessionId]?.interfaceContext?.variables,
+      isHelloUser: state.draftData?.isHelloUser || false,
+      uuid: state.Hello?.[chatSessionId]?.channelListData?.uuid,
+      unique_id: state.Hello?.[chatSessionId]?.channelListData?.unique_id,
+      presence_channel: state.Hello?.[chatSessionId]?.channelListData?.presence_channel,
+      team_id: state.Hello?.[chatSessionId]?.widgetInfo?.team?.[0]?.id,
+      isDefaultNavigateToChatScreen: isDefaultNavigateToChatScreenFn(state, chatSessionId),
+      chat_id: state.Hello?.[chatSessionId]?.Channel?.id,
+      channelId: state.Hello?.[chatSessionId]?.Channel?.channel || null,
+      mode: state.Hello?.[chatSessionId]?.mode || [],
+      selectedAiServiceAndModal: state.Interface?.[chatSessionId]?.selectedAiServiceAndModal || null,
+      unique_id_hello: state?.Hello?.[chatSessionId]?.helloConfig?.unique_id,
+      widgetToken: state?.Hello?.[chatSessionId]?.helloConfig?.widgetToken,
+      currentChatId: state?.appInfo?.[tabSessionId]?.currentChatId || fallbackChat?.id,
+      currentChannelId: state?.appInfo?.[tabSessionId]?.currentChannelId || fallbackChat?.channel,
+      currentTeamId: state?.appInfo?.[tabSessionId]?.currentTeamId || fallbackChat?.team_id,
+      overrideChannelId: state?.appInfo?.[tabSessionId]?.overrideChannelId,
+    };
+  });
 
   return {
     interfaceContextData,

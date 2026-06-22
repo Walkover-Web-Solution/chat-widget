@@ -627,14 +627,12 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
   const hasMinimizeAction = !!MinimizeButton;
   const hasFullScreenAction = !!ScreenSizeToggleButton && !isFullScreen;
   const hasExitFullScreenAction = !!ScreenSizeToggleButton && isFullScreen;
-  const hasCloseAction = !!CloseButton;
   const hasNewConversationAction = !!CreateThreadButton;
 
   const showQuickActions = (
     hasMinimizeAction ||
     hasFullScreenAction ||
     hasExitFullScreenAction ||
-    hasCloseAction ||
     hasNewConversationAction
   );
 
@@ -645,11 +643,9 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       showMinimize={hasMinimizeAction}
       showFullScreen={hasFullScreenAction || hasExitFullScreenAction}
       showNewConversation={hasNewConversationAction}
-      showClose={hasCloseAction}
       onMinimize={handleToggleMinimize}
       onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
       onNewConversation={handleCreateNewSubThread}
-      onClose={handleCloseChatbot}
       position={isChatbotMinimized ? 'top' : 'bottom'}
     />
   ), [
@@ -658,12 +654,10 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     hasMinimizeAction,
     hasFullScreenAction,
     hasExitFullScreenAction,
-    hasCloseAction,
     hasNewConversationAction,
     handleToggleMinimize,
     toggleFullScreen,
     handleCreateNewSubThread,
-    handleCloseChatbot
   ])
 
   return isChatbotMinimized ?
@@ -716,6 +710,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
               {QuickActionsMenuComponent}
             </div>
           )}
+          {CloseButton}
         </div>
       </div>
     </div>

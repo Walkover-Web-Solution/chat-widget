@@ -1,6 +1,6 @@
 'use client';
 
-import { EllipsisVertical, Maximize2, Minimize2, Minus, Plus, X } from "lucide-react";
+import { EllipsisVertical, Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 export interface QuickActionsMenuProps {
@@ -14,12 +14,10 @@ export interface QuickActionsMenuProps {
   showMinimize?: boolean;
   showFullScreen?: boolean;
   showNewConversation?: boolean;
-  showClose?: boolean;
 
   onMinimize?: () => void;
   onToggleFullScreen?: () => void;
   onNewConversation?: () => void;
-  onClose?: (e?: React.MouseEvent) => void;
 
   /** Extra class for the trigger button. */
   triggerClassName?: string;
@@ -41,11 +39,9 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   showMinimize = false,
   showFullScreen = false,
   showNewConversation = false,
-  showClose = false,
   onMinimize,
   onToggleFullScreen,
   onNewConversation,
-  onClose,
   triggerClassName = "cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors icn",
   menuClassName = "absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 py-1",
   triggerIconSize = 22,
@@ -146,18 +142,6 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
             >
               <Plus size={18} />
               <span>New conversation</span>
-            </button>
-          )}
-
-          {showClose && (
-            <button
-              role="menuitem"
-              tabIndex={-1}
-              onClick={(e) => { onClose?.(e); closeMenu(); }}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <X size={18} />
-              <span>Close chat</span>
             </button>
           )}
         </div>

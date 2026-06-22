@@ -1,7 +1,7 @@
 'use client';
 
 import { lighten } from "@mui/material";
-import { AlignLeft, ChevronRight, SquarePen, Users, Phone, Send } from "lucide-react";
+import { AlignLeft, ChevronRight, SquarePen, Users, Phone, Send, X } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -67,6 +67,8 @@ const ChatbotDrawer = ({
   const { currentChatId, currentTeamId, currentChannelId } = useReduxStateManagement({ chatSessionId, tabSessionId });
   const { callState } = useCallUI();
   const sendMessageToHello = useOnSendHello();
+  const [showAllChannels, setShowAllChannels] = useState(false);
+  const [showAllTeams, setShowAllTeams] = useState(false);
 
   // Consolidated Redux state selection
   const {
@@ -101,7 +103,25 @@ const ChatbotDrawer = ({
     };
   });
 
+  const VISIBLE_ITEMS_COUNT = 3;
+  const filteredChannels = (channelList || []).filter(
+    (channel: any) => channel?.id
+  );
+
+  const closedChatsCount = filteredChannels.filter(
+    (channel: any) => channel?.is_closed
+  ).length;
+
+  const displayedChannels = showAllChannels
+  ? filteredChannels
+  : filteredChannels.slice(0, VISIBLE_ITEMS_COUNT);
+
+  const displayedTeams = showAllTeams
+  ? teamsList
+  : teamsList.slice(0, VISIBLE_ITEMS_COUNT);
+
   useEffect(() => {
+  console.log("filteredChannels", filteredChannels);
     if (chatSessionId) {
       setToggleDrawer(true);
     }
@@ -243,9 +263,9 @@ const ChatbotDrawer = ({
   ), [subThreadList, subThreadId, handleChangeSubThread]);
 
   const TeamsList = useMemo(() => (
-  <>
-  {((channelList?.length > 0 && channelList.some((thread: any) => thread?.id)) || teamsList?.length > 0) && (
-    <div className="teams-container pb-2 relative gap-4 flex flex-col h-[calc(100vh - 185px)] overflow-y-auto">
+      <>
+        {((channelList?.length > 0 && channelList.some((thread: any) => thread?.id)) || teamsList?.length > 0) && (
+          <div className="teams-container pb-2 relative gap-4 flex flex-col h-[calc(100vh_-_185px)] overflow-y-auto">
       {/* Conversations Section */}
       {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
         <div className="conversations-section">
@@ -253,9 +273,7 @@ const ChatbotDrawer = ({
             <h3 className="text-base font-semibold">Continue Conversations</h3>
           </div>
           <div className="conversations-list space-y-2">
-            {channelList
-              .filter((channel: any) => channel?.id)
-              .map((channel: any, index: number) => (
+            { displayedChannels.map((channel: any, index: number) => (
                 <div
                   key={`${channel?._id}-${index}`}
                   className={`conversation-card max-h-16 h-full overflow-hidden text-ellipsis p-3 ${channel?.id === currentChatId ? 'border-2 border-primary' : ''} bg-white dark:bg-[var(--background)] rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center`}
@@ -339,6 +357,23 @@ const ChatbotDrawer = ({
                   </div>
                 </div>
               ))}
+              {filteredChannels.length > VISIBLE_ITEMS_COUNT && (
+                <div className="flex justify-center mt-2">
+                  <button
+                    type="button"
+                    className="text-sm font-medium hover:underline"
+                    style={{ color: backgroundColor}}
+                    onClick={() => setShowAllChannels(!showAllChannels)}
+                  >
+                    {showAllChannels
+                      ? "Show Less"
+                      : (filteredChannels.length - closedChatsCount) <= VISIBLE_ITEMS_COUNT
+                        ? `Show (${filteredChannels.length - VISIBLE_ITEMS_COUNT}) Closed Conversations`
+                        : `Show All (${filteredChannels.length - VISIBLE_ITEMS_COUNT}) Conversations`
+                    }
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       )}
@@ -351,7 +386,7 @@ const ChatbotDrawer = ({
         </div>
         <div className="teams-list space-y-0">
             <div className="flex flex-col gap-1">
-              {teamsList.map((team: any, index: number) => (
+              {displayedTeams.map((team: any, index: number) => (
                 <div
                   key={`${team?.id}-${index}`}
                   className={`team-card p-3 bg-white shadow-sm hover:shadow-md transition-all cursor-pointer rounded-lg flex items-center justify-between`}
@@ -370,6 +405,21 @@ const ChatbotDrawer = ({
                   </div>
                 </div>
               ))}
+
+              {teamsList.length > VISIBLE_ITEMS_COUNT && (
+                <div className="flex justify-center mt-2">
+                  <button
+                    type="button"
+                    style={{ color: backgroundColor }}
+                    className="text-sm font-medium hover:underline"
+                    onClick={() => setShowAllTeams(!showAllTeams)}
+                  >
+                    {showAllTeams
+                      ? "Show Less"
+                      : `Show All (${teamsList.length -  VISIBLE_ITEMS_COUNT})`}
+                  </button>
+                </div>
+              )}
             </div>
         </div>
       </div>
@@ -463,6 +513,7 @@ const ChatbotDrawer = ({
   const canFullScreen = !isMobileSDK && !isFullScreen;
 
   const DrawerQuickActionsMenu = useMemo(() => {
+    if (fullScreen || isFullScreen) return null;
     if (!isToggledrawer) return null;
 
     return (
@@ -472,11 +523,9 @@ const ChatbotDrawer = ({
         showMinimize={canMinimize}
         showFullScreen={canFullScreen}
         showNewConversation={!isHelloUser}
-        showClose={!hideCloseButton}
         onMinimize={handleToggleMinimize}
         onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
         onNewConversation={handleCreateNewSubThread}
-        onClose={() => handleCloseChatbot()}
         triggerClassName="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
         menuClassName="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999] py-1"
         useIconColor
@@ -487,13 +536,12 @@ const ChatbotDrawer = ({
     isHelloUser,
     isChatbotMinimized,
     fullScreen,
+    isFullScreen,
     canMinimize,
     canFullScreen,
-    hideCloseButton,
     handleToggleMinimize,
     toggleFullScreen,
     handleCreateNewSubThread,
-    handleCloseChatbot
   ]);
 
   return (
@@ -537,8 +585,17 @@ const ChatbotDrawer = ({
                   <p className="text-xs text-gray-500 text-center">{tagline}</p>
                 )}
               </div>
-              <div className="w-10 flex items-center justify-end">
+              <div className="w-10 flex items-center justify-end gap-1">
                 {isToggledrawer && DrawerQuickActionsMenu}
+                {isToggledrawer && !hideCloseButton && (
+                  <button
+                    className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+                    onClick={handleCloseChatbot}
+                    aria-label="Close chat"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
               </div>
             </div>
           </div>

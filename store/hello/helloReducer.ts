@@ -71,10 +71,15 @@ export const reducers: ValidateSliceCaseReducers<
   setChannelListData(state, action: actionType<ChannelListData>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
+      const channels = action.payload?.channels || [];
+      const sortedChannels = [...channels].sort((a: any, b: any) => {
+        if (a.is_closed === b.is_closed) return 0;
+        return a.is_closed ? 1 : -1;
+      });
       state[chatSessionId] = {
         ...state[chatSessionId],
-        channelListData: action.payload,
-        Channel: action.payload?.channels?.[0]
+        channelListData: { ...action.payload, channels: sortedChannels },
+        Channel: sortedChannels[0]
       };
     }
   },
