@@ -61,13 +61,18 @@ export const useFetchHelloPreviousHistory = () => {
   const { setChatsLoading } = useChatActions();
   const { setHelloMessages } = useHelloMessages();
 
-  const { uuid, currentChannelId } = useReduxStateManagement({
+  const { uuid, currentChannelId, companyId } = useReduxStateManagement({
     chatSessionId,
     tabSessionId: useHelloContext().tabSessionId
   });
 
   return useCallback((dynamicChannelId?: string) => {
-    const channelId = dynamicChannelId || currentChannelId;
+    // Backend regex: ^ch-comp-(\d+)\.([0-9a-f]{32})$ — must be 32 hex chars.
+    // Some code paths persist a 24-char ObjectId (k_clientId/a_clientId), so
+    // regenerate whenever the stored id does not match.
+    const storedChannel = (dynamicChannelId || currentChannelId) || '';
+    const isValid = /^[0-9a-f]{32}$/.test(String(storedChannel).split('.')[1] || '');
+    const channelId = isValid ? storedChannel : generateChannelId(companyId);
     if (!channelId || !uuid) return;
 
     setChatsLoading(true);
@@ -92,7 +97,7 @@ export const useFetchHelloPreviousHistory = () => {
       .finally(() => {
         setChatsLoading(false);
       });
-  }, [currentChannelId, uuid, setChatsLoading, setHelloMessages, globalDispatch]);
+  }, [currentChannelId, uuid, companyId, setChatsLoading, setHelloMessages, globalDispatch]);
 };
 
 export const useGetMoreHelloChats = () => {
@@ -101,7 +106,7 @@ export const useGetMoreHelloChats = () => {
   const { setChatsLoading } = useChatActions();
   const { addHelloMessage } = useHelloMessages();
 
-  const { uuid, currentChannelId } = useReduxStateManagement({
+  const { uuid, currentChannelId, companyId } = useReduxStateManagement({
     chatSessionId,
     tabSessionId: useHelloContext().tabSessionId
   });
@@ -112,10 +117,14 @@ export const useGetMoreHelloChats = () => {
   }));
 
   return useCallback(() => {
-    if (!currentChannelId || !uuid || !hasMoreMessages) return;
+    // Backend regex: ^ch-comp-(\d+)\.([0-9a-f]{32})$ — must be 32 hex chars.
+    const storedChannel = currentChannelId || '';
+    const isValid = /^[0-9a-f]{32}$/.test(String(storedChannel).split('.')[1] || '');
+    const channelId = isValid ? storedChannel : generateChannelId(companyId);
+    if (!channelId || !uuid || !hasMoreMessages) return;
 
     setChatsLoading(true);
-    getHelloChatHistoryApi(currentChannelId, skip)
+    getHelloChatHistoryApi(channelId, skip)
       .then((response) => {
         const helloChats = response?.data?.data;
         if (Array.isArray(helloChats) && helloChats.length > 0) {
@@ -136,7 +145,7 @@ export const useGetMoreHelloChats = () => {
       .finally(() => {
         setChatsLoading(false);
       });
-  }, [currentChannelId, uuid, setChatsLoading, addHelloMessage, hasMoreMessages, skip, globalDispatch]);
+  }, [currentChannelId, uuid, companyId, setChatsLoading, addHelloMessage, hasMoreMessages, skip, globalDispatch]);
 };
 
 export const useFetchChannels = () => {
@@ -224,13 +233,20 @@ export const useOnSendHello = () => {
 
     try {
 
-      const channelIdToUse = newChannelId || currentChannelId || overrideChannelId;
-      const chatIdToUse = overrideChatId || currentChatId;
-      const teamIdToUse = overrideTeamId || currentTeamId;
+      const channelIdToUse = newChannelId !== undefined ? newChannelId : (currentChannelId || overrideChannelId);
+      const chatIdToUse = overrideChatId !== undefined ? overrideChatId : currentChatId;
+      const teamIdToUse = overrideTeamId !== undefined ? overrideTeamId : currentTeamId;
 
-      let workingChannelId = channelIdToUse;
-      if (!chatIdToUse && !channelIdToUse) {
-        workingChannelId = generateChannelId(companyId);
+      // Backend regex: ^ch-comp-(\d+)\.([0-9a-f]{32})$ — must be 32 hex chars.
+      // Some code paths persist a 24-char ObjectId (k_clientId/a_clientId), so
+      // regenerate whenever the chosen channel id does not match.
+      const isChannelHexValid = (id: string) =>
+        /^[0-9a-f]{32}$/.test(String(id || '').split('.')[1] || '');
+
+      let workingChannelId = isChannelHexValid(channelIdToUse)
+        ? channelIdToUse
+        : generateChannelId(companyId);
+      if (!chatIdToUse && (!channelIdToUse || !isChannelHexValid(channelIdToUse))) {
         dispatch(setDataInAppInfoReducer({
           subThreadId: workingChannelId
         }));
@@ -303,10 +319,24 @@ export const useOnSendHello = () => {
       }
       const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, repliedOn);
       if (data && (!chatIdToUse || !channelIdToUse || demo_widget)) {
+        // Prefer the locally-generated 32-char channel id (matches backend regex
+        // ^ch-comp-(\d+)\.([0-9a-f]{32})$) over the backend's echoed channel,
+        // which may contain a 24-char ObjectId suffix and would be rejected by
+        // /get-history/. Fall back to the backend's echo only if it already has
+        // a 32-char hex suffix.
+        const backendChannel = data?.['channel'];
+        const channelToPersist = (() => {
+          if (workingChannelId) return workingChannelId;
+          if (backendChannel) {
+            const suffix = String(backendChannel).split('.')[1];
+            if (suffix && /^[0-9a-f]{32}$/.test(suffix)) return backendChannel;
+          }
+          return generateChannelId(companyId);
+        })();
         dispatch(setDataInAppInfoReducer({
-          subThreadId: data?.['channel'],
+          subThreadId: channelToPersist,
           currentChatId: data?.['id'],
-          currentChannelId: data?.['channel'],
+          currentChannelId: channelToPersist,
           overrideChannelId: ""
         }));
         // no need to append user message again this time

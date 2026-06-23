@@ -33,7 +33,8 @@ export const useReduxStateManagement = ({
     currentChannelId,
     currentTeamId,
     isDefaultNavigateToChatScreen,
-    overrideChannelId
+    overrideChannelId,
+    companyId
   } = useCustomSelector((state) => {
     const channels = state.Hello?.[chatSessionId]?.channelListData?.channels || [];
     const fallbackChat = (() => {
@@ -43,6 +44,13 @@ export const useReduxStateManagement = ({
         .sort((a: any, b: any) => (b.last_message?.timetoken || 0) - (a.last_message?.timetoken || 0));
       return openChats[0] || channels[0];
     })();
+
+    // Treat "" / null / undefined as a deliberate "start fresh" signal,
+    // not as a fallback trigger. Only fall back when explicitly cleared.
+    const isExplicitlyEmpty = (v: any) => v === '' || v === null || v === undefined;
+    const appInfoChannelId = state?.appInfo?.[tabSessionId]?.currentChannelId;
+    const appInfoChatId = state?.appInfo?.[tabSessionId]?.currentChatId;
+    const appInfoTeamId = state?.appInfo?.[tabSessionId]?.currentTeamId;
 
     return {
       interfaceContextData: state.Interface?.[chatSessionId]?.interfaceContext?.variables,
@@ -58,10 +66,17 @@ export const useReduxStateManagement = ({
       selectedAiServiceAndModal: state.Interface?.[chatSessionId]?.selectedAiServiceAndModal || null,
       unique_id_hello: state?.Hello?.[chatSessionId]?.helloConfig?.unique_id,
       widgetToken: state?.Hello?.[chatSessionId]?.helloConfig?.widgetToken,
-      currentChatId: state?.appInfo?.[tabSessionId]?.currentChatId || fallbackChat?.id,
-      currentChannelId: state?.appInfo?.[tabSessionId]?.currentChannelId || fallbackChat?.channel,
-      currentTeamId: state?.appInfo?.[tabSessionId]?.currentTeamId || fallbackChat?.team_id,
+      currentChannelId: isExplicitlyEmpty(appInfoChannelId)
+        ? ''
+        : (appInfoChannelId ?? fallbackChat?.channel ?? ''),
+      currentChatId: isExplicitlyEmpty(appInfoChatId)
+        ? ''
+        : (appInfoChatId ?? fallbackChat?.id ?? ''),
+      currentTeamId: isExplicitlyEmpty(appInfoTeamId)
+        ? ''
+        : (appInfoTeamId ?? fallbackChat?.team_id ?? ''),
       overrideChannelId: state?.appInfo?.[tabSessionId]?.overrideChannelId,
+      companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
     };
   });
 
@@ -82,6 +97,7 @@ export const useReduxStateManagement = ({
     currentChatId,
     currentChannelId,
     currentTeamId,
-    overrideChannelId
+    overrideChannelId,
+    companyId
   };
 };

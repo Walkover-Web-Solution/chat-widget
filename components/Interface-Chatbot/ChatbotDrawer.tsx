@@ -194,38 +194,30 @@ const ChatbotDrawer = ({
   };
 
   const handleVoiceCall = async () => {
-    // If no channel is selected, pick the most recent (first valid) channel just for this action
-    let overrideChannelId;
-    let overrideChatId;
+    // Voice call should always start a FRESH chat — never reuse an existing
+    // chat_id. We only use the team selection (if any) to route the call.
     let overrideTeamId;
-    if (!currentChannelId && Array.isArray(channelList) && channelList.length > 0 && channelList?.[0]?.id) {
-      const firstValid = channelList.find((ch: any) => ch?.id);
+    if (Array.isArray(teamsList) && teamsList.length > 0) {
+      const firstValid = teamsList[0];
       if (firstValid) {
-        overrideChannelId = firstValid?.channel;
-        overrideChatId = firstValid?.id;
-        dispatch(
-          setDataInAppInfoReducer({
-            subThreadId: firstValid?.channel,
-            currentChannelId: firstValid?.channel,
-            currentChatId: firstValid?.id,
-            currentTeamId: firstValid?.team_id,
-          })
-        );
-      }
-    } else if (teamsList?.length > 0) {
-      const firstValid = teamsList[0]
-      if (firstValid) {
+        overrideTeamId = firstValid?.id;
         dispatch(
           setDataInAppInfoReducer({
             currentTeamId: firstValid?.id,
           })
         );
-        overrideTeamId = firstValid?.id;
       }
     }
     if (isSmallScreen) setToggleDrawer(false);
-    // pass overrides so sendMessageToHello uses latest values in the same tick
-    const data = await sendMessageToHello('', '', true, overrideChannelId || currentChannelId, overrideChatId || currentChatId, overrideTeamId || currentTeamId);
+    // Force a fresh chat by clearing chat_id / channel_id before sending.
+    dispatch(setDataInAppInfoReducer({
+      subThreadId: '',
+      currentChannelId: '',
+      currentChatId: '',
+      overrideChannelId: '',
+    }));
+    // Pass empty chatId/channelId overrides so sendMessageToHello creates a new chat.
+    const data = await sendMessageToHello('', '', true, '', '', overrideTeamId || currentTeamId);
     helloVoiceService.initiateCall(data?.['call_jwt_token'] || '');
   };
 
