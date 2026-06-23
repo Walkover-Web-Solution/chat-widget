@@ -49,7 +49,7 @@ const ChatbotDrawer = ({
   threadId
 }: ChatbotDrawerProps) => {
   const dispatch = useDispatch();
-  const { backgroundColor, textColor } = useColor();
+  const { backgroundColor, textColor, primaryGradientBg } = useColor();
 
   // Context hooks
   const { messageRef } = useContext(MessageContext);
@@ -121,7 +121,6 @@ const ChatbotDrawer = ({
   : teamsList.slice(0, VISIBLE_ITEMS_COUNT);
 
   useEffect(() => {
-  console.log("filteredChannels", filteredChannels);
     if (chatSessionId) {
       setToggleDrawer(true);
     }
@@ -270,7 +269,7 @@ const ChatbotDrawer = ({
       {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
         <div className="conversations-section">
           <div className="conversations-header pb-2">
-            <h3 className="text-base font-semibold">Continue Conversations</h3>
+            <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase">Continue Conversations</h3>
           </div>
           <div className="conversations-list space-y-2">
             { displayedChannels.map((channel: any, index: number) => (
@@ -382,20 +381,31 @@ const ChatbotDrawer = ({
       {(teamsList || []).length > 0 && (
       <div className="teams-section">
         <div className="teams-header pb-2 flex items-center">
-          <h3 className="text-base font-semibold">Talk to our experts</h3>
+          <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase">Talk to our experts</h3>
         </div>
         <div className="teams-list space-y-0">
             <div className="flex flex-col gap-1">
               {displayedTeams.map((team: any, index: number) => (
                 <div
                   key={`${team?.id}-${index}`}
-                  className={`team-card p-3 bg-white shadow-sm hover:shadow-md transition-all cursor-pointer rounded-lg flex items-center justify-between`}
+                  className={`team-card px-4 py-2 transition-all cursor-pointer flex items-center justify-between`}
                   onClick={() => handleChangeTeam(team?.id)}
                 >
                   <div className="flex items-center overflow-hidden">
-                    <div className="team-avatar mr-3 bg-primary/10 p-2 rounded-md flex-shrink-0">
-                      {team?.icon || <Users size={12} className="text-primary" />}
+                    <div className="relative flex-shrink-0 mr-3">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold select-none bg-blue-50 text-blue-600">
+                        {team?.name?.charAt(0)?.toUpperCase() || (team?.icon || <Users size={14} />)}
+                      </div>
+                      {team?.widget_unread_count > 0 && (
+                        <span
+                          className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
+                          style={{ backgroundColor: "rgb(37, 99, 235)" }}
+                        >
+                          {team?.widget_unread_count}
+                        </span>
+                      )}
                     </div>
+
                     <div className="team-info overflow-hidden">
                       <div className="team-name font-medium truncate max-w-full">{team?.name}</div>
                     </div>
@@ -430,7 +440,7 @@ const ChatbotDrawer = ({
     {/* Voice Call Section */}
     {voice_call_widget && (
       <div className="marketing-banner mt-auto sticky bottom-0 bg-[var(--drawer-color)] pt-3">
-        <h3 className="text-base font-semibold">Talk to Our Teams</h3>
+        <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase">Talk to Our Teams</h3>
         <div className="flex gap-2 mt-3">
           <button
             className={`grid place-items-center flex-1 text-xs p-3 rounded-md transition-colors ${
@@ -565,8 +575,8 @@ const ChatbotDrawer = ({
       <div className={`drawer-side ${isHelloUser && isSmallScreen ? '100%' : 'max-w-[286px]'} ${isToggledrawer ? 'lg:translate-x-0' : 'lg:-translate-x-full'} transition-transform duration-100`}>
         <div className="w-full h-full relative flex flex-col bg-[var(--drawer-color)]">
           {/* Header with padding */}
-          <div className="px-4 pt-4 pb-4">
-            <div className="flex items-center justify-between">
+          <div className="px-4 py-4" style={{ background: primaryGradientBg }}>
+            <div className="flex items-start justify-between">
               <div className="w-10">
                 {isToggledrawer && (
                   <button
@@ -577,7 +587,7 @@ const ChatbotDrawer = ({
                   </button>
                 )}
               </div>
-              <div className="flex flex-col items-center justify-center flex-1">
+              <div className="flex flex-col items-center justify-center flex-1 mt-[40px]">
                 <h2 className="text-lg font-bold text-center">
                   {Name ? `Hello ${Name.split(' ')[0]}` : 'Hello There!'}
                 </h2>
@@ -601,30 +611,32 @@ const ChatbotDrawer = ({
           </div>
 
           {/* Content area with overflow handling - the scrollbar will appear at the edge */}
-          <div className="flex-1 overflow-y-auto flex flex-col px-4">
+          <div className="flex-1 overflow-y-auto flex flex-col pt-4">
               {!isHelloUser ? DrawerList : TeamsList}
           </div>
 
           {/* Footer with branding - always stays at bottom */}
-          <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
-            <div className="text-xs text-gray-500 flex items-baseline gap-1">
-              {isHelloUser && show_msg91 ? (
-                <>
-                  Powered by
-                  <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
-                    <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
-                  </a>
-                </>
-              ) : !isHelloUser ? (
-                <>
-                  Powered by
-                  <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity">
-                    <span className="font-bold">GTWY</span>
-                  </a>
-                </>
-              ) : null}
+          {(isHelloUser && show_msg91) || !isHelloUser ? (
+            <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
+              <div className="text-xs text-gray-500 flex items-baseline gap-1">
+                {isHelloUser && show_msg91 ? (
+                  <>
+                    Powered by
+                    <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
+                      <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    Powered by
+                    <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity">
+                      <span className="font-bold">GTWY</span>
+                    </a>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </div>

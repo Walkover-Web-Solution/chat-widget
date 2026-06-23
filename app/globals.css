@@ -9,7 +9,7 @@
   --foreground: #171717;
   --message-card-background: #f0f0f0;
   --icon-color: #555555;
-  --drawer-color: #f2f2f2;
+  --drawer-color: #ffffff;
 }
 
 [data-theme="dark"] {
