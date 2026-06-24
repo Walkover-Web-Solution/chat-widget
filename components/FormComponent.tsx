@@ -6,7 +6,7 @@ import { setHelloClientInfo, setHelloKeysData } from "@/store/hello/helloSlice";
 import { GetSessionStorageData } from "@/utils/ChatbotUtility";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { splitNumber } from "@/utils/utilities";
-import { BookText, Loader2, Mail, Phone, Send, User } from "lucide-react";
+import { Loader2, Mail, MessageSquare, Phone, Send, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useColor } from "./Chatbot/hooks/useColor";
@@ -137,21 +137,21 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
 
   if (!open && !showWidgetForm) return null;
   if (!open && showWidgetForm) return (
-    <div
-      className={`bg-white p-2 px-4 cursor-pointer z-[9] hover:shadow-md transition-all mx-auto rounded-br-md rounded-bl-md ${isSmallScreen ? 'w-full' : 'w-1/2 max-w-lg'}`}
-      onClick={() => setOpen(true)}
-      style={{
-        background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
-        color: textColor
-      }}
-    >
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <BookText className="h-7 w-7 mr-1" />
+    <div className={`px-3 pt-2 ${isSmallScreen ? '' : 'mx-auto w-full max-w-2xl'}`}>
+      <div
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-all hover:opacity-95 hover:shadow-md"
+        style={{ backgroundColor: backgroundColor, color: textColor }}
+      >
+        <div
+          className="flex-shrink-0 grid place-items-center w-9 h-9 rounded-lg"
+          style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
+        >
+          <MessageSquare size={18} />
         </div>
-        <div className="ml-2">
-          <span className="font-medium block text-base">Enter your details</span>
-          <p className="text-xs opacity-90">Click here to provide your information</p>
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className="font-semibold text-sm truncate">Enter your details</div>
+          <div className="text-xs opacity-80 truncate">Click here to provide your information</div>
         </div>
       </div>
     </div>

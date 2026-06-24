@@ -85,7 +85,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const dispatch = useAppDispatch();
 
   // State management
-  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, subThreadId, helloMsgIds } = useCustomSelector((state) => {
+  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, subThreadId, helloMsgIds, show_msg91 } = useCustomSelector((state) => {
     const widgetInfo = state.Hello?.[chatSessionId]?.widgetInfo
     return ({
       show_widget_form: typeof widgetInfo?.show_widget_form === 'boolean' ? widgetInfo?.show_widget_form : state.Hello?.[chatSessionId]?.showWidgetForm,
@@ -94,7 +94,8 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
       chatsLoading: state.Chat.chatsLoading,
       messageIds: state.Chat.messageIds,
       subThreadId: state.Chat.subThreadId,
-      helloMsgIds: state.Chat.helloMsgIds
+      helloMsgIds: state.Chat.helloMsgIds,
+      show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
     })
   });
 
@@ -178,6 +179,39 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
             <EmptyChatView />
           ) : (
             <ActiveChatView />
+          )}
+
+          {/* Branding footer */}
+          {((isHelloUser && show_msg91) || !isHelloUser) && (
+            <div className="px-4 pb-2 pt-1 flex items-center justify-center">
+              <div className="text-[11px] text-gray-500 flex items-center gap-1">
+                {isHelloUser && show_msg91 ? (
+                  <>
+                    <span>Powered by</span>
+                    <a
+                      href="https://msg91.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center hover:opacity-80 transition-opacity"
+                    >
+                      <img src="/msg91-logo.svg" alt="MSG91" className="h-3.5" />
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <span>Powered by</span>
+                    <a
+                      href="https://gtwy.ai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:opacity-80 transition-opacity"
+                    >
+                      <span className="font-bold">GTWY</span>
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

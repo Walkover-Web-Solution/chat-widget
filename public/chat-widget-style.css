@@ -86,6 +86,21 @@
   float: right;
   cursor: pointer;
   z-index: 999999999 !important;
+  position: relative;
+}
+
+/* Carve a circular notch out of the launcher's top-right corner whenever an
+   unread badge is being shown. The mask matches the launcher's 48x48 inner
+   circle so the badge appears to "punch through" the launcher. */
+[id$="-hello-chatbot-icon-image"].has-badge > div {
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00Mi45OTkxIDBDNDAuNTcwNyAxLjgyNDQ2IDM5IDQuNzI4OCAzOSA4QzM5IDEzLjE4NTMgNDIuOTQ2NyAxNy40NDg5IDQ4IDE3Ljk1MDZWNDhIMFYwSDQyLjk5OTFaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPC9zdmc+Cg==");
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00Mi45OTkxIDBDNDAuNTcwNyAxLjgyNDQ2IDM5IDQuNzI4OCAzOSA4QzM5IDEzLjE4NTMgNDIuOTQ2NyAxNy40NDg5IDQ4IDE3Ljk1MDZWNDhIMFYwSDQyLjk5OTFaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPC9zdmc+Cg==");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
 }
 
 [id$="-hello-iframe-parent-container"] {
@@ -422,12 +437,12 @@
 
 .hello-badge-count {
   /* Dimensions & Position */
-  min-width: 20px;
-  height: 20px;
+  min-width: 18px;
+  height: 18px;
   position: absolute;
   top: -2px;
-  right: 5px;
-  padding: 4px;
+  right: -11px;
+  padding: 3px;
   box-sizing: border-box;
 
   /* Centering */

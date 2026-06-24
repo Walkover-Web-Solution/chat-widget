@@ -393,12 +393,15 @@
 
         updateBadgeCount(data, channelId) {
             const badgeElement = document.getElementById(this.elements.unReadMsgCountBadge);
+            const iconImageElement = document.getElementById(this.elements.chatbotIconImage);
             if (badgeElement && channelId === '*') {
                 if (!data || parseInt(data) === 0) {
                     badgeElement.style.display = 'none';
+                    if (iconImageElement) iconImageElement.classList.remove('has-badge');
                 } else {
                     badgeElement.textContent = data;
                     badgeElement.style.display = 'block'; // or 'block' depending on your layout
+                    if (iconImageElement) iconImageElement.classList.add('has-badge');
                 }
             }
             const divElement = document.getElementById(`unread-${channelId}`);

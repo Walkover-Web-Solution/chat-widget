@@ -1,7 +1,7 @@
 'use client';
 
 import { lighten } from "@mui/material";
-import { AlignLeft, ChevronRight, SquarePen, Users, Phone, Send, X } from "lucide-react";
+import { AlignLeft, ChevronRight, SquarePen, Users, Phone, Send, X, MessageSquareText } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -30,6 +30,28 @@ import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent
 import QuickActionsMenu from "./QuickActionsMenu";
 
 const createRandomId = () => Math.random().toString(36).substring(2, 15);
+
+const formatRelativeTime = (input: any): string => {
+  if (input === null || input === undefined || input === '') return '';
+  let ts: number;
+  if (typeof input === 'number' || /^\d+$/.test(String(input))) {
+    const num = Number(input);
+    // PubNub timetoken is in 100ns units (17-digit). Convert to ms.
+    ts = num > 1e14 ? Math.floor(num / 10000) : num;
+  } else {
+    ts = new Date(input).getTime();
+  }
+  if (!ts || isNaN(ts)) return '';
+  const diffSec = Math.floor((Date.now() - ts) / 1000);
+  if (diffSec < 60) return 'now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d`;
+  return `${Math.floor(diffDay / 7)}w`;
+};
 
 interface ChatbotDrawerProps {
   preview?: boolean;
@@ -256,115 +278,143 @@ const ChatbotDrawer = ({
   const TeamsList = useMemo(() => (
       <>
         {((channelList?.length > 0 && channelList.some((thread: any) => thread?.id)) || teamsList?.length > 0) && (
-          <div className="teams-container pb-2 relative gap-4 flex flex-col h-[calc(100vh_-_185px)] overflow-y-auto">
+          <div className="teams-container pb-2 relative gap-5 flex flex-col h-[calc(100vh_-_185px)] overflow-y-auto">
       {/* Conversations Section */}
       {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
         <div className="conversations-section">
           <div className="conversations-header pb-2">
-            <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase">Continue Conversations</h3>
+            <h3 className="px-4 text-[11px] font-semibold tracking-wider text-gray-400 uppercase">Continue Conversations</h3>
           </div>
-          <div className="conversations-list space-y-2">
-            { displayedChannels.map((channel: any, index: number) => (
+          <div className="conversations-list flex flex-col">
+            { displayedChannels.map((channel: any, index: number) => {
+              const isActive = channel?.id === currentChatId;
+              const unread = channel?.widget_unread_count || 0;
+              const isClosed = !!channel?.is_closed;
+              const channelMessages = allMessages?.[channel?.channel];
+              const lastMessageId = channelMessages?.[0];
+              const lastMessage = lastMessageId ? allMessagesData?.[channel?.channel]?.[lastMessageId] : null;
+
+              const lastMsgType = channel?.last_message?.message?.message_type
+                || lastMessage?.messageJson?.message_type
+                || lastMessage?.message_type;
+
+              const titleByType: Record<string, string> = {
+                voice_call: 'Voice Call',
+                text: 'Chat',
+                pushNotification: 'Notification',
+                image: 'Image',
+                video: 'Video',
+                file: 'Attachment',
+                audio: 'Audio',
+              };
+
+              const title = channel?.assigned_to?.name
+                || (lastMsgType && titleByType[lastMsgType])
+                || 'Conversation';
+
+              const subtitleHtml = (() => {
+                if (lastMessage) {
+                  const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
+                  const text = lastMessage?.message_type === 'pushNotification'
+                    ? "Custom Notification"
+                    : (lastMessage.messageJson?.text
+                      || (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment"
+                        : lastMessage.messageJson?.message_type || "New conversation"));
+                  return `${isUserMessage ? "You: " : ""}${text}`;
+                }
+                if (channel?.last_message) {
+                  const isYou = !channel?.last_message?.message?.sender_id;
+                  const text = channel?.last_message?.message?.content?.text
+                    || (channel?.last_message?.message?.content?.attachment?.length > 0 ? "Attachment"
+                      : channel?.last_message?.message?.message_type || "New conversation");
+                  return `${isYou ? "You: " : ""}${text}`;
+                }
+                return "New conversation";
+              })();
+
+              const timeLabel = formatRelativeTime(
+                channel?.last_message?.timetoken
+                || channel?.last_message?.message?.timetoken
+                || channel?.last_message?.created_at
+                || channel?.updated_at
+                || channel?.last_message_at
+                || channel?.created_at
+              );
+
+              const initials = (() => {
+                if (channel?.assigned_to?.name) {
+                  const name = channel.assigned_to.name.toString() || '';
+                  const parts = name.split(' ').filter(Boolean);
+                  if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+                  return name.length > 1
+                    ? (name[0] + name[1]).toUpperCase()
+                    : (name[0] || 'A').toUpperCase();
+                }
+                return 'A';
+              })();
+
+              return (
                 <div
                   key={`${channel?._id}-${index}`}
-                  className={`conversation-card max-h-16 h-full overflow-hidden text-ellipsis p-3 ${channel?.id === currentChatId ? 'border-2 border-primary' : ''} bg-white dark:bg-[var(--background)] rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center`}
-                  style={{
-                    borderColor: channel?.id === currentChatId ? backgroundColor : ''
-                  }}
+                  className={`conversation-card group relative px-4 py-3 cursor-pointer flex items-center gap-3 transition-all ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}
                   onClick={() => handleChangeChannel(channel?.channel, channel?.id, channel?.team_id)}
                 >
-                  <div className="w-9 h-9 flex items-center justify-center text-xs font-bold rounded-full mr-3" style={{ background: lighten(backgroundColor, 0.8), color: "#606060" }}>
-                    {(() => {
-                      if (channel?.assigned_to?.name) {
-                        const name = channel.assigned_to.name.toString() || '';
-                        const nameParts = name.split(' ');
-                        if (nameParts.length > 1) {
-                          // If there are multiple words, take first letter of first and second word
-                          return nameParts[0].charAt(0).toUpperCase() + nameParts[1].charAt(0).toUpperCase();
-                        } else {
-                          // If there's only one word, take first two letters
-                          return name.length > 1 ?
-                            name.charAt(0).toUpperCase() + name.charAt(1).toUpperCase() :
-                            name.charAt(0).toUpperCase();
-                        }
-                      } else {
-                        return "A";
-                      }
-                    })()}
-                  </div>
-                  <div className="conversation-info flex-1 min-w-0 pr-1">
-                    {channel?.channel && allMessages && allMessagesData && (
-                      <div className="last-message text-sm font-medium truncate flex flex-row items-center gap-1 text-ellipsis overflow-hidden">
-                        {(() => {
-                          const channelMessages = allMessages[channel?.channel];
-                          if (channelMessages && channelMessages?.length > 0) {
-                            const lastMessageId = channelMessages[0];
-                            const lastMessage = allMessagesData[channel?.channel]?.[lastMessageId];
-                            if (lastMessage) {
-                              const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
-                              return (
-                                <>
-                                  {isUserMessage ? "You: " : "Sender: "}
-                                  <div className="line-clamp-1" dangerouslySetInnerHTML={{
-                                    __html: lastMessage?.message_type === 'pushNotification'
-                                      ? "Custom Notification"
-                                      : (lastMessage.messageJson?.text ||
-                                        (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment" :
-                                          lastMessage.messageJson?.message_type ||
-                                          "New conversation"))
-                                  }}></div>
-                                </>
-                              );
-                            }
-                          }
-
-                          // Fallback to channel.last_message if no message found in allMessagesData
-                          if (channel?.last_message) {
-                            return (
-                              <>
-                                {!channel?.last_message?.message?.sender_id ? "You: " : "Sender: "}
-                                <div className="line-clamp-1" dangerouslySetInnerHTML={{
-                                  __html: channel?.last_message?.message?.content?.text ||
-                                    (channel?.last_message?.message?.content?.attachment?.length > 0 ? "Attachment" :
-                                      channel?.last_message?.message?.message_type ||
-                                      "New conversation")
-                                }}></div>
-                              </>
-                            );
-                          }
-
-                          return "New conversation";
-                        })()}
-                      </div>
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none bg-blue-50 text-blue-600"
+                    >
+                      {initials}
+                    </div>
+                    {unread > 0 && (
+                      <span
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold"
+                        style={{ backgroundColor: backgroundColor, color: textColor }}
+                      >
+                        {unread}
+                      </span>
                     )}
                   </div>
-                  <div className="flex-shrink-0 flex items-center">
-                    {channel?.widget_unread_count > 0 && (
-                      <div className="text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center mr-2" style={{ backgroundColor: backgroundColor, color: textColor }}>
-                        {channel?.widget_unread_count}
-                      </div>
+
+                  <div className="conversation-info flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        {title}
+                      </span>
+                      {isClosed && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 flex-shrink-0">
+                          Closed
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="text-xs text-gray-500 line-clamp-1"
+                      dangerouslySetInnerHTML={{ __html: subtitleHtml }}
+                    />
+                  </div>
+
+                  <div className="flex-shrink-0 flex items-center gap-1 text-gray-400">
+                    {timeLabel && (
+                      <span className="text-[11px] whitespace-nowrap">{timeLabel}</span>
                     )}
-                    <ChevronRight size={16} className="var(--icon-color)" />
+                    <ChevronRight size={14} />
                   </div>
                 </div>
-              ))}
-              {filteredChannels.length > VISIBLE_ITEMS_COUNT && (
-                <div className="flex justify-center mt-2">
-                  <button
-                    type="button"
-                    className="text-sm font-medium hover:underline"
-                    style={{ color: backgroundColor}}
-                    onClick={() => setShowAllChannels(!showAllChannels)}
-                  >
-                    {showAllChannels
-                      ? "Show Less"
-                      : (filteredChannels.length - closedChatsCount) <= VISIBLE_ITEMS_COUNT
-                        ? `Show (${filteredChannels.length - VISIBLE_ITEMS_COUNT}) Closed Conversations`
-                        : `Show All (${filteredChannels.length - VISIBLE_ITEMS_COUNT}) Conversations`
-                    }
-                  </button>
-                </div>
-              )}
+              );
+            })}
+            {filteredChannels.length > VISIBLE_ITEMS_COUNT && (
+              <div className="flex justify-start mt-2 px-4">
+                <button
+                  type="button"
+                  className="text-sm font-medium hover:underline"
+                  style={{ color: backgroundColor }}
+                  onClick={() => setShowAllChannels(!showAllChannels)}
+                >
+                  {showAllChannels
+                    ? "Show less"
+                    : `See all ${filteredChannels.length} conversations`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -373,43 +423,69 @@ const ChatbotDrawer = ({
       {(teamsList || []).length > 0 && (
       <div className="teams-section">
         <div className="teams-header pb-2 flex items-center">
-          <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase">Talk to our experts</h3>
+          <h3 className="px-4 text-[11px] font-semibold tracking-wider text-gray-400 uppercase">Talk to our teams</h3>
         </div>
-        <div className="teams-list space-y-0">
-            <div className="flex flex-col gap-1">
-              {displayedTeams.map((team: any, index: number) => (
-                <div
-                  key={`${team?.id}-${index}`}
-                  className={`team-card px-4 py-2 transition-all cursor-pointer flex items-center justify-between`}
-                  onClick={() => handleChangeTeam(team?.id)}
-                >
-                  <div className="flex items-center overflow-hidden">
-                    <div className="relative flex-shrink-0 mr-3">
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-semibold select-none bg-blue-50 text-blue-600">
-                        {team?.name?.charAt(0)?.toUpperCase() || (team?.icon || <Users size={14} />)}
+        <div className="teams-list">
+            <div className="flex flex-col">
+              {displayedTeams.map((team: any, index: number) => {
+                const onlineCount = team?.online_users_count ?? team?.online_count ?? team?.online;
+                const memberCount = team?.members_count ?? team?.total_members ?? team?.member_count;
+                const initials = (team?.name?.split(' ').filter(Boolean) || [])
+                  .slice(0, 2)
+                  .map((w: string) => w[0]?.toUpperCase())
+                  .join('') || 'T';
+                return (
+                  <div
+                    key={`${team?.id}-${index}`}
+                    className="team-card px-4 py-3 transition-all cursor-pointer flex items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-white/5"
+                    onClick={() => handleChangeTeam(team?.id)}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none bg-blue-50 text-blue-600">
+                          {initials || (team?.icon || <Users size={14} />)}
+                        </div>
+                        {team?.widget_unread_count > 0 && (
+                          <span
+                            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
+                            style={{ backgroundColor: "rgb(37, 99, 235)" }}
+                          >
+                            {team?.widget_unread_count}
+                          </span>
+                        )}
                       </div>
-                      {team?.widget_unread_count > 0 && (
-                        <span
-                          className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                          style={{ backgroundColor: "rgb(37, 99, 235)" }}
-                        >
-                          {team?.widget_unread_count}
-                        </span>
-                      )}
-                    </div>
 
-                    <div className="team-info overflow-hidden">
-                      <div className="team-name font-medium truncate max-w-full">{team?.name}</div>
+                      <div className="team-info overflow-hidden min-w-0">
+                        <div className="team-name text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                          {team?.name}
+                        </div>
+                        {(onlineCount != null || memberCount != null) && (
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                            {onlineCount != null && (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                <span className="text-green-600 font-medium">{onlineCount} online</span>
+                              </span>
+                            )}
+                            {onlineCount != null && memberCount != null && (
+                              <span className="text-gray-300">·</span>
+                            )}
+                            {memberCount != null && (
+                              <span>{memberCount} members</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <MessageSquareText size={18} style={{ color: backgroundColor }} />
                     </div>
                   </div>
-                  <div className="flex-shrink-0 ml-2">
-                    <SquarePen size={16} color="var(--icon-color)" />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {teamsList.length > VISIBLE_ITEMS_COUNT && (
-                <div className="flex justify-center mt-2">
+                <div className="flex justify-start mt-2 px-4">
                   <button
                     type="button"
                     style={{ color: backgroundColor }}
@@ -417,8 +493,8 @@ const ChatbotDrawer = ({
                     onClick={() => setShowAllTeams(!showAllTeams)}
                   >
                     {showAllTeams
-                      ? "Show Less"
-                      : `Show All (${teamsList.length -  VISIBLE_ITEMS_COUNT})`}
+                      ? "Show less"
+                      : `See all ${teamsList.length} teams`}
                   </button>
                 </div>
               )}
@@ -431,30 +507,37 @@ const ChatbotDrawer = ({
 
     {/* Voice Call Section */}
     {voice_call_widget && (
-      <div className="marketing-banner mt-auto sticky bottom-0 bg-[var(--drawer-color)] pt-3">
-        <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase">Talk to Our Teams</h3>
-        <div className="flex gap-2 mt-3">
+      <div className="marketing-banner mt-auto bg-[var(--drawer-color)] px-4 pt-3 pb-3 border-t border-gray-100">
+        <p className="text-sm mb-2">Need specialized help?</p>
+        <div className="flex gap-2">
           <button
-            className={`grid place-items-center flex-1 text-xs p-3 rounded-md transition-colors ${
+            className={`grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors ${
               callState !== "idle"
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-primaryTheme hover:bg-primaryTheme/80"
+                : "hover:opacity-90"
             }`}
-            style={{ color: textColor, borderRadius: "14px" }}
+            style={{
+              background: callState !== "idle" ? undefined : backgroundColor,
+              color: textColor,
+            }}
             onClick={handleVoiceCall}
             disabled={callState !== "idle"}
           >
             <span className="inline-flex items-center gap-2">
-              <Phone size={18} />
+              <Phone size={16} />
               <strong>Call Us</strong>
             </span>
           </button>
           {/*Send Message button in case of no team assign */}
           { (teamsList || []).length ===  0 && (
-            <button className="grid place-items-center flex-1 text-xs p-3 rounded-md transition-colors" style={{ border: "2px solid " + backgroundColor, color: backgroundColor, borderRadius: "14px" }} onClick={handleSendMessageWithNoTeam}>
+            <button
+              className="grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors hover:bg-gray-50"
+              style={{ border: "1.5px solid " + backgroundColor, color: backgroundColor }}
+              onClick={handleSendMessageWithNoTeam}
+            >
               <span className="inline-flex items-center gap-2">
-                <Send size={18} />
-                <strong>Send Message</strong>
+                <Send size={16} />
+                <strong>Message</strong>
               </span>
             </button>
           )}
@@ -581,7 +664,7 @@ const ChatbotDrawer = ({
               </div>
               <div className="flex flex-col items-center justify-center flex-1 mt-[40px]">
                 <h2 className="text-lg font-bold text-center">
-                  {Name ? `Hello ${Name.split(' ')[0]}` : 'Hello There!'}
+                  {Name ? `Hello, ${Name.split(' ')[0]} 👋` : 'Hello there! 👋'}
                 </h2>
                 {tagline && (
                   <p className="text-xs text-gray-500 text-center">{tagline}</p>

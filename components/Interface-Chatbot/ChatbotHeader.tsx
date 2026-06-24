@@ -458,7 +458,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
   // Memoized header title section
   const HeaderTitleSection = useMemo(() => {
-    const displayTitle = isChatbotMinimized && lastMessage?.role === 'user' ? 'You' : chatTitle || chatbotTitle || (isHelloUser ? (agentTeamName || teamName || "Conversation")?.toString().split(" ")?.[0] : "AI Assistant");
+    const displayTitle = isChatbotMinimized && lastMessage?.role === 'user' ? 'You' : chatTitle || chatbotTitle || (isHelloUser ? (agentTeamName || teamName || "Conversation") : "AI Assistant");
     const displaySubtitle = chatSubTitle || chatbotSubtitle || "Do you have any questions? Ask us!";
 
     // Minimized version of the header
@@ -476,7 +476,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
           )}
           <div className="flex items-center">
             <div className="relative">
-              <h1 className="text-center font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis text-sm">
+              <h1 className="text-center font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis text-sm max-w-80">
                 {displayTitle}
               </h1>
               {unReadCount > 0 && (
