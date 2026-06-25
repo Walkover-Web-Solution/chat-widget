@@ -26,6 +26,7 @@ export interface ChatState {
   helloMsgIdAndDataMap: { [subThreadId: string]: { [msgId: string]: any } }
   loading: boolean;
   chatsLoading: boolean;
+  chatsError: boolean;
   options: any[];
   images: string[];
   threadId: string;
@@ -54,6 +55,7 @@ export interface ReduxSetterActionType {
   helloMessages?: any[];
   loading?: boolean;
   chatsLoading?: boolean;
+  chatsError?: boolean;
   options?: any[];
   images?: string[] | Array<{ path: string }>;
   threadId?: string;
@@ -78,6 +80,7 @@ export enum ChatActionTypes {
   UPDATE_LAST_ASSISTANT_MESSAGE = 'UPDATE_LAST_ASSISTANT_MESSAGE',
   SET_LOADING = 'SET_LOADING',
   SET_CHATS_LOADING = 'SET_CHATS_LOADING',
+  SET_CHATS_ERROR = 'SET_CHATS_ERROR',
   SET_OPTIONS = 'SET_OPTIONS',
   SET_IMAGES = 'SET_IMAGES',
   CLEAR_IMAGES = 'CLEAR_IMAGES',
@@ -112,6 +115,7 @@ export type ChatAction =
   | { type: ChatActionTypes.UPDATE_LAST_ASSISTANT_MESSAGE; payload: Partial<MessageType> }
   | { type: ChatActionTypes.SET_LOADING; payload: boolean }
   | { type: ChatActionTypes.SET_CHATS_LOADING; payload: boolean }
+  | { type: ChatActionTypes.SET_CHATS_ERROR; payload: boolean }
   | { type: ChatActionTypes.SET_OPTIONS; payload: any[] }
   | { type: ChatActionTypes.SET_IMAGES; payload: string[] }
   | { type: ChatActionTypes.CLEAR_IMAGES }

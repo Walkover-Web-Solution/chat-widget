@@ -337,6 +337,11 @@
                     this.enableDomainTracking();
                     break;
                 case 'SET_BADGE_COUNT':
+                    try {
+                        if (typeof process === 'undefined' || (process && process.env && process.env.NODE_ENV !== 'production')) {
+                            console.log('%c[launcher]%c recv SET_BADGE_COUNT', 'color:#7c3aed;font-weight:600', 'color:inherit', data);
+                        }
+                    } catch (_) { /* ignore */ }
                     this.updateBadgeCount(data?.badgeCount, data?.channelId || '*');
                     break;
                 case 'SHOW_STARTER_QUESTION':
@@ -392,6 +397,20 @@
         }
 
         updateBadgeCount(data, channelId) {
+            // [dev-only] trace launcher badge updates in the parent's console
+            if (typeof process === 'undefined' || (process && process.env && process.env.NODE_ENV !== 'production')) {
+                try {
+                    if (channelId === '*') {
+                        console.log(
+                            '%c[launcher]%c SET_BADGE_COUNT',
+                            'color:#7c3aed;font-weight:600',
+                            'color:inherit',
+                            { count: data, channelId }
+                        );
+                    }
+                } catch (_) { /* ignore */ }
+            }
+
             const badgeElement = document.getElementById(this.elements.unReadMsgCountBadge);
             const iconImageElement = document.getElementById(this.elements.chatbotIconImage);
             if (badgeElement && channelId === '*') {
@@ -1161,7 +1180,11 @@
             }
             if (this.state.interfaceLoaded && this.state.delayElapsed) {
                 const interfaceEmbed = document.getElementById(this.elements.chatbotIconContainer);
-                if (!this.hideHelloIcon && (this.helloProps?.hide_launcher !== undefined && (this.helloProps?.hide_launcher === false || this.helloProps?.hide_launcher === 'false')) && !this.helloProps?.isMobileSDK) {
+                // Launcher is visible by default; only hidden when hide_launcher is
+                // explicitly truthy. This keeps the icon shown even if widget-info
+                // fails to load (e.g. API 500) and hide_launcher stays undefined.
+                const launcherHidden = this.helloProps?.hide_launcher === true || this.helloProps?.hide_launcher === 'true';
+                if (!this.hideHelloIcon && !launcherHidden && !this.helloProps?.isMobileSDK) {
                     if (interfaceEmbed) interfaceEmbed.style.display = 'block';
                 }
                 if (this.helloLaunchWidget) this.openChatbot()

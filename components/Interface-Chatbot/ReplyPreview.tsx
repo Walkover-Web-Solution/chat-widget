@@ -1,6 +1,7 @@
 'use client';
 import { X } from "lucide-react";
 import React from "react";
+import { useColor } from "../Chatbot/hooks/useColor";
 
 interface ReplyPreviewProps {
   replyToMessage: {
@@ -15,6 +16,8 @@ interface ReplyPreviewProps {
 }
 
 const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseReply }) => {
+  const { backgroundColor, primaryTintColor } = useColor();
+
   if (!replyToMessage) return null;
 
   const getMessageContent = (content: string | { text: string }): string => {
@@ -53,10 +56,19 @@ const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseRepl
   const displayContent = getDisplayContent();
 
   return (
-    <div className="relative flex items-start gap-3 p-3 bg-blue-50 border-l-4 border-blue-500 mb-1 rounded-md shadow-sm z-[999]">
+    <div
+      className="relative flex items-start gap-3 p-3 border-l-4 mb-1 rounded-md shadow-sm z-[999]"
+      style={{
+        backgroundColor: primaryTintColor,
+        borderLeftColor: backgroundColor,
+      }}
+    >
       <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-blue-700">
+          <span
+            className="text-sm font-medium"
+            style={{ color: backgroundColor }}
+          >
             {getSenderName()}
           </span>
         </div>

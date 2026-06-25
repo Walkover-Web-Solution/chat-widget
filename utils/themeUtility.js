@@ -34,3 +34,25 @@ export function getPrimaryGradientBg(primaryColor) {
 
   return `linear-gradient(150deg, rgb(${r1}, ${g1}, ${b1}) 0%, rgb(${r2}, ${g2}, ${b2}) 50%, rgb(${r3}, ${g3}, ${b3}) 100%)`;
 }
+
+// Returns the primary color as an `rgba(...)` string at the given opacity.
+// Useful for soft tints / badges that follow the theme without hardcoding.
+export function withAlpha(color, alpha) {
+  if (color === null || color === undefined) return color;
+  const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+  let r = 0, g = 0, b = 0;
+  if (canvas) {
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+    const data = ctx.getImageData(0, 0, 1, 1).data;
+    r = data[0]; g = data[1]; b = data[2];
+  } else {
+    // Fallback for non-browser environments
+    return color;
+  }
+  const a = Math.max(0, Math.min(1, Number(alpha) || 0));
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}

@@ -15,6 +15,7 @@ export const initialChatState: ChatState = {
   // Loading States
   loading: false,
   chatsLoading: false,
+  chatsError: false,
   isFetching: false,
 
   // UI States
@@ -100,6 +101,11 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
       return {
         ...state,
         chatsLoading: action.payload
+      };
+    case ChatActionTypes.SET_CHATS_ERROR:
+      return {
+        ...state,
+        chatsError: action.payload
       };
     case ChatActionTypes.SET_OPTIONS:
       return {

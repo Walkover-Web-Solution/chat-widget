@@ -1,4 +1,5 @@
 import { LinearProgress } from '@mui/material';
+import { RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import React, { useEffect, useMemo, useRef } from 'react';
 
@@ -6,6 +7,11 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { MessageContext } from '../Interface-Chatbot/InterfaceChatbot';
 import { useReduxStateManagement } from './hooks/useReduxManagement';
 import useRtlayerEventManager from './hooks/useRtlayerEventManager';
+import { installSocketLogger } from './utils/socketLogger';
+
+// Install the dev-only realtime logger at module load (before any fetch/axios
+// call can fire). The function is a true no-op in production.
+installSocketLogger();
 
 // Components
 import FormComponent from '../FormComponent';
@@ -26,6 +32,7 @@ import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { useChatEffects } from './hooks/useChatEffects';
 import { useColor } from './hooks/useColor';
 import { useHelloEffects } from './hooks/useHelloEffects';
+import { useRetryChats } from './hooks/useHelloIntegration';
 import { useReduxEffects } from './hooks/useReduxEffects';
 import { useScreenSize } from './hooks/useScreenSize';
 
@@ -83,15 +90,17 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const { backgroundColor } = useColor();
   const { isSmallScreen } = useScreenSize();
   const dispatch = useAppDispatch();
+  const retryChats = useRetryChats();
 
   // State management
-  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, subThreadId, helloMsgIds, show_msg91 } = useCustomSelector((state) => {
+  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, chatsError, messageIds, subThreadId, helloMsgIds, show_msg91 } = useCustomSelector((state) => {
     const widgetInfo = state.Hello?.[chatSessionId]?.widgetInfo
     return ({
       show_widget_form: typeof widgetInfo?.show_widget_form === 'boolean' ? widgetInfo?.show_widget_form : state.Hello?.[chatSessionId]?.showWidgetForm,
       greetingMessage: state.Hello?.[chatSessionId]?.greeting as any,
       isToggledrawer: state.Chat.isToggledrawer,
       chatsLoading: state.Chat.chatsLoading,
+      chatsError: state.Chat.chatsError,
       messageIds: state.Chat.messageIds,
       subThreadId: state.Chat.subThreadId,
       helloMsgIds: state.Chat.helloMsgIds,
@@ -158,13 +167,29 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
           {/* Mobile header */}
           <ChatbotHeader />
 
-          {/* Loading indicator */}
-          {chatsLoading && (
+          {/* Loading / retry indicator */}
+          {(chatsLoading || chatsError) && (
             <div className="w-full">
-              <LinearProgress
-                color="inherit"
-                style={{ color: backgroundColor }}
-              />
+              {chatsLoading && (
+                <LinearProgress
+                  color="inherit"
+                  style={{ color: backgroundColor }}
+                />
+              )}
+              {chatsError && (
+                <div className="flex items-center justify-center gap-2 px-3 py-1.5 text-xs bg-red-50 text-red-700 border-b border-red-100">
+                  <span>Couldn't load chat history.</span>
+                  <button
+                    type="button"
+                    onClick={() => retryChats()}
+                    disabled={chatsLoading}
+                    className="inline-flex items-center gap-1 font-medium underline disabled:opacity-50 disabled:cursor-not-allowed hover:text-red-900"
+                  >
+                    <RefreshCw size={12} className={chatsLoading ? 'animate-spin' : ''} />
+                    Retry
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

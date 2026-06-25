@@ -58,7 +58,7 @@ export const useHelloMessages = () => {
 export const useFetchHelloPreviousHistory = () => {
   const { chatSessionId } = useHelloContext();
   const globalDispatch = useAppDispatch();
-  const { setChatsLoading } = useChatActions();
+  const { setChatsLoading, setChatsError } = useChatActions();
   const { setHelloMessages } = useHelloMessages();
 
   const { uuid, currentChannelId, companyId } = useReduxStateManagement({
@@ -76,6 +76,7 @@ export const useFetchHelloPreviousHistory = () => {
     if (!channelId || !uuid) return;
 
     setChatsLoading(true);
+    setChatsError(false);
     getHelloChatHistoryApi(channelId)
       .then((response) => {
         const helloChats = response?.data?.data;
@@ -93,17 +94,18 @@ export const useFetchHelloPreviousHistory = () => {
       })
       .catch((error) => {
         console.error("Error fetching Hello chat history:", error);
+        setChatsError(true);
       })
       .finally(() => {
         setChatsLoading(false);
       });
-  }, [currentChannelId, uuid, companyId, setChatsLoading, setHelloMessages, globalDispatch]);
+  }, [currentChannelId, uuid, companyId, setChatsLoading, setChatsError, setHelloMessages, globalDispatch]);
 };
 
 export const useGetMoreHelloChats = () => {
   const { chatSessionId } = useHelloContext();
   const globalDispatch = useAppDispatch();
-  const { setChatsLoading } = useChatActions();
+  const { setChatsLoading, setChatsError } = useChatActions();
   const { addHelloMessage } = useHelloMessages();
 
   const { uuid, currentChannelId, companyId } = useReduxStateManagement({
@@ -124,6 +126,7 @@ export const useGetMoreHelloChats = () => {
     if (!channelId || !uuid || !hasMoreMessages) return;
 
     setChatsLoading(true);
+    setChatsError(false);
     getHelloChatHistoryApi(channelId, skip)
       .then((response) => {
         const helloChats = response?.data?.data;
@@ -141,11 +144,25 @@ export const useGetMoreHelloChats = () => {
       })
       .catch((error) => {
         console.error("Error fetching more Hello chat history:", error);
+        setChatsError(true);
       })
       .finally(() => {
         setChatsLoading(false);
       });
-  }, [currentChannelId, uuid, companyId, setChatsLoading, addHelloMessage, hasMoreMessages, skip, globalDispatch]);
+  }, [currentChannelId, uuid, companyId, setChatsLoading, setChatsError, addHelloMessage, hasMoreMessages, skip, globalDispatch]);
+};
+
+/**
+ * Combined "retry the chat history fetch" hook — re-runs the initial
+ * `getHelloChatHistoryApi` call. Used by the inline Retry pill in the header.
+ */
+export const useRetryChats = () => {
+  const fetchHelloPreviousHistory = useFetchHelloPreviousHistory();
+  const fetchMoreHelloChats = useGetMoreHelloChats();
+  return useCallback(() => {
+    fetchHelloPreviousHistory();
+    fetchMoreHelloChats();
+  }, [fetchHelloPreviousHistory, fetchMoreHelloChats]);
 };
 
 export const useFetchChannels = () => {

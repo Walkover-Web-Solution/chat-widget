@@ -16,6 +16,7 @@ const draftDataSlice = createSlice({
       variables: {} as Record<string, any>
     },
     isChatbotMinimized: false as boolean,
+    isChatbotFullScreen: false as boolean,
   } as $DraftDataReducerType,
   reducers: {
     /**
@@ -35,7 +36,8 @@ const draftDataSlice = createSlice({
         tabSessionId: "",
         widgetToken: "",
         chatbotId: "",
-        isChatbotMinimized: false
+        isChatbotMinimized: false,
+        isChatbotFullScreen: false
       }
     },
     setVariablesForHelloBot: (state, action: PayloadAction<$DraftDataReducerType>) => {

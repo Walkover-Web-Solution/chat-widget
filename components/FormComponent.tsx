@@ -36,13 +36,17 @@ interface FormErrors {
 }
 
 function FormComponent({ chatSessionId }: FormComponentProps) {
-  const { textColor, backgroundColor } = useColor();
+  const { primaryTextColor, textColor, backgroundColor } = useColor();
   const dispatch = useDispatch();
-  const { showWidgetForm, open, userData } = useCustomSelector((state) => ({
-    showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm ?? true,
-    open: state.Chat.openHelloForm,
-    userData: state.Hello?.[chatSessionId]?.clientInfo
-  }));
+  const { showWidgetForm, open, userData, isFullScreen } = useCustomSelector((state) => {
+    const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen;
+    return {
+      showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm ?? true,
+      open: state.Chat.openHelloForm,
+      userData: state.Hello?.[chatSessionId]?.clientInfo,
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
+    };
+  });
   const scriptParams = JSON.parse(GetSessionStorageData('helloConfig') || '{}')
   const { isSmallScreen } = useScreenSize();
   const [formData, setFormData] = useState<FormData>({
@@ -157,10 +161,17 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
     </div>
   );
   return (
-    <div className="fixed inset-0 bg-black/50 z-[9999] overflow-y-auto flex items-start justify-center py-4 backdrop-blur-sm">
-      <div className="rounded-lg shadow-xl w-full max-w-md mx-4 relative my-auto dark:border dark:border-gray-500" style={{ backgroundColor: 'var(--background)' }}>
-        {/* Card header */}
-        < div className="bg-primary text-white p-5 rounded-t-lg" style={{
+    <div
+      className={`fixed inset-0 bg-black/50 z-[9999] flex justify-center backdrop-blur-sm animate-fadeIn ${isFullScreen ? 'items-center p-4' : 'items-end'}`}
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className={`shadow-2xl w-full max-w-md relative dark:border dark:border-gray-500 overflow-y-auto ${isFullScreen ? 'rounded-2xl max-h-[90vh] animate-fadeIn' : 'rounded-t-2xl max-h-[92%] animate-slideUp'}`}
+        style={{ backgroundColor: 'var(--background)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Card header (sticky); drag handle shown only in bottom-sheet mode */}
+        < div className={`bg-primary text-white px-5 pb-5 rounded-t-2xl sticky top-0 z-10 ${isFullScreen ? 'pt-5' : 'pt-2'}`} style={{
           background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
           color: textColor
         }}>
@@ -171,11 +182,15 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
         </div>
 
         {/* Form content */}
-        <form onSubmit={handleSubmit} className="p-5 gap-2 flex flex-col">
+        <form
+          onSubmit={handleSubmit}
+          className="p-5 gap-2 flex flex-col"
+          style={{ ['--theme-primary' as any]: backgroundColor }}
+        >
           {/* Name field */}
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-medium">Name *</span>
+              <span className="label-text font-medium">Name <span className="text-red-400">*</span></span>
             </label>
             <div className="relative">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -188,7 +203,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
                 onChange={handleChange}
                 placeholder="Enter your name"
                 disabled={scriptParams?.name ? true : false}
-                className={`input input-bordered w-full pl-10 ${errors.name ? "input-error" : ""
+                className={`input input-bordered focus:outline-none focus:ring-1 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)] w-full pl-10 ${errors.name ? "input-error" : ""
                   }`}
                 required
               />
@@ -216,7 +231,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
                 onChange={handleChange}
                 disabled={scriptParams?.mail || scriptParams?.Email ? true : false}
                 placeholder="Enter your email"
-                className={`input input-bordered w-full pl-10 ${errors.email ? "input-error" : ""}`}
+                className={`input input-bordered focus:outline-none focus:ring-1 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)] w-full pl-10 ${errors.email ? "input-error" : ""}`}
               />
             </div>
             {errors.email && (
@@ -231,13 +246,13 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
             <label className="label">
               <span className="label-text font-medium">Phone Number</span>
             </label>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex gap-2">
               <div className="relative">
                 <select
                   name="countryCode"
                   value={formData.countryCode}
                   onChange={handleChange}
-                  className={`select select-bordered select-md max-w-36 pl-10 ${errors.countryCode ? "select-error" : ""}`}
+                  className={`select select-bordered focus:outline-none focus:ring-1 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)] select-md max-w-36 pl-10 ${errors.countryCode ? "select-error" : ""}`}
                   style={{ width: 'auto' }}
                 >
                   {countryCodes
@@ -262,7 +277,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
                   onChange={handleChange}
                   disabled={scriptParams?.number || scriptParams?.Phonenumber ? true : false}
                   placeholder="Enter your phone number"
-                  className={`input input-bordered w-full ${errors.number ? "input-error" : ""}`}
+                  className={`input input-bordered focus:outline-none focus:ring-1 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)] w-full ${errors.number ? "input-error" : ""}`}
                 />
               </div>
             </div>

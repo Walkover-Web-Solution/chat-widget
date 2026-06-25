@@ -47,12 +47,28 @@ export const useSocketEvents = ({
         }
         const { type } = message || {};
 
+        // Build a fresh last-message snapshot so the drawer can refresh the
+        // conversation preview + relative time ("23m" → "now") immediately,
+        // without waiting for the next channel-list poll.
+        const buildLastMessage = (msg: any) => {
+            if (!msg) return undefined;
+            const attachment = msg?.content?.attachment;
+            return {
+                timetoken: msg?.timetoken,
+                message_type: msg?.message_type,
+                text: msg?.content?.text,
+                hasAttachment: Array.isArray(attachment) ? attachment.length > 0 : !!attachment,
+                sender_id: msg?.sender_id ?? null,
+            };
+        };
+
         // Handle unread count updates
         if (message?.new_event && (type === 'chat' || type === 'feedback') && !message?.chat_id) {
             const channelId = message?.channel;
             dispatch(setUnReadCount({
                 channelId,
-                resetCount: false
+                resetCount: false,
+                lastMessage: buildLastMessage(message)
             }));
             dispatch(moveChannelToTop({ channelId }));
         }
@@ -68,7 +84,8 @@ export const useSocketEvents = ({
                             addHelloMessage({ ...message, id: messageId }, channel);
                             dispatch(setUnReadCount({
                                 channelId: channel,
-                                resetCount: false
+                                resetCount: false,
+                                lastMessage: buildLastMessage(message)
                             }));
                             dispatch(moveChannelToTop({ channelId: channel }));
                         }

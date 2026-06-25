@@ -12,6 +12,7 @@ export const {
     removeMessages,
     setLoading,
     setChatsLoading,
+    setChatsError,
     setOptions,
     setImages,
     clearImages,

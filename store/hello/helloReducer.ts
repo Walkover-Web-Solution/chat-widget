@@ -146,10 +146,27 @@ export const reducers: ValidateSliceCaseReducers<
     }
   },
 
-  setUnReadCount(state, action: actionType<{ channelId?: string, resetCount?: boolean }>) {
+  setUnReadCount(state, action: actionType<{
+    channelId?: string,
+    resetCount?: boolean,
+    // Optional last-message snapshot — used by the drawer to refresh
+    // title, preview, and relative time without waiting for the next
+    // channel-list poll.
+    lastMessage?: {
+      timetoken?: number | string,
+      message_type?: string,
+      text?: string,
+      hasAttachment?: boolean,
+      sender_id?: string | null,
+    }
+  }>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
-      const { channelId = state[chatSessionId]?.currentChannelId, resetCount = false } = action.payload;
+      const {
+        channelId = state[chatSessionId]?.currentChannelId,
+        resetCount = false,
+        lastMessage,
+      } = action.payload;
 
       if (!state[chatSessionId]?.channelListData?.channels?.length) return;
 
@@ -166,7 +183,37 @@ export const reducers: ValidateSliceCaseReducers<
       } else {
         channel.widget_unread_count = (channel.widget_unread_count || 0) + 1;
       }
-      emitEventToParent('SET_BADGE_COUNT', { badgeCount: channel.widget_unread_count > 99 ? '99+' : channel.widget_unread_count, channelId: channel?.channel })
+
+      // Refresh last-message preview + timetoken when the caller supplies one.
+      // The drawer's formatRelativeTime() depends on this, and the title /
+      // subtitle fallbacks (message_type → "Voice Call"/"Chat") need fresh
+      // data too.
+      if (lastMessage) {
+        const existing = channel.last_message || {};
+        const existingMsg = existing.message || {};
+        const mergedContent = {
+          ...(existingMsg.content || {}),
+          ...(lastMessage.text !== undefined ? { text: lastMessage.text } : {}),
+          ...(lastMessage.hasAttachment !== undefined ? { attachment: lastMessage.hasAttachment ? [{ }] : null } : {}),
+        };
+        const mergedMsg = {
+          ...existingMsg,
+          ...(lastMessage.message_type ? { message_type: lastMessage.message_type } : {}),
+          ...(lastMessage.timetoken ? { timetoken: lastMessage.timetoken } : {}),
+          ...(lastMessage.sender_id !== undefined ? { sender_id: lastMessage.sender_id } : {}),
+          content: mergedContent,
+        };
+        channel.last_message = {
+          ...existing,
+          timetoken: lastMessage.timetoken ?? existing.timetoken,
+          message: mergedMsg,
+        };
+      }
+
+      emitEventToParent('SET_BADGE_COUNT', {
+        badgeCount: channel.widget_unread_count > 99 ? '99+' : channel.widget_unread_count,
+        channelId: channel?.channel,
+      });
     }
   },
 

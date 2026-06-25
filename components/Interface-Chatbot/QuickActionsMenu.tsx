@@ -29,6 +29,12 @@ export interface QuickActionsMenuProps {
   useIconColor?: boolean;
   /** Where to anchor the menu relative to the trigger. Defaults to "bottom". */
   position?: "top" | "bottom";
+  /**
+   * Background color used for the trigger's hover state. Pass a theme-derived
+   * value (e.g. a translucent overlay) so the wash matches any header color.
+   * If omitted, the trigger falls back to the `hover:bg-gray-200` class.
+   */
+  triggerHoverBg?: string;
 }
 
 const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
@@ -47,6 +53,7 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   triggerIconSize = 22,
   useIconColor = false,
   position = "bottom",
+  triggerHoverBg,
 }) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -75,6 +82,17 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
 
   const triggerIconProps = useIconColor ? { color: "var(--icon-color)" as const } : {};
 
+  const triggerHoverHandlers = triggerHoverBg
+    ? {
+        onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = triggerHoverBg;
+        },
+        onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '';
+        },
+      }
+    : {};
+
   const trigger = useMemo(() => (
     <button
       type="button"
@@ -83,6 +101,7 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
       aria-haspopup="menu"
       onClick={() => setOpen(!open)}
       className={triggerClassName}
+      {...triggerHoverHandlers}
     >
       <EllipsisVertical size={triggerIconSize} {...triggerIconProps} />
     </button>

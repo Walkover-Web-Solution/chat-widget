@@ -2,7 +2,7 @@ import { ChatContext } from '@/components/Chatbot-Wrapper/ChatbotWrapper';
 import { errorToast } from '@/components/customToast';
 import { MessageContext } from '@/components/Interface-Chatbot/InterfaceChatbot';
 import { getAllThreadsApi, getPreviousMessage, sendDataToAction, sendFeedbackAction } from '@/config/api';
-import { removeMessages, setChatsLoading, setData, setHelloEventMessage, setImages, setInitialMessages, setIsFetching, setLoading, setNewMessage, setOptions, setPaginateMessages, setStarterQuestions, setToggleDrawer, updateLastAssistantMessage, updateSingleMessage } from '@/store/chat/chatSlice';
+import { removeMessages, setChatsError, setChatsLoading, setData, setHelloEventMessage, setImages, setInitialMessages, setIsFetching, setLoading, setNewMessage, setOptions, setPaginateMessages, setStarterQuestions, setToggleDrawer, updateLastAssistantMessage, updateSingleMessage } from '@/store/chat/chatSlice';
 import { setThreads } from '@/store/interface/interfaceSlice';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { PAGE_SIZE } from '@/utils/enums';
@@ -258,6 +258,7 @@ export const useChatActions = () => {
         setToggleDrawer: (payload: boolean) => globalDispatch(setToggleDrawer(payload)),
         setLoading: (payload: boolean) => globalDispatch(setLoading(payload)),
         setChatsLoading: (payload: boolean) => globalDispatch(setChatsLoading(payload)),
+        setChatsError: (payload: boolean) => globalDispatch(setChatsError(payload)),
         setImages: (payload: string[]) => globalDispatch(setImages(payload)),
         setOptions: (payload: string[]) => globalDispatch(setOptions(payload)),
         setNewMessage: (payload: boolean) => globalDispatch(setNewMessage(payload)),

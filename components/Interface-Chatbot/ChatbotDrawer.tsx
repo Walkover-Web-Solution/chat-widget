@@ -1,7 +1,7 @@
 'use client';
 
 import { lighten } from "@mui/material";
-import { AlignLeft, ChevronRight, SquarePen, Users, Phone, Send, X, MessageSquareText } from "lucide-react";
+import { AlignLeft, ChevronRight, ChevronUp, ChevronDown, SquarePen, Users, Phone, Send, X, MessageSquareText } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -71,7 +71,7 @@ const ChatbotDrawer = ({
   threadId
 }: ChatbotDrawerProps) => {
   const dispatch = useDispatch();
-  const { backgroundColor, textColor, primaryGradientBg } = useColor();
+  const { backgroundColor, textColor, primaryGradientBg, primaryTintColor, headerHoverBg } = useColor();
 
   // Context hooks
   const { messageRef } = useContext(MessageContext);
@@ -92,6 +92,25 @@ const ChatbotDrawer = ({
   const [showAllChannels, setShowAllChannels] = useState(false);
   const [showAllTeams, setShowAllTeams] = useState(false);
 
+  // Tick state — bumps every 30s AND on every inbound `SET_BADGE_COUNT` postMessage,
+  // forcing time labels like "14m" → "15m" to re-render against fresh `Date.now()`.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      const data: any = e?.data;
+      const type = typeof data === 'string' ? data : data?.type;
+      if (type === 'SET_BADGE_COUNT') {
+        setTick((t) => t + 1);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
   // Consolidated Redux state selection
   const {
     subThreadList,
@@ -105,7 +124,8 @@ const ChatbotDrawer = ({
     show_msg91,
     isChatbotMinimized,
     isMobileSDK,
-    isFullScreen
+    isFullScreen,
+    isChatbotFullScreen
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
     const helloFullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
@@ -121,7 +141,8 @@ const ChatbotDrawer = ({
       show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
       isMobileSDK: state.Hello?.[chatSessionId]?.helloConfig?.isMobileSDK || false,
-      isFullScreen: (helloFullScreen === true || helloFullScreen === 'true') ?? false
+      isFullScreen: (helloFullScreen === true || helloFullScreen === 'true') ?? false,
+      isChatbotFullScreen: state.draftData?.isChatbotFullScreen || false
     };
   });
 
@@ -283,7 +304,7 @@ const ChatbotDrawer = ({
       {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
         <div className="conversations-section">
           <div className="conversations-header pb-2">
-            <h3 className="px-4 text-[11px] font-semibold tracking-wider text-gray-400 uppercase">Continue Conversations</h3>
+            <h3 className="px-4 text-[11px] font-semibold tracking-wider text-gray-500 uppercase">Continue Conversations</h3>
           </div>
           <div className="conversations-list flex flex-col">
             { displayedChannels.map((channel: any, index: number) => {
@@ -361,7 +382,11 @@ const ChatbotDrawer = ({
                 >
                   <div className="relative flex-shrink-0">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none bg-blue-50 text-blue-600"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none ${isClosed ? 'text-gray-500' : ''}`}
+                      style={{
+                        backgroundColor: primaryTintColor,
+                        color: isClosed ? undefined : backgroundColor,
+                      }}
                     >
                       {initials}
                     </div>
@@ -377,11 +402,11 @@ const ChatbotDrawer = ({
 
                   <div className="conversation-info flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      <span className={`text-sm font-semibold truncate ${isClosed ? 'text-gray-500' : 'text-gray-900'}`}>
                         {title}
                       </span>
                       {isClosed && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 flex-shrink-0">
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-lg border bg-gray-100 text-gray-500 flex-shrink-0">
                           Closed
                         </span>
                       )}
@@ -402,7 +427,7 @@ const ChatbotDrawer = ({
               );
             })}
             {filteredChannels.length > VISIBLE_ITEMS_COUNT && (
-              <div className="flex justify-start mt-2 px-4">
+              <div className="flex justify-between items-center mt-2 px-4">
                 <button
                   type="button"
                   className="text-sm font-medium hover:underline"
@@ -413,6 +438,7 @@ const ChatbotDrawer = ({
                     ? "Show less"
                     : `See all ${filteredChannels.length} conversations`}
                 </button>
+                { showAllChannels ? <ChevronUp size={14} style={{ color: backgroundColor }} /> : <ChevronDown size={14} style={{ color: backgroundColor }} /> }
               </div>
             )}
           </div>
@@ -423,7 +449,7 @@ const ChatbotDrawer = ({
       {(teamsList || []).length > 0 && (
       <div className="teams-section">
         <div className="teams-header pb-2 flex items-center">
-          <h3 className="px-4 text-[11px] font-semibold tracking-wider text-gray-400 uppercase">Talk to our teams</h3>
+          <h3 className="px-4 text-[11px] font-semibold tracking-wider text-gray-500 uppercase">Talk to our teams</h3>
         </div>
         <div className="teams-list">
             <div className="flex flex-col">
@@ -442,13 +468,16 @@ const ChatbotDrawer = ({
                   >
                     <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
                       <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none bg-blue-50 text-blue-600">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none"
+                          style={{ backgroundColor: primaryTintColor, color: backgroundColor }}
+                        >
                           {initials || (team?.icon || <Users size={14} />)}
                         </div>
                         {team?.widget_unread_count > 0 && (
                           <span
-                            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                            style={{ backgroundColor: "rgb(37, 99, 235)" }}
+                            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold"
+                            style={{ backgroundColor: backgroundColor, color: textColor }}
                           >
                             {team?.widget_unread_count}
                           </span>
@@ -477,15 +506,16 @@ const ChatbotDrawer = ({
                         )}
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 flex gap-3 items-center">
                       <MessageSquareText size={18} style={{ color: backgroundColor }} />
+                      <ChevronRight size={14} className="text-gray-400" />
                     </div>
                   </div>
                 );
               })}
 
               {teamsList.length > VISIBLE_ITEMS_COUNT && (
-                <div className="flex justify-start mt-2 px-4">
+                <div className="flex justify-between items-center mt-2 px-4">
                   <button
                     type="button"
                     style={{ color: backgroundColor }}
@@ -496,6 +526,7 @@ const ChatbotDrawer = ({
                       ? "Show less"
                       : `See all ${teamsList.length} teams`}
                   </button>
+                  { showAllTeams ? <ChevronUp size={14} style={{ color: backgroundColor }} /> : <ChevronDown size={14} style={{ color: backgroundColor }} /> }
                 </div>
               )}
             </div>
@@ -506,10 +537,15 @@ const ChatbotDrawer = ({
     )}
 
     {/* Voice Call Section */}
-    {voice_call_widget && (
-      <div className="marketing-banner mt-auto bg-[var(--drawer-color)] px-4 pt-3 pb-3 border-t border-gray-100">
+    {(voice_call_widget || (teamsList || []).length ===  0)&& (
+      <div className={`marketing-banner bg-[var(--drawer-color)] px-4 pt-3 pb-3 ${
+        (teamsList || []).length === 0 && (filteredChannels || []).length === 0
+          ? ''
+          : 'mt-auto border-t border-gray-100'
+      }`}>
         <p className="text-sm mb-2">Need specialized help?</p>
         <div className="flex gap-2">
+        {voice_call_widget &&
           <button
             className={`grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors ${
               callState !== "idle"
@@ -528,6 +564,8 @@ const ChatbotDrawer = ({
               <strong>Call Us</strong>
             </span>
           </button>
+        }
+
           {/*Send Message button in case of no team assign */}
           { (teamsList || []).length ===  0 && (
             <button
@@ -558,7 +596,8 @@ const ChatbotDrawer = ({
     handleSendMessageWithNoTeam,
     handleVoiceCall,
     allMessages,
-    allMessagesData
+    allMessagesData,
+    tick
   ]);
 
   const handleCloseChatbot = () => {
@@ -570,11 +609,13 @@ const ChatbotDrawer = ({
     dispatch(setDataInDraftReducer({ isChatbotMinimized: value }));
   };
 
-  const [fullScreen, setFullScreen] = useState(false);
+  // Fullscreen state lives in redux (draftData) so the header and drawer share a
+  // single source of truth and never drift (prevents the double-click collapse bug).
+  const fullScreen = isChatbotFullScreen;
 
   const toggleFullScreen = (enter: boolean) => {
     if (!window?.parent) return;
-    setFullScreen(enter);
+    dispatch(setDataInDraftReducer({ isChatbotFullScreen: enter }));
     const message = enter
       ? { type: "ENTER_FULL_SCREEN_CHATBOT" }
       : { type: "EXIT_FULL_SCREEN_CHATBOT" };
@@ -611,9 +652,10 @@ const ChatbotDrawer = ({
         onMinimize={handleToggleMinimize}
         onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
         onNewConversation={handleCreateNewSubThread}
-        triggerClassName="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+        triggerClassName="p-2 rounded-full transition-colors icn"
         menuClassName="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999] py-1"
         useIconColor
+        triggerHoverBg={headerHoverBg}
       />
     );
   }, [
@@ -627,7 +669,21 @@ const ChatbotDrawer = ({
     handleToggleMinimize,
     toggleFullScreen,
     handleCreateNewSubThread,
+    headerHoverBg,
   ]);
+
+  const headerIconBtnClass =
+    'p-2 rounded-full transition-colors icn';
+  // Inline hover via onMouseEnter/Leave keeps the wash on-theme regardless
+  // of Tailwind / dark-mode variants.
+  const bindHeaderHover = () => ({
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+      (e.currentTarget as HTMLButtonElement).style.backgroundColor = headerHoverBg;
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+      (e.currentTarget as HTMLButtonElement).style.backgroundColor = '';
+    },
+  });
 
   return (
     <div className={`drawer ${isSmallScreen ? 'z-[99999]' : 'z-[999]'}`}>
@@ -651,18 +707,19 @@ const ChatbotDrawer = ({
         <div className="w-full h-full relative flex flex-col bg-[var(--drawer-color)]">
           {/* Header with padding */}
           <div className="px-4 py-4" style={{ background: primaryGradientBg }}>
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div className="w-10">
                 {isToggledrawer && (
                   <button
-                    className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+                    className={headerIconBtnClass}
+                    {...bindHeaderHover()}
                     onClick={() => closeToggleDrawer(!isToggledrawer)}
                   >
                     <AlignLeft size={22} />
                   </button>
                 )}
               </div>
-              <div className="flex flex-col items-center justify-center flex-1 mt-[40px]">
+              <div className="flex flex-col items-center justify-center flex-1 p-2">
                 <h2 className="text-lg font-bold text-center">
                   {Name ? `Hello, ${Name.split(' ')[0]} 👋` : 'Hello there! 👋'}
                 </h2>
@@ -671,10 +728,11 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end gap-1">
-                {isToggledrawer && DrawerQuickActionsMenu}
-                {isToggledrawer && !hideCloseButton && (
+                {isToggledrawer && !(fullScreen || isFullScreen) && DrawerQuickActionsMenu}
+                {isToggledrawer && !(fullScreen || isFullScreen) && !hideCloseButton && (
                   <button
-                    className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+                    className={headerIconBtnClass}
+                    {...bindHeaderHover()}
                     onClick={handleCloseChatbot}
                     aria-label="Close chat"
                   >

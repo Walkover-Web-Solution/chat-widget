@@ -89,3 +89,7 @@ html:has(.drawer-toggle:checked) {
 [data-theme="dark"] .icn {
   @apply hover:bg-gray-800 hover:text-gray-200
 }
+
+input, select {
+  outline: none !important;
+}

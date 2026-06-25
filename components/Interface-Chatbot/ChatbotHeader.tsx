@@ -28,6 +28,7 @@ import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
 import { createRandomId, DEFAULT_AI_SERVICE_MODALS, ParamsEnums } from "@/utils/enums";
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
+import { useColor } from "../Chatbot/hooks/useColor";
 import { ChatbotContext } from "../context";
 import QuickActionsMenu from "./QuickActionsMenu";
 import "./InterfaceChatbot.css";
@@ -295,8 +296,20 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     setOptions,
     setToggleDrawer,
   } = useChatActions();
+  const { headerHoverBg } = useColor();
 
-  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds, lastMessage, unReadCount, isChatbotMinimized, isFullScreen } = useCustomSelector((state) => {
+  // Inline hover so the wash reads correctly on any header color (light or
+  // dark primary gradient), not just the previous hardcoded `bg-gray-200`.
+  const bindHeaderHover = () => ({
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+      (e.currentTarget as HTMLElement).style.backgroundColor = headerHoverBg;
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
+      (e.currentTarget as HTMLElement).style.backgroundColor = '';
+    },
+  });
+
+  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds, lastMessage, unReadCount, isChatbotMinimized, isFullScreen, isChatbotFullScreen } = useCustomSelector((state) => {
     const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
     return {
       isToggledrawer: state.Chat?.isToggledrawer,
@@ -311,7 +324,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
         (channel: any) => channel?.channel === currentChannelId
       )?.widget_unread_count || 0,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
-      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false,
+      isChatbotFullScreen: state.draftData?.isChatbotFullScreen || false
     }
   }
   )
@@ -326,7 +340,9 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     bridges = []
   } = chatbotConfig || {};
 
-  const [fullScreen, setFullScreen] = useState(false);
+  // Fullscreen state lives in redux (draftData) so the header and drawer share a
+  // single source of truth and never drift (prevents the double-click collapse bug).
+  const fullScreen = isChatbotFullScreen;
   const [teamName, setTeamName] = useState(false);
 
   const shouldToggleScreenSize = `${width}${widthUnit}` !== '1200%';
@@ -401,7 +417,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
   const toggleFullScreen = (enter: boolean) => {
     if (!window?.parent) return;
 
-    setFullScreen(enter);
+    dispatch(setDataInDraftReducer({ isChatbotFullScreen: enter }));
     const message = enter
       ? { type: "ENTER_FULL_SCREEN_CHATBOT" }
       : { type: "EXIT_FULL_SCREEN_CHATBOT" };
@@ -432,13 +448,14 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return (
       <button
-        className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+        className="p-2 rounded-full transition-colors icn"
+        {...bindHeaderHover()}
         onClick={() => setToggleDrawer(!isToggledrawer)}
       >
         {isToggledrawer ? null : <AlignLeft size={22} />}
       </button>
     );
-  }, [subThreadList?.length, isHelloUser, isToggledrawer, setToggleDrawer]);
+  }, [subThreadList?.length, isHelloUser, isToggledrawer, setToggleDrawer, headerHoverBg]);
 
   // Memoized create thread button
   const CreateThreadButton = useMemo(() => {
@@ -447,14 +464,15 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     return (
       <div className="tooltip tooltip-right" data-tip="Create new thread">
         <button
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+          className="p-2 rounded-full transition-colors icn"
+          {...bindHeaderHover()}
           onClick={handleCreateNewSubThread}
         >
           <SquarePen size={22} />
         </button>
       </div>
     );
-  }, [showCreateThreadButton, isToggledrawer, handleCreateNewSubThread]);
+  }, [showCreateThreadButton, isToggledrawer, handleCreateNewSubThread, headerHoverBg]);
 
   // Memoized header title section
   const HeaderTitleSection = useMemo(() => {
@@ -555,7 +573,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return fullScreen ? (
       <div
-        className="cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 rounded-full transition-colors icn"
+        {...bindHeaderHover()}
         onClick={() => toggleFullScreen(false)}
       >
         {/* <PictureInPicture2 size={22} color="var(--icon-color)" /> */}
@@ -563,14 +582,15 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       </div>
     ) : (
       <div
-        className="cursor-pointer p-2 rounded-full transition-colors hover:bg-gray-200 icn"
+        className="cursor-pointer p-2 rounded-full transition-colors icn"
+        {...bindHeaderHover()}
         onClick={() => toggleFullScreen(true)}
       >
         {/* <Maximize size={22} color="var(--icon-color)" /> */}
         <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} />
       </div>
     );
-  }, [shouldToggleScreenSize, hideFullScreenButton, fullScreen, toggleFullScreen]);
+  }, [shouldToggleScreenSize, hideFullScreenButton, fullScreen, toggleFullScreen, headerHoverBg]);
 
   // Memoized close button
   const CloseButton = useMemo(() => {
@@ -578,13 +598,14 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return (
       <div
-        className="cursor-pointer p-2 py-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 py-2 rounded-full transition-colors icn"
+        {...bindHeaderHover()}
         onClick={handleCloseChatbot}
       >
         <X size={22} />
       </div>
     );
-  }, [hideCloseButton, handleCloseChatbot]);
+  }, [hideCloseButton, handleCloseChatbot, headerHoverBg]);
 
   const handleToggleMinimize = () => {
     if (!isChatbotMinimized && fullScreen) {
@@ -602,26 +623,28 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     if (!isHelloUser) return null;
     return (
       <div
-        className="cursor-pointer p-2 py-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 py-2 rounded-full transition-colors icn"
+        {...bindHeaderHover()}
         onClick={handleToggleMinimize}
       >
         {isChatbotMinimized ? <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} /> : <Minus size={22} />}
       </div>
     );
-  }, [isHelloUser, isChatbotMinimized, fullScreen, toggleFullScreen])
+  }, [isHelloUser, isChatbotMinimized, fullScreen, toggleFullScreen, headerHoverBg])
 
   // Expand button for the collapsed header — un-minimizes the chat back to default size
   const ExpandButton = useMemo(() => {
     if (!isChatbotMinimized) return null;
     return (
       <div
-        className="cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 rounded-full transition-colors icn"
+        {...bindHeaderHover()}
         onClick={(e) => { e.stopPropagation(); handleToggleMinimize(); }}
       >
         <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} />
       </div>
     );
-  }, [isChatbotMinimized, handleToggleMinimize])
+  }, [isChatbotMinimized, handleToggleMinimize, headerHoverBg])
 
   // Determine which quick-action items are available
   const hasMinimizeAction = !!MinimizeButton;
@@ -647,6 +670,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
       onNewConversation={handleCreateNewSubThread}
       position={isChatbotMinimized ? 'top' : 'bottom'}
+      triggerHoverBg={headerHoverBg}
     />
   ), [
     isChatbotMinimized,
@@ -658,6 +682,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     handleToggleMinimize,
     toggleFullScreen,
     handleCreateNewSubThread,
+    headerHoverBg,
   ])
 
   return isChatbotMinimized ?

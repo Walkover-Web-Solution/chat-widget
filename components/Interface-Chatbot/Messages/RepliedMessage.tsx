@@ -2,11 +2,15 @@ import RenderHelloAttachmentMessage from "@/components/Hello/RenderHelloAttachme
 import RenderHelloInteractiveMessage from "@/components/Hello/RenderHelloInteractiveMessage";
 import RenderHelloVedioCallMessage from "@/components/Hello/RenderHelloVedioCallMessage";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
+import { withAlpha } from "@/utils/themeUtility";
 import React from "react";
 import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
+import { useColor } from "../../Chatbot/hooks/useColor";
 import { MESSAGE_TYPES } from "./MessageType";
 
 const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; message: any }) => {
+    const { backgroundColor } = useColor();
+
     if (message?.replied_msg_type !== 'interactive' &&
         !message?.replied_msg_content?.text &&
         !(message?.replied_msg_content?.attachment && message?.replied_msg_content?.attachment?.length > 0)) {
@@ -50,9 +54,27 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
         }
     }
 
+    const isUser = message?.role === 'user';
+    // Match the input-area ReplyPreview: a light card with a primary-colored
+    // accent + sender name. On the primary-colored (outgoing) bubble we use a
+    // near-opaque white so the purple doesn't bleed through and wash it out;
+    // on white (incoming) bubbles a soft primary tint reads the same way.
+    const replyBg = isUser
+        ? 'rgba(255, 255, 255, 0.92)'
+        : withAlpha(backgroundColor, 0.08);
+    const replyBorder = backgroundColor;
+
     return (
-        <div className={`pointer-events-none mb-1 p-2 rounded-md border-l-2 border-blue-400 not-prose ${message?.role !== 'user' ? 'bg-gray-200 dark:bg-gray-800' : 'bg-black bg-opacity-10 border-white'}`}>
-            <div className={`text-xs text-gray-600 mb-1 font-medium ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`}>{senderName}</div>
+        <div
+            className="pointer-events-none mb-1 p-2 rounded-md border-l-4 not-prose"
+            style={{ backgroundColor: replyBg, borderLeftColor: replyBorder }}
+        >
+            <div
+                className="text-xs mb-1 font-medium truncate"
+                style={{ color: backgroundColor }}
+            >
+                {senderName}
+            </div>
             {message.replied_msg_type === MESSAGE_TYPES.INTERACTIVE ? (
                 <RenderHelloInteractiveMessage message={{ messageJson: message.replied_msg_content }} />
             ) :
@@ -60,7 +82,7 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
                     <RenderHelloAttachmentMessage message={{ messageJson: message.replied_msg_content }} isBot={message.replied_msg_sender_id || false} />
                 ) : message.replied_msg_type === MESSAGE_TYPES.VIDEO_CALL ? (<RenderHelloVedioCallMessage message={{ messageJson: message.replied_msg_content }} />)
                     : (
-                        <div className={`text-sm text-gray-700 ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`}>
+                        <div className="text-sm text-gray-700">
                             {(() => {
                                 const isBotMessage = senderId && typeof senderId === 'string' && senderId.toLowerCase() !== 'user';
                                 const replyContent = (() => {

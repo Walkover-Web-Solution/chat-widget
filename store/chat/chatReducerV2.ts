@@ -17,6 +17,7 @@ interface ChatState {
     // Loading States
     loading: boolean;
     chatsLoading: boolean;
+    chatsError: boolean;
     isFetching: boolean;
 
     // UI States
@@ -59,6 +60,7 @@ export const initialChatState: ChatState = {
     // Loading States
     loading: false,
     chatsLoading: false,
+    chatsError: false,
     isFetching: false,
 
     // UI States
@@ -118,6 +120,10 @@ export const chatReducerV2 = {
 
     setChatsLoading: (state, action: PayloadAction<boolean>) => {
         state.chatsLoading = action.payload;
+    },
+
+    setChatsError: (state, action: PayloadAction<boolean>) => {
+        state.chatsError = action.payload;
     },
 
     setOptions: (state, action: PayloadAction<any[]>) => {

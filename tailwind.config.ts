@@ -15,6 +15,20 @@ export default {
         primaryTheme: "rgb(var(--primary-rgb) / <alpha-value>)",
         secondaryTheme: "rgb(var(--primary-rgb) / <alpha-value>)",
       },
+      keyframes: {
+        slideUp: {
+          "0%": { transform: "translateY(100%)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
+      animation: {
+        slideUp: "slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+        fadeIn: "fadeIn 0.2s ease-out",
+      },
     },
   },
   plugins: [
