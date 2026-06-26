@@ -686,7 +686,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
   ])
 
   return isChatbotMinimized ?
-    <div className="px-2 sm:py-4 py-3 w-full cursor-pointer" onClick={handleToggleMinimize}>
+    <div className="px-2 sm:py-4 py-3 w-full cursor-pointer bg-white" onClick={handleToggleMinimize}>
       <div className="flex items-center w-full relative px-2">
         <div className="justify-start">
           {HeaderTitleSection}
@@ -700,7 +700,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       </div>
     </div>
     :
-    <div className="px-2 sm:py-4 py-3 w-full">
+    <div className="px-2 sm:py-4 py-3 w-full  bg-white">
       <div className="flex items-center w-full relative">
         {/* Left side buttons */}
         <div className="flex items-center flex-1 sm:absolute sm:left-0 sm:flex sm:items-center">

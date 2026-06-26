@@ -171,7 +171,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Card header (sticky); drag handle shown only in bottom-sheet mode */}
-        < div className={`bg-primary text-white px-5 pb-5 rounded-t-2xl sticky top-0 z-10 ${isFullScreen ? 'pt-5' : 'pt-2'}`} style={{
+        < div className={`bg-primary text-white px-5 py-4 rounded-t-2xl sticky top-0 z-10`} style={{
           background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
           color: textColor
         }}>
@@ -189,7 +189,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
         >
           {/* Name field */}
           <div className="form-control w-full">
-            <label className="label">
+            <label className="label pt-0">
               <span className="label-text font-medium">Name <span className="text-red-400">*</span></span>
             </label>
             <div className="relative">
@@ -289,7 +289,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
           </div>
 
           {/* Submit button */}
-          <div className="flex gap-3 mt-2">
+          <div className="flex gap-3 mt-5">
             <button
               type="button"
               className="btn btn-outline flex-1"

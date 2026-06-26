@@ -163,6 +163,14 @@ const ChatbotDrawer = ({
   ? teamsList
   : teamsList.slice(0, VISIBLE_ITEMS_COUNT);
 
+
+  const hiddenChannels = filteredChannels.slice(VISIBLE_ITEMS_COUNT);
+  const hiddenCount = hiddenChannels.length;
+
+  const areAllHiddenChatsClosed =
+    hiddenCount > 0 &&
+    hiddenChannels.every((channel: any) => channel?.is_closed);
+
   useEffect(() => {
     if (chatSessionId) {
       setToggleDrawer(true);
@@ -436,7 +444,10 @@ const ChatbotDrawer = ({
                 >
                   {showAllChannels
                     ? "Show less"
-                    : `See all ${filteredChannels.length} conversations`}
+                    : areAllHiddenChatsClosed
+                      ? `Show (${hiddenCount}) Closed Conversations`
+                      : `See all ${hiddenCount} conversations`
+                  }
                 </button>
                 { showAllChannels ? <ChevronUp size={14} style={{ color: backgroundColor }} /> : <ChevronDown size={14} style={{ color: backgroundColor }} /> }
               </div>
@@ -513,7 +524,6 @@ const ChatbotDrawer = ({
                   </div>
                 );
               })}
-
               {teamsList.length > VISIBLE_ITEMS_COUNT && (
                 <div className="flex justify-between items-center mt-2 px-4">
                   <button
@@ -524,7 +534,7 @@ const ChatbotDrawer = ({
                   >
                     {showAllTeams
                       ? "Show less"
-                      : `See all ${teamsList.length} teams`}
+                      : `See all ${teamsList.length - VISIBLE_ITEMS_COUNT} team${teamsList.length - VISIBLE_ITEMS_COUNT > 1 ? "s" : ""}`}
                   </button>
                   { showAllTeams ? <ChevronUp size={14} style={{ color: backgroundColor }} /> : <ChevronDown size={14} style={{ color: backgroundColor }} /> }
                 </div>

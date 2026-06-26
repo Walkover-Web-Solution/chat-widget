@@ -166,7 +166,7 @@
             const imgElement = document.createElement('div');
             imgElement.id = this.elements.chatbotIconImage;
             imgElement.innerHTML = `
-                <div style="border-radius: 50%; box-shadow: 0 0 8px rgba(0, 0, 0, 0.2); display: grid; place-items: center; width: 48px; height: 48px; background-color: #ffffff;">
+                <div style="border-radius: 50%; box-shadow: 0px 0px 20px 2px rgba(0, 0, 0, 0.2); display: grid; place-items: center; width: 48px; height: 48px; background-color: #ffffff;">
                 <span id="chatbot-logo">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps">
                         <title>MSG91 Logo</title>

@@ -74,7 +74,7 @@ const ActiveChatView = React.memo(() => (
     <div className="w-full h-full overflow-hidden relative flex-1">
       <MessageList />
     </div>
-    <div className="max-w-5xl mx-auto p-3 pb-3 w-full">
+    <div className="max-w-5xl mx-auto p-3 pb-3 w-full bg-white">
       <ChatbotTextField />
     </div>
   </div>

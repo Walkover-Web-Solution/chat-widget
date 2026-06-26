@@ -4,6 +4,18 @@
 @plugin "daisyui";
 @plugin "@tailwindcss/typography";
 
+/* Hide Scrollbar */
+* {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: none;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
