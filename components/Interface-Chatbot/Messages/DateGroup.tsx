@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
  * if they are from different dates.
  */
 
-function DateGroup({ prevTime, messageTime, backgroundColor, textColor }: { prevTime: any, messageTime: number, backgroundColor: string, textColor: string }) {
+function DateGroup({ prevTime, messageTime, backgroundColor, foregroundColor }: { prevTime: any, messageTime: number, backgroundColor: string, foregroundColor: string }) {
     const messageTimeRange = dayjs(messageTime);
     const prevTimeRange = dayjs(prevTime);
 

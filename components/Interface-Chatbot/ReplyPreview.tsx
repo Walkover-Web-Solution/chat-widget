@@ -16,7 +16,7 @@ interface ReplyPreviewProps {
 }
 
 const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseReply }) => {
-  const { backgroundColor, primaryTintColor } = useColor();
+  const { primaryBgColor, primaryTextColor, primaryTintColor } = useColor();
 
   if (!replyToMessage) return null;
 
@@ -60,14 +60,14 @@ const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseRepl
       className="relative flex items-start gap-3 p-3 border-l-4 mb-1 rounded-md shadow-sm z-[999]"
       style={{
         backgroundColor: primaryTintColor,
-        borderLeftColor: backgroundColor,
+        borderLeftColor: primaryTextColor,
       }}
     >
       <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-center gap-2 mb-1">
           <span
             className="text-sm font-medium"
-            style={{ color: backgroundColor }}
+            style={{ color: primaryTextColor }}
           >
             {getSenderName()}
           </span>

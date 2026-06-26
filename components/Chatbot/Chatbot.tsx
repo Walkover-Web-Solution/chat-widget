@@ -87,7 +87,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const messageRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { backgroundColor } = useColor();
+  const { primaryTextColor } = useColor();
   const { isSmallScreen } = useScreenSize();
   const dispatch = useAppDispatch();
   const retryChats = useRetryChats();
@@ -173,7 +173,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
               {chatsLoading && (
                 <LinearProgress
                   color="inherit"
-                  style={{ color: backgroundColor }}
+                  style={{ color: primaryTextColor }}
                 />
               )}
               {chatsError && (

@@ -9,7 +9,7 @@ import { useColor } from "../../Chatbot/hooks/useColor";
 import { MESSAGE_TYPES } from "./MessageType";
 
 const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; message: any }) => {
-    const { backgroundColor } = useColor();
+    const { primaryTextColor, primaryBgColor } = useColor();
 
     if (message?.replied_msg_type !== 'interactive' &&
         !message?.replied_msg_content?.text &&
@@ -61,8 +61,8 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
     // on white (incoming) bubbles a soft primary tint reads the same way.
     const replyBg = isUser
         ? 'rgba(255, 255, 255, 0.92)'
-        : withAlpha(backgroundColor, 0.08);
-    const replyBorder = backgroundColor;
+        : withAlpha(primaryBgColor, 0.08);
+    const replyBorder = primaryTextColor;
 
     return (
         <div
@@ -71,7 +71,7 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
         >
             <div
                 className="text-xs mb-1 font-medium truncate"
-                style={{ color: backgroundColor }}
+                style={{ color: primaryTextColor }}
             >
                 {senderName}
             </div>

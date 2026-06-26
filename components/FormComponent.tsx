@@ -36,7 +36,7 @@ interface FormErrors {
 }
 
 function FormComponent({ chatSessionId }: FormComponentProps) {
-  const { primaryTextColor, textColor, backgroundColor } = useColor();
+  const { foregroundColor, primaryTextColor, primaryBgColor } = useColor();
   const dispatch = useDispatch();
   const { showWidgetForm, open, userData, isFullScreen } = useCustomSelector((state) => {
     const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen;
@@ -145,7 +145,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
       <div
         onClick={() => setOpen(true)}
         className="flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-all hover:opacity-95 hover:shadow-md"
-        style={{ backgroundColor: backgroundColor, color: textColor }}
+        style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
       >
         <div
           className="flex-shrink-0 grid place-items-center w-9 h-9 rounded-lg"
@@ -172,8 +172,8 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
       >
         {/* Card header (sticky); drag handle shown only in bottom-sheet mode */}
         < div className={`bg-primary text-white px-5 py-4 rounded-t-2xl sticky top-0 z-10`} style={{
-          background: `linear-gradient(to right, ${backgroundColor}, ${backgroundColor}CC)`,
-          color: textColor
+          background: `linear-gradient(to right, ${primaryBgColor}, ${primaryBgColor}CC)`,
+          color: foregroundColor
         }}>
           <h2 className="text-lg font-bold">Enter your details</h2>
           <p className="text-sm opacity-90 mt-1">
@@ -185,7 +185,7 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
         <form
           onSubmit={handleSubmit}
           className="p-5 gap-2 flex flex-col"
-          style={{ ['--theme-primary' as any]: backgroundColor }}
+          style={{ ['--theme-primary' as any]: primaryBgColor }}
         >
           {/* Name field */}
           <div className="form-control w-full">
@@ -303,8 +303,8 @@ function FormComponent({ chatSessionId }: FormComponentProps) {
               className="btn flex-1"
               style={{
                 opacity: isLoading ? 0.5 : 1,
-                backgroundColor: backgroundColor,
-                color: textColor
+                backgroundColor: primaryBgColor,
+                color: foregroundColor
               }}
             >
               {isLoading ? (

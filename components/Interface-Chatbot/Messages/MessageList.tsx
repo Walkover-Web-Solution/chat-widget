@@ -30,7 +30,7 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
   const getMoreHelloChats = useGetMoreHelloChats();
   const getMoreChats = useGetMoreChats();
   const { setNewMessage } = useChatActions();
-  const { backgroundColor, textColor } = useColor();
+  const { primaryBgColor, foregroundColor } = useColor();
 
   const { newMessage, messageIds, msgIdAndDataMap, loading, hasMoreMessages } = useCustomSelector((state) => ({
     newMessage: state.Chat.newMessage || false,
@@ -53,8 +53,8 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
   }));
 
   const themePalette = useMemo(() => ({
-    "--primary-main": lighten(backgroundColor, 0.4),
-  }), [backgroundColor]);
+    "--primary-main": lighten(primaryBgColor, 0.4),
+  }), [primaryBgColor]);
 
   const fetchMoreData = useCallback(() => {
     if (isHelloUser) {
@@ -221,8 +221,8 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
         <MoveToDownButton
           movetoDown={moveToDown}
           showScrollButton={showScrollButton}
-          backgroundColor={lighten(backgroundColor, 0.1)}
-          textColor={textColor}
+          backgroundColor={lighten(primaryBgColor, 0.1)}
+          foregroundColor={foregroundColor}
         />
       </div>
     </div>

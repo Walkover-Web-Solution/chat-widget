@@ -7,7 +7,7 @@ import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
   const messageJson = message?.messageJson || {};
   const sendMessageToHello = useSendMessageToHello({});
-  const { textColor, backgroundColor } = useColor();
+  const { foregroundColor, primaryTextColor, primaryBgColor } = useColor();
 
   const renderHeader = (header: any) => {
     if (header?.type === "text") {
@@ -67,7 +67,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium w-full max-w-md justify-start"
-                        style={{ backgroundColor: backgroundColor, color: textColor }}
+                        style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink size={16} strokeWidth={2} />
@@ -125,7 +125,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-                  style={{ backgroundColor: backgroundColor, color: textColor }}
+                  style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                 >
                   <ExternalLink size={16} strokeWidth={2} />
                   {action.parameters.display_text || "View"}
@@ -143,7 +143,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium w-full max-w-md justify-start"
-                    style={{ backgroundColor: backgroundColor, color: textColor }}
+                    style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink size={16} strokeWidth={2} />
@@ -223,8 +223,8 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
         return (
           <CarouselMessage
             messageJson={messageJson}
-            backgroundColor={backgroundColor}
-            textColor={textColor}
+            backgroundColor={primaryBgColor}
+            foregroundColor={foregroundColor}
             sendMessageToHello={sendMessageToHello}
             renderHeader={renderHeader}
           />
@@ -329,7 +329,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
   );
 }
 
-function CarouselMessage({ messageJson, backgroundColor, textColor, sendMessageToHello, renderHeader }: any) {
+function CarouselMessage({ messageJson, backgroundColor, foregroundColor, sendMessageToHello, renderHeader }: any) {
   return (
     <div className="flex flex-col gap-2 max-w-[320px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px]">
       {messageJson.body?.text && (
@@ -358,7 +358,7 @@ function CarouselMessage({ messageJson, backgroundColor, textColor, sendMessageT
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-sm rounded-md normal-case font-medium flex items-center justify-center gap-2"
-                      style={{ backgroundColor, color: textColor, border: "none" }}
+                      style={{ backgroundColor: primaryBgColor, color: foregroundColor, border: "none" }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <ExternalLink size={14} />

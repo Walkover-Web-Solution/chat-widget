@@ -71,7 +71,7 @@ const ChatbotDrawer = ({
   threadId
 }: ChatbotDrawerProps) => {
   const dispatch = useDispatch();
-  const { backgroundColor, textColor, primaryGradientBg, primaryTintColor, headerHoverBg } = useColor();
+  const { primaryTextColor, primaryBgColor, foregroundColor, primaryGradientBg, primaryTintColor, headerHoverBg } = useColor();
 
   // Context hooks
   const { messageRef } = useContext(MessageContext);
@@ -393,7 +393,7 @@ const ChatbotDrawer = ({
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none ${isClosed ? 'text-gray-500' : ''}`}
                       style={{
                         backgroundColor: primaryTintColor,
-                        color: isClosed ? undefined : backgroundColor,
+                        color: isClosed ? undefined : primaryTextColor,
                       }}
                     >
                       {initials}
@@ -401,7 +401,7 @@ const ChatbotDrawer = ({
                     {unread > 0 && (
                       <span
                         className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold"
-                        style={{ backgroundColor: backgroundColor, color: textColor }}
+                        style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                       >
                         {unread}
                       </span>
@@ -439,7 +439,7 @@ const ChatbotDrawer = ({
                 <button
                   type="button"
                   className="text-sm font-medium hover:underline"
-                  style={{ color: backgroundColor }}
+                  style={{ color: primaryTextColor }}
                   onClick={() => setShowAllChannels(!showAllChannels)}
                 >
                   {showAllChannels
@@ -449,7 +449,7 @@ const ChatbotDrawer = ({
                       : `See all ${hiddenCount} conversations`
                   }
                 </button>
-                { showAllChannels ? <ChevronUp size={14} style={{ color: backgroundColor }} /> : <ChevronDown size={14} style={{ color: backgroundColor }} /> }
+                { showAllChannels ? <ChevronUp size={14} style={{ color: primaryTextColor }} /> : <ChevronDown size={14} style={{ color: primaryTextColor }} /> }
               </div>
             )}
           </div>
@@ -481,14 +481,14 @@ const ChatbotDrawer = ({
                       <div className="relative flex-shrink-0">
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-semibold select-none"
-                          style={{ backgroundColor: primaryTintColor, color: backgroundColor }}
+                          style={{ backgroundColor: primaryTintColor, color: primaryTextColor }}
                         >
                           {initials || (team?.icon || <Users size={14} />)}
                         </div>
                         {team?.widget_unread_count > 0 && (
                           <span
                             className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] font-bold"
-                            style={{ backgroundColor: backgroundColor, color: textColor }}
+                            style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                           >
                             {team?.widget_unread_count}
                           </span>
@@ -518,7 +518,7 @@ const ChatbotDrawer = ({
                       </div>
                     </div>
                     <div className="flex-shrink-0 flex gap-3 items-center">
-                      <MessageSquareText size={18} style={{ color: backgroundColor }} />
+                      <MessageSquareText size={18} style={{ color: primaryTextColor }} />
                       <ChevronRight size={14} className="text-gray-400" />
                     </div>
                   </div>
@@ -528,7 +528,7 @@ const ChatbotDrawer = ({
                 <div className="flex justify-between items-center mt-2 px-4">
                   <button
                     type="button"
-                    style={{ color: backgroundColor }}
+                    style={{ color: primaryTextColor }}
                     className="text-sm font-medium hover:underline"
                     onClick={() => setShowAllTeams(!showAllTeams)}
                   >
@@ -536,7 +536,7 @@ const ChatbotDrawer = ({
                       ? "Show less"
                       : `See all ${teamsList.length - VISIBLE_ITEMS_COUNT} team${teamsList.length - VISIBLE_ITEMS_COUNT > 1 ? "s" : ""}`}
                   </button>
-                  { showAllTeams ? <ChevronUp size={14} style={{ color: backgroundColor }} /> : <ChevronDown size={14} style={{ color: backgroundColor }} /> }
+                  { showAllTeams ? <ChevronUp size={14} style={{ color: primaryTextColor }} /> : <ChevronDown size={14} style={{ color: primaryTextColor }} /> }
                 </div>
               )}
             </div>
@@ -563,8 +563,8 @@ const ChatbotDrawer = ({
                 : "hover:opacity-90"
             }`}
             style={{
-              background: callState !== "idle" ? undefined : backgroundColor,
-              color: textColor,
+              background: callState !== "idle" ? undefined : primaryBgColor,
+              color: foregroundColor,
             }}
             onClick={handleVoiceCall}
             disabled={callState !== "idle"}
@@ -580,7 +580,7 @@ const ChatbotDrawer = ({
           { (teamsList || []).length ===  0 && (
             <button
               className="grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors hover:bg-gray-50"
-              style={{ border: "1.5px solid " + backgroundColor, color: backgroundColor }}
+              style={{ border: "1.5px solid currentColor", color: primaryTextColor }}
               onClick={handleSendMessageWithNoTeam}
             >
               <span className="inline-flex items-center gap-2">
@@ -600,7 +600,8 @@ const ChatbotDrawer = ({
     currentTeamId,
     callState,
     voice_call_widget,
-    backgroundColor,
+    primaryTextColor,
+    primaryBgColor,
     handleChangeChannel,
     handleChangeTeam,
     handleSendMessageWithNoTeam,

@@ -46,10 +46,8 @@ export const generateNewId = (length = 8) => {
 };
 
 export const generateChannelId = (companyId = '') => {
-  // Backend regex: ^ch-comp-(\d+)\.([0-9a-f]{32})$
   const numericCompanyId = String(companyId).replace(/\D/g, '');
-  const uuid = uuidv4().replace(/-/g, '').toLowerCase();
-  console.log("Hero: ", uuid, `ch-comp-${numericCompanyId}.${uuid}`);
+  const uuid = uuidv4().replace(/-/g, '');
   return `ch-comp-${numericCompanyId}.${uuid}`;
 };
 
