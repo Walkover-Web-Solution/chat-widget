@@ -82,7 +82,7 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
       default:
         return null;
     }
-  }, [message, foregroundColor, backgroundColor, addMessage]);
+  }, [message, foregroundColor, primaryBgColor, addMessage]);
 
   return (
     <div className="w-full">
