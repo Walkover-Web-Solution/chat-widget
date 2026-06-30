@@ -14,7 +14,6 @@
   /* background-color: #3d7bef !important; */
   text-align: center;
   align-content: center;
-  color: white;
   font-size: 18px;
   /* cursor: pointer; */
   z-index: 99999 !important;
@@ -66,7 +65,7 @@
   z-index: 9999;
   display: none;
   box-sizing: border-box;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid #cecece;
   box-shadow: rgba(15, 15, 15, 0.08) 0px 5px 40px 0px;
@@ -78,15 +77,30 @@
 }
 
 #hello-chatbot-icon-image {
+  position: relative;
   background-color: none !important;
   object-fit: contain;
-  height: 60px !important;
-  width: 60px !important;
+  height: 48px !important;
+  width: 48px !important;
   margin: 8px 0px 0px 2px !important;
   box-sizing: border-box !important;
   float: right;
   cursor: pointer;
   z-index: 999999999 !important;
+}
+
+/* Carve a circular notch out of the launcher's top-right corner whenever an
+   unread badge is being shown. The mask matches the launcher's 48x48 inner
+   circle so the badge appears to "punch through" the launcher. */
+#hello-chatbot-icon-image.has-badge > div {
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00Mi45OTkxIDBDNDAuNTcwNyAxLjgyNDQ2IDM5IDQuNzI4OCAzOSA4QzM5IDEzLjE4NTMgNDIuOTQ2NyAxNy40NDg5IDQ4IDE3Ljk1MDZWNDhIMFYwSDQyLjk5OTFaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPC9zdmc+Cg==");
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00Mi45OTkxIDBDNDAuNTcwNyAxLjgyNDQ2IDM5IDQuNzI4OCAzOSA4QzM5IDEzLjE4NTMgNDIuOTQ2NyAxNy40NDg5IDQ4IDE3Ljk1MDZWNDhIMFYwSDQyLjk5OTFaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPC9zdmc+Cg==");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
 }
 
 #hello-iframe-parent-container {
@@ -97,7 +111,7 @@
   /* background-color: transparent; */
   object-fit: contain;
   /* cursor: pointer; */
-  z-index: 9999 !important;
+  z-index: 2147483003 !important;
   height: auto;
   width: auto;
   box-sizing: border-box !important;
@@ -105,6 +119,11 @@
   position: fixed;
   bottom: 18px !important;
   right: 18px !important;
+}
+
+#chatbot-logo {
+  display: inherit;
+  place-items: inherit;
 }
 
 /* Starter Question Styles */
@@ -279,8 +298,8 @@
 }
 
 .chatbot-icon-interfaceEmbed {
-  width: 60px !important;
-  height: 60px !important;
+  width: 48px !important;
+  height: 48px !important;
   cursor: pointer;
   object-fit: contain;
 }
@@ -418,12 +437,12 @@
 
 .hello-badge-count {
   /* Dimensions & Position */
-  min-width: 20px;
-  height: 20px;
+  min-width: 18px;
+  height: 18px;
   position: absolute;
   top: -2px;
-  right: 5px;
-  padding: 4px;
+  right: -11px;
+  padding: 3px;
   box-sizing: border-box;
 
   /* Centering */

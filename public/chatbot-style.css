@@ -63,7 +63,7 @@
     z-index: 9999;
     display: none;
     box-sizing: border-box;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     border: 1px solid #cecece;
 }

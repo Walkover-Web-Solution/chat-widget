@@ -7,7 +7,7 @@ import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
   const messageJson = message?.messageJson || {};
   const sendMessageToHello = useSendMessageToHello({});
-  const { textColor, backgroundColor } = useColor();
+  const { foregroundColor, primaryBgColor } = useColor();
 
   const renderHeader = (header: any) => {
     if (header?.type === "text") {
@@ -67,7 +67,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium w-full max-w-md justify-start"
-                        style={{ backgroundColor: backgroundColor, color: textColor }}
+                        style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink size={16} strokeWidth={2} />
@@ -125,7 +125,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-                  style={{ backgroundColor: backgroundColor, color: textColor }}
+                  style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                 >
                   <ExternalLink size={16} strokeWidth={2} />
                   {action.parameters.display_text || "View"}
@@ -143,7 +143,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium w-full max-w-md justify-start"
-                    style={{ backgroundColor: backgroundColor, color: textColor }}
+                    style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink size={16} strokeWidth={2} />
