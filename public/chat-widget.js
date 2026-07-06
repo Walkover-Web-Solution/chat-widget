@@ -14,6 +14,7 @@
         ? scriptUrl.port
         : scriptUrl.hostname.split('.')[0];
     const scriptOrigin = scriptUrl.origin;
+    const isLegacySubdomain = (s) => s === 'blacksea' || s === 'ctest';
 
     let block_chatbot = false;
 
@@ -107,7 +108,7 @@
     class HelloChatbotEmbedManager {
         constructor(subdomain = "blacksea") {
             this.subdomain = subdomain
-            this.prefix = `${this.subdomain}-hello-`
+            this.prefix = isLegacySubdomain(subdomain) ? 'hello-' : `${this.subdomain}-hello-`
             this.elements = {
                 chatbotIconContainer: `${this.prefix}chatbot-launcher-icon`,
                 chatbotIconImage: `${this.prefix}chatbot-icon-image`,
@@ -117,6 +118,8 @@
                 chatbotStyle: `${this.prefix}chatbot-style`,
                 unReadMsgCountBadge: `${this.prefix}unread-msg-count-badge`,
                 starterQuestionContainer: `${this.prefix}starter-question-container`,
+                popupInterfaceEmbed: `${this.prefix}popup-interfaceEmbed`,
+                closeButtonInterfaceEmbed: `${this.prefix}close-button-interfaceEmbed`,
             }
             this.props = {};
             this.helloProps = null;
@@ -1124,7 +1127,7 @@
 
         setPropValues(newprops) {
             if (newprops.iconColor) {
-                document.getElementById("hello-popup-interfaceEmbed").src = newprops.iconColor === 'dark' ? AI_WHITE_ICON : AI_BLACK_ICON
+                document.getElementById(this.elements.popupInterfaceEmbed).src = newprops.iconColor === 'dark' ? AI_WHITE_ICON : AI_BLACK_ICON
             } if (newprops.fullScreen === true || newprops.fullScreen === 'true') {
                 document.getElementById(this.elements.chatbotIframeContainer)?.classList.add('hello-full-screen-interfaceEmbed')
             } if (newprops.fullScreen === false || newprops.fullScreen === 'false') {
@@ -1132,8 +1135,8 @@
             } if ('hide_launcher' in newprops && document.getElementById(this.elements.chatbotIconContainer)) {
                 document.getElementById(this.elements.chatbotIconContainer).style.display = (newprops.hide_launcher === true || newprops.hide_launcher === 'true') ? 'none' : 'unset';
                 // this.hideHelloIcon = newprops?.hide_launcher;
-            } if ('hideCloseButton' in newprops && document.getElementById('hello-close-button-interfaceEmbed')) {
-                document.getElementById('hello-close-button-interfaceEmbed').style.display = (newprops.hideCloseButton === true || newprops.hideCloseButton === 'true') ? 'none' : 'unset';
+            } if ('hideCloseButton' in newprops && document.getElementById(this.elements.closeButtonInterfaceEmbed)) {
+                document.getElementById(this.elements.closeButtonInterfaceEmbed).style.display = (newprops.hideCloseButton === true || newprops.hideCloseButton === 'true') ? 'none' : 'unset';
             }
             if ('launch_widget' in newprops && newprops.launch_widget === true || newprops.launch_widget === 'true') {
                 this.helloLaunchWidget = newprops?.launch_widget
@@ -1467,8 +1470,8 @@
     window.chatWidget = window.chatWidget || {};
     window.chatWidget[subdomain] = windowMethods;
 
-    // For blacksea, also expose methods flat on window.chatWidget (backward compat)
-    if (subdomain == 'blacksea') {
+    // For legacy subdomains, also expose methods flat on window.chatWidget (backward compat)
+    if (isLegacySubdomain(subdomain)) {
         Object.assign(window.chatWidget, windowMethods);
     }
 
