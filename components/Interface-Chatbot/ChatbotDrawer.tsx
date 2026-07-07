@@ -311,7 +311,7 @@ const ChatbotDrawer = ({
                       return `${isUserMessage ? "You: " : ""}${text}`;
                     }
                     if (channel?.last_message) {
-                      const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message.is_auto_response;
+                      const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message?.is_auto_response;
                       const text = channel?.last_message?.message?.content?.text
                         || (channel?.last_message?.message?.content?.attachment?.length > 0 ? "Attachment"
                           : channel?.last_message?.message?.message_type || "New conversation");
