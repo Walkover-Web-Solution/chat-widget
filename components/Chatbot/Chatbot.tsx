@@ -62,12 +62,15 @@ const EmptyChatView = React.memo(() => (
   </div>
 ));
 
-const ActiveChatView = React.memo(() => (
+const ActiveChatView = React.memo(({ isSmallScreen }: { isSmallScreen: boolean }) => (
   <div className="flex flex-col flex-1 overflow-hidden">
     <div className="w-full h-full overflow-hidden relative flex-1">
       <MessageList />
     </div>
-    <div className="max-w-5xl mx-auto p-3 pb-3 w-full">
+    <div
+      className={"max-w-5xl mx-auto p-3 pb-3 w-full" + (isSmallScreen ? ' border-t border-gray-100' : "") }
+      style={{ backgroundColor: (isSmallScreen ? 'var(--background)' : undefined) }}
+    >
       <ChatbotTextField />
     </div>
   </div>
@@ -80,7 +83,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const messageRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { backgroundColor } = useColor();
+  const { primaryBgColor } = useColor();
   const { isSmallScreen } = useScreenSize();
   const dispatch = useAppDispatch();
 
@@ -145,7 +148,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
     <MessageContext.Provider value={contextValue}>
       <div className="flex h-screen w-full overflow-hidden relative">
         {/* Sidebar - visible on large screens */}
-        <div className={`border-r overflow-y-auto transition-all duration-300 ease-in-out ${isToggledrawer && !isSmallScreen ? 'w-96 max-w-[286px]' : 'w-0'}`}>
+        <div className={`border-r overflow-y-auto transition-all duration-300 ease-in-out ${isToggledrawer && !isSmallScreen ? 'w-96 max-w-[286px]' : 'w-0 absolute'}`}>
           <ChatbotDrawer
             setToggleDrawer={(data: boolean) => { dispatch(setToggleDrawer(data)) }}
             isToggledrawer={isToggledrawer}
@@ -162,7 +165,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
             <div className="w-full">
               <LinearProgress
                 color="inherit"
-                style={{ color: backgroundColor }}
+                style={{ color: primaryBgColor }}
               />
             </div>
           )}
@@ -177,7 +180,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
           {isChatEmpty ? (
             <EmptyChatView />
           ) : (
-            <ActiveChatView />
+            <ActiveChatView isSmallScreen={isSmallScreen} />
           )}
         </div>
       </div>

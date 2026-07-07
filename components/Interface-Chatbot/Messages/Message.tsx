@@ -30,7 +30,7 @@ const ROLE_TOOLS_CALL = "tools_call";
 const ROLE_VOICE_CALL = "voice_call";
 
 function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps) {
-  const { backgroundColor, textColor } = useColor();
+  const { primaryBgColor, foregroundColor } = useColor();
 
   /**
    * Memoize role-based rendering to prevent unnecessary re-computations
@@ -44,15 +44,15 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
           <>
             <UserMessageCard
               message={message}
-              textColor={textColor}
-              backgroundColor={backgroundColor}
+              foregroundColor={foregroundColor}
+              backgroundColor={primaryBgColor}
             />
             {message?.error && (
               <AssistantMessageCard
                 message={message}
                 isError={true}
-                textColor={textColor}
-                backgroundColor={backgroundColor}
+                foregroundColor={foregroundColor}
+                backgroundColor={primaryBgColor}
               />
             )}
           </>
@@ -62,8 +62,8 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
         return (
           <AssistantMessageCard
             message={message}
-            textColor={textColor}
-            backgroundColor={backgroundColor}
+            foregroundColor={foregroundColor}
+            backgroundColor={primaryBgColor}
           />
         );
 
@@ -82,7 +82,7 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
       default:
         return null;
     }
-  }, [message, textColor, backgroundColor, addMessage]);
+  }, [message, foregroundColor, primaryBgColor, addMessage]);
 
   return (
     <div className="w-full">
@@ -91,8 +91,8 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
           prevTime={prevTime}
           messageTime={message.time}
           key={message.time}
-          backgroundColor={backgroundColor}
-          textColor={textColor}
+          backgroundColor={primaryBgColor}
+          foregroundColor={foregroundColor}
         />
       )}
       {messageContent}
