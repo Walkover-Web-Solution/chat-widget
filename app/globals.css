@@ -4,12 +4,24 @@
 @plugin "daisyui";
 @plugin "@tailwindcss/typography";
 
+/* Hide Scrollbar */
+* {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: none;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
   --message-card-background: #f0f0f0;
   --icon-color: #555555;
-  --drawer-color: #f2f2f2;
+  --drawer-color: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -82,10 +94,22 @@ html:has(.drawer-toggle:checked) {
 
 
 .icn {
-  color: var(--icon-color);
-  @apply hover:bg-gray-200 hover:text-gray-800
+  /* color: var(--icon-color); */
+  border-radius: 9999px;
+  transition: color 200ms ease, background-color 200ms ease;
 }
 
-[data-theme="dark"] .icn {
-  @apply hover:bg-gray-800 hover:text-gray-200
+.icn:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+[data-theme="dark"] .icn:hover {
+  background-color: color-mix(in srgb, var(--icon-color) 12%, transparent);
+  color: var(--icon-color);
+}
+
+input,
+select {
+  outline: none !important;
 }

@@ -1,6 +1,7 @@
 'use client';
 import { X } from "lucide-react";
 import React from "react";
+import { useColor } from "../Chatbot/hooks/useColor";
 
 interface ReplyPreviewProps {
   replyToMessage: {
@@ -15,6 +16,7 @@ interface ReplyPreviewProps {
 }
 
 const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseReply }) => {
+  const { primaryTextColor, primaryTintColor } = useColor();
   if (!replyToMessage) return null;
 
   const getMessageContent = (content: string | { text: string }): string => {
@@ -53,14 +55,23 @@ const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToMessage, onCloseRepl
   const displayContent = getDisplayContent();
 
   return (
-    <div className="relative flex items-start gap-3 p-3 bg-blue-50 border-l-4 border-blue-500 mb-1 rounded-md shadow-sm z-[999]">
+    <div
+      className="relative flex items-start gap-3 p-3 border-l-4 mb-1 rounded-md shadow-sm z-[999]"
+      style={{
+        backgroundColor: primaryTintColor,
+        borderLeftColor: primaryTextColor,
+      }}
+    >
       <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-blue-700">
+          <span
+            className="text-sm font-medium"
+            style={{ color: primaryTextColor }}
+          >
             {getSenderName()}
           </span>
         </div>
-        <div className="text-sm text-gray-600 leading-relaxed truncate">
+        <div className="text-sm leading-relaxed truncate" style={{ color: 'var(--icon-color)'}}>
           {/* {getMessagePreview(messageContent)} */}
           <div className="max-w-none">
             <div dangerouslySetInnerHTML={{ __html: (getMessagePreview(displayContent)) }}></div>
