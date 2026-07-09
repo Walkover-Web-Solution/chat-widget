@@ -26,8 +26,8 @@ const FALLBACK_ICON = "https://cdn1.iconfinder.com/data/icons/leto-files/64/leto
 const getFileType = (url: string): string => {
   if (!url) return "other"; // e.g. null, undefined, empty string
   const extension = url?.split(".")?.pop()?.toLowerCase()?.split("?")[0] || "";
-  if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(extension)) return "image";
-  if (["mp4", "webm", "ogg"].includes(extension)) return "video";
+  if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(extension)) return "image";
+  if (["mp4", "webm", "ogg", "mov"].includes(extension)) return "video";
   if (["mp3", "wav", "aac", "flac"].includes(extension)) return "audio";
   if (["pdf"].includes(extension)) return "pdf";
   return "other"; // e.g. xlsx, csv, html, zip, etc.
@@ -45,7 +45,7 @@ const PlayIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="text-white"
+    className="text-white mt-1"
   >
     <polygon points="5 3 19 12 5 21 5 3" />
   </svg>
@@ -53,21 +53,21 @@ const PlayIcon = () => (
 
 // Memoized error component
 const ErrorDisplay = () => (
-  <div className="w-60 h-40 flex items-center justify-center border rounded-md bg-gray-100 text-gray-500">
-    <FileWarning className="w-6 h-6 mr-2" />
-    Failed to load
+  <div className="w-64 h-48 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700/60 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20 backdrop-blur-sm transition-all text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/40">
+    <div className="bg-gray-200/60 dark:bg-gray-700/50 p-3 rounded-full mb-3 ring-4 ring-gray-50 dark:ring-gray-800/50">
+      <FileWarning className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+    </div>
+    <span className="text-sm font-medium">Failed to load media</span>
   </div>
 );
 
 // Memoized download button
 const DownloadButton = ({ onClick }: { onClick: () => void }) => (
   <button
-    onClick={onClick}
-    className="absolute top-2 right-2 px-2 pt-1 ml-2 bg-gray-200 shadow-md rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+    onClick={(e) => { e.stopPropagation(); onClick(); }}
+    className="absolute top-2 right-2 p-2 bg-white/70 dark:bg-black/50 backdrop-blur-md text-gray-800 dark:text-gray-200 shadow-md rounded-full md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:scale-110 hover:bg-white dark:hover:bg-black/80 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 z-10"
   >
-    <div className="tooltip tooltip-left" data-tip="Download">
-      <Download size={18} />
-    </div>
+    <Download size={16} strokeWidth={2.5} />
   </button>
 );
 
@@ -112,7 +112,7 @@ const ImageWithFallback = ({
 
   // Memoized container classes
   const containerClasses = useMemo(() =>
-    `flex relative group ${isSmallScreen ? 'max-w-[80%]' : 'max-w-[40%]'} h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity`,
+    `flex relative group ${isSmallScreen ? 'max-w-[80%]' : 'max-w-[40%]'} h-auto rounded-2xl cursor-pointer transition-all duration-300`,
     [isSmallScreen]
   );
 
@@ -128,6 +128,7 @@ const ImageWithFallback = ({
             onError={handleError}
             onClick={handleClick}
             style={style}
+            className="rounded-2xl shadow-sm group-hover:shadow-md transition-all duration-300"
           />
         );
 
@@ -144,8 +145,8 @@ const ImageWithFallback = ({
             >
               <source src={src} type={videoType} />
             </video>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
+              <div className="w-14 h-14 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl border border-white/20 group-hover:scale-110 transition-transform duration-300">
                 <PlayIcon />
               </div>
             </div>
