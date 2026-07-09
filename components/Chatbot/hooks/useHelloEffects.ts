@@ -6,11 +6,12 @@ import useSocket from '@/hooks/socket';
 import useSocketEvents from '@/hooks/socketEventHandler';
 import socketManager from '@/hooks/socketManager';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
+import { setHelloEventMessage, setOpenHelloForm } from '@/store/chat/chatSlice';
 import { setAgentTeams, setGreeting, setHelloClientInfo, setHelloKeysData, setJwtToken, setUnReadCount, setWidgetInfo } from '@/store/hello/helloSlice';
 import { GetSessionStorageData, SetSessionStorage } from '@/utils/ChatbotUtility';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
-import { cleanObject, getLocalStorage } from '@/utils/utilities';
+import { cleanObject, generateNewId, getLocalStorage } from '@/utils/utilities';
 import debounce from 'lodash.debounce';
 import { useCallback, useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
@@ -21,17 +22,6 @@ import { useReduxStateManagement } from './useReduxManagement';
 import { useScreenSize } from './useScreenSize';
 import { useTabVisibility } from './useTabVisibility';
 import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
-
-interface HelloMessage {
-    role: string;
-    message_id?: string;
-    from_name?: string;
-    content: string;
-    id?: string;
-    chat_id?: string;
-    urls?: string[];
-    channel?: string;
-}
 
 interface UseHelloIntegrationProps {
     messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
@@ -50,7 +40,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     const { currentChannelId, isHelloUser } = useReduxStateManagement({ chatSessionId, tabSessionId });
 
-    const { companyId, botId, reduxChatSessionId, totalNoOfUnreadMsgs, isToggledrawer, isChatbotOpen, isChatbotMinimized, unReadCountInCurrentChannel, callToken, demo_widget, helloVariables } = useCustomSelector((state) => ({
+    const { companyId, botId, reduxChatSessionId, totalNoOfUnreadMsgs, isToggledrawer, isChatbotOpen, isChatbotMinimized, unReadCountInCurrentChannel, callToken, demo_widget, helloVariables, unreadNotificationCount } = useCustomSelector((state) => ({
         companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
         botId: state.Hello?.[chatSessionId]?.widgetInfo?.bot_id || '',
         reduxChatSessionId: state.draftData?.chatSessionId,
@@ -61,6 +51,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
             }, 0);
             return unreadCount;
         })(),
+        unreadNotificationCount: (state.Chat?.notifications || []).filter((n: any) => !n.read).length,
         isToggledrawer: state.Chat?.isToggledrawer,
         isChatbotOpen: state.appInfo?.[tabSessionId]?.isChatbotOpen,
         isChatbotMinimized: state.draftData?.isChatbotMinimized,
@@ -92,9 +83,10 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     useEffect(() => {
         if (!demo_widget) {
-            emitEventToParent('SET_BADGE_COUNT', { badgeCount: totalNoOfUnreadMsgs > 99 ? '99+' : totalNoOfUnreadMsgs, channelId: '*' })
+            const combined = (totalNoOfUnreadMsgs || 0) + (unreadNotificationCount || 0);
+            emitEventToParent('SET_BADGE_COUNT', { badgeCount: combined > 99 ? '99+' : combined, channelId: '*' })
         }
-    }, [totalNoOfUnreadMsgs, demo_widget])
+    }, [totalNoOfUnreadMsgs, unreadNotificationCount, demo_widget])
 
     useSocketEvents({ messageRef, fetchChannels, chatSessionId, setLoading, tabSessionId });
     useNotificationSocketEventHandler({ chatSessionId })
@@ -166,6 +158,56 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
     useEffect(() => {
         clearReply();
     }, [currentChannelId]);
+
+    // Handle OPEN_WITH_NOTIFICATION messages from parent widget
+    // When user clicks the launcher message preview popup, the parent script posts
+    // 'OPEN_WITH_NOTIFICATION' with the raw notification HTML. This opens a fresh
+    // chat thread and inserts the notification as a bot-side message (rendered via
+    // ShadowDomComponent) so the user can reply to the campaign notification.
+    useEffect(() => {
+        const handleNotificationMessage = (event: MessageEvent) => {
+            if (event?.data?.type === 'OPEN_WITH_NOTIFICATION') {
+                const content = event?.data?.data?.content || '';
+                // Generate a fresh sub-thread key so this new chat has its own bucket
+                const newSubThreadId = `notification-${generateNewId()}`;
+                // Reset to a fresh channel and close notification view
+                dispatch(setDataInAppInfoReducer({
+                    subThreadId: newSubThreadId,
+                    currentTeamId: '',
+                    currentChannelId: '',
+                    currentChatId: '',
+                    overrideChannelId: '',
+                    showNotificationView: false,
+                }));
+                // Bypass "Enter your details" form popup BEFORE the message is added
+                dispatch(setOpenHelloForm(false));
+                // Push the notification as a bot-side message on the LEFT in the new chat
+                // (rendered via ShadowDomComponent for pushNotification message_type)
+                dispatch(setHelloEventMessage({
+                    subThreadId: newSubThreadId,
+                    message: {
+                        type: 'chat',
+                        message_type: 'pushNotification',
+                        sender_id: 'bot',
+                        is_auto_response: true,
+                        content: {
+                            text: content,
+                            attachment: []
+                        },
+                        from_name: '',
+                        id: generateNewId(),
+                    }
+                }));
+            }
+        };
+
+        if (isHelloUser) {
+            window.addEventListener('message', handleNotificationMessage);
+            return () => {
+                window.removeEventListener('message', handleNotificationMessage);
+            };
+        }
+    }, [isHelloUser]);
 
 
     const initializeHelloServices = async (widgetToken: string = '') => {
@@ -313,9 +355,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
                 }
             }
 
-            if (true) {
-                emitEventToParent("ENABLE_DOMAIN_TRACKING")
-            }
+            emitEventToParent("ENABLE_DOMAIN_TRACKING")
 
         } catch (error) {
             console.error("Error initializing Hello services:", error);

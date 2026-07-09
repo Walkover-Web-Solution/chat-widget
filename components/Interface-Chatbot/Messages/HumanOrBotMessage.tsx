@@ -198,7 +198,6 @@ ShadowDomComponent.displayName = 'ShadowDomComponent';
 const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: boolean }) => {
     const content = useMemo(() => {
         const messageType = message?.message_type;
-
         switch (messageType) {
             case MESSAGE_TYPES.VIDEO_CALL:
                 return <RenderHelloVedioCallMessage message={message} />;
@@ -213,6 +212,8 @@ const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: bo
             case MESSAGE_TYPES.FEEDBACK:
                 return <RenderHelloFeedbackMessage message={message} />;
 
+            // Push notification content rendered in a Shadow DOM to safely display
+            // raw campaign HTML without affecting the parent page styles
             case MESSAGE_TYPES.PUSH_NOTIFICATION:
                 return (
                     <ShadowDomComponent

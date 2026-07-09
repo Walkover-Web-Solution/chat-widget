@@ -41,6 +41,14 @@ interface ChatState {
     options: any[];
     images: any[];
 
+    // Notifications
+    notifications: Array<{
+        id: string;
+        content: string;
+        timestamp: number;
+        read: boolean;
+    }>;
+
     // Additional properties that might be needed
     open?: boolean;
     isHelloUser?: boolean;
@@ -82,6 +90,9 @@ export const initialChatState: ChatState = {
     // Options & Media
     options: [],
     images: [],
+
+    // Notifications
+    notifications: [],
 };
 
 export const chatReducerV2 = {
@@ -316,5 +327,30 @@ export const chatReducerV2 = {
         };
 
         Object.assign(state, initialChatState, preservedValues);
-    }
+    },
+
+    // --- Push Notification Reducers ---
+    // Push notifications (message_type: "Message") from campaigns are stored here.
+    // They appear in the NotificationPage UI and contribute to the launcher badge count.
+    addNotification: (state, action: PayloadAction<{ id: string; content: string; timestamp: number }>) => {
+        state.notifications = [
+            { ...action.payload, read: false },
+            ...state.notifications
+        ];
+    },
+
+    markNotificationRead: (state, action: PayloadAction<string>) => {
+        const notification = state.notifications.find(n => n.id === action.payload);
+        if (notification) {
+            notification.read = true;
+        }
+    },
+
+    removeNotification: (state, action: PayloadAction<string>) => {
+        state.notifications = state.notifications.filter(n => n.id !== action.payload);
+    },
+
+    clearNotifications: (state) => {
+        state.notifications = [];
+    },
 };

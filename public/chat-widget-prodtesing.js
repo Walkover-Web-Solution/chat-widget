@@ -293,6 +293,11 @@
                         this.handlePushNotification(data)
                     }
                     break;
+                case 'LAUNCHER_MESSAGE_PREVIEW':
+                    if (!this.helloProps?.isMobileSDK) {
+                        this.showLauncherMessagePreview(data)
+                    }
+                    break;
                 case 'ENABLE_DOMAIN_TRACKING':
                     this.enableDomainTracking();
                     break;
@@ -420,6 +425,127 @@
             }
         }
 
+        showLauncherMessagePreview(data) {
+            const chatBotIcon = document.getElementById(this.elements.chatbotIconContainer);
+            if (!chatBotIcon) return;
+
+            // Don't show if chatbot is open
+            const iframeContainer = document.getElementById(this.elements.chatbotIframeContainer);
+            if (iframeContainer && iframeContainer.style.display === 'block') return;
+
+            // Remove existing preview if any
+            this.hideLauncherMessagePreview();
+
+            const previewId = `${this.prefix}launcher-msg-preview`;
+
+            // Create preview container
+            const previewContainer = document.createElement('div');
+            previewContainer.id = previewId;
+            previewContainer.className = 'hello-launcher-msg-preview';
+
+            // Close button
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'hello-launcher-msg-preview-close';
+            closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+            closeBtn.setAttribute('aria-label', 'Close preview');
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.hideLauncherMessagePreview();
+            });
+
+            // Content area with iframe for HTML rendering
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'hello-launcher-msg-preview-content';
+
+            const iframe = document.createElement('iframe');
+            iframe.className = 'hello-launcher-msg-preview-iframe';
+            iframe.setAttribute('sandbox', 'allow-same-origin');
+            iframe.setAttribute('scrolling', 'no');
+            iframe.style.width = '100%';
+            iframe.style.border = 'none';
+            iframe.style.background = 'transparent';
+            iframe.style.overflow = 'hidden';
+            iframe.style.display = 'block';
+
+            contentWrapper.appendChild(iframe);
+            previewContainer.appendChild(closeBtn);
+            previewContainer.appendChild(contentWrapper);
+
+            // Click on content opens chatbot with notification
+            contentWrapper.addEventListener('click', () => {
+                this.hideLauncherMessagePreview();
+                this.openChatbot();
+                // Send notification data to iframe to open new chat
+                const iframeComponent = document.getElementById(this.elements.chatbotIframeComponent);
+                if (iframeComponent?.contentWindow) {
+                    setTimeout(() => {
+                        iframeComponent.contentWindow.postMessage({
+                            type: 'OPEN_WITH_NOTIFICATION',
+                            data: { content: data.content || '' }
+                        }, '*');
+                    }, 500);
+                }
+            });
+
+            // Insert before the icon inside the launcher container
+            chatBotIcon.prepend(previewContainer);
+
+            // Write HTML content into the iframe
+            setTimeout(() => {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (iframeDoc) {
+                    iframeDoc.open();
+                    iframeDoc.write(`
+                        <html>
+                        <head><style>
+                            html, body { margin: 0; padding: 0; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2937; background: transparent; }
+                            body > * { margin: 0; }
+                            h1 { font-size: 16px; } h2 { font-size: 15px; } h3 { font-size: 14px; }
+                            img { max-width: 100%; height: auto; }
+                        </style></head>
+                        <body>${data.content || ''}</body>
+                        </html>
+                    `);
+                    iframeDoc.close();
+
+                    // Auto-resize iframe to content height
+                    const resizeIframe = () => {
+                        const bodyHeight = iframeDoc.body?.scrollHeight || 0;
+                        iframe.style.height = Math.min(bodyHeight, 200) + 'px';
+                    };
+                    resizeIframe();
+                    setTimeout(resizeIframe, 100);
+                }
+            }, 0);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                previewContainer.classList.add('hello-launcher-msg-preview-visible');
+            });
+
+            // Auto-dismiss based on TTL (default 10s for preview)
+            const dismissTimeout = Math.min((data.ttl || 10) * 1000, 30000);
+            this._launcherPreviewTimer = setTimeout(() => {
+                this.hideLauncherMessagePreview();
+            }, dismissTimeout);
+        }
+
+        hideLauncherMessagePreview() {
+            if (this._launcherPreviewTimer) {
+                clearTimeout(this._launcherPreviewTimer);
+                this._launcherPreviewTimer = null;
+            }
+            const previewId = `${this.prefix}launcher-msg-preview`;
+            const existing = document.getElementById(previewId);
+            if (existing) {
+                existing.classList.remove('hello-launcher-msg-preview-visible');
+                existing.classList.add('hello-launcher-msg-preview-hide');
+                setTimeout(() => {
+                    existing.remove();
+                }, 300);
+            }
+        }
+
         enableDomainTracking() {
             if (this.state.domainTrackingStarted) return
             this.state.domainTrackingStarted = true
@@ -521,6 +647,8 @@
             if (this.state?.chatbotSize !== 'NORMAL') {
                 this.toggleFullscreen(false);
             }
+            // Hide launcher message preview when chatbot opens
+            this.hideLauncherMessagePreview();
             const interfaceEmbed = document.getElementById(this.elements.chatbotIconContainer);
             const iframeContainer = document.getElementById(this.elements.chatbotIframeContainer);
             const openMessage = { type: 'open', data: {} };
