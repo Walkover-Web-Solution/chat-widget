@@ -75,9 +75,11 @@ const ChatbotDrawer = ({
     tagline,
     hideCloseButton,
     voice_call_widget,
-    show_msg91
+    show_msg91,
+    isFullScreen
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
+    const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
     return {
       subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
       teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
@@ -87,7 +89,8 @@ const ChatbotDrawer = ({
       tagline: state.Hello?.[chatSessionId]?.widgetInfo?.tagline || '',
       hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : state.appInfo?.[tabSessionId]?.hideCloseButton || false,
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
-      show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false
+      show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
     };
   });
 
@@ -401,7 +404,7 @@ const ChatbotDrawer = ({
   };
 
   const CloseButton = useMemo(() => {
-    if ((hideCloseButton === true || String(hideCloseButton) === 'true') || !isSmallScreen) return null;
+    if ((hideCloseButton === true || String(hideCloseButton) === 'true') || !isSmallScreen || isFullScreen) return null;
 
     return (
       <div
@@ -411,7 +414,7 @@ const ChatbotDrawer = ({
         <X size={22} color="var(--icon-color)" />
       </div>
     );
-  }, [hideCloseButton, handleCloseChatbot]);
+  }, [hideCloseButton, isFullScreen, handleCloseChatbot]);
 
   return (
     <div className={`drawer ${isSmallScreen ? 'z-[99999]' : 'z-[999]'}`}>
