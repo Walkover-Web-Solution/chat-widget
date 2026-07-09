@@ -79,8 +79,10 @@ const ChatbotDrawer = ({
     voice_call_widget,
     show_msg91,
     isChatbotMinimized,
+    isFullScreen
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
+    const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
     return {
       subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
       teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
@@ -92,6 +94,7 @@ const ChatbotDrawer = ({
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
       show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
     };
   });
   const theme = useTheme();
@@ -609,7 +612,7 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end gap-1">
-                {!(hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen) && (
+                {!(hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen || isFullScreen) && (
                   <button
                     className={headerIconBtnClass}
                     onClick={handleCloseChatbot}
