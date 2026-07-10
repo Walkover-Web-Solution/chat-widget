@@ -45,6 +45,19 @@ export const generateNewId = (length = 8) => {
   return nanoid();
 };
 
+/**
+ * Strip HTML tags and collapse whitespace to get plain text from an HTML string.
+ * Used for conversation subtitles where raw HTML (e.g. push notifications) should not render.
+ * @param {string} html - Raw HTML or plain text.
+ * @returns {string} Plain text with collapsed whitespace.
+ */
+export const stripHtmlToText = (html) => {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+};
+
 export const generateChannelId = (companyId = '') => {
   const uuid = uuidv4().replace(/-/g, '');
   return `ch-comp-${companyId}.${uuid}`;

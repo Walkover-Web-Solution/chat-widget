@@ -317,7 +317,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     </div>
   );
 
-  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds, lastMessage, unReadCount, isChatbotMinimized, isFullScreen, isOpenInParentContainer } = useCustomSelector((state) => {
+  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds, lastMessage, unReadCount, isChatbotMinimized, isFullScreen, isOpenInParentContainer, unreadNotifications, unreadTotalMsgs } = useCustomSelector((state) => {
     const helloConfig = state.Hello?.[chatSessionId]?.helloConfig;
     const fullScreen = helloConfig?.fullScreen
 
@@ -338,7 +338,11 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       )?.widget_unread_count || 0,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
       isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false,
-      isOpenInParentContainer: parentId
+      isOpenInParentContainer: parentId,
+      unreadNotifications: (state.Chat?.notifications || []).filter((notification: any) => !notification.read).length,
+      unreadTotalMsgs: (state.Hello?.[chatSessionId]?.channelListData?.channels || []).reduce(
+        (acc: number, c: any) => acc + (c?.widget_unread_count || 0), 0
+      )
     }
   }
   )
@@ -375,7 +379,9 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     isHelloUser,
     teams,
     agentTeamName,
-    isMobileSDK
+    isMobileSDK,
+    showNotificationView,
+    notificationsCount
   } = useCustomSelector((state: $ReduxCoreType) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
     return ({
@@ -391,7 +397,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       agentTeamName: getAgentTeamName(state, chatSessionId, currentChannelId),
       subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
       isHelloUser: state.draftData?.isHelloUser || false,
-      voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false
+      showNotificationView: state.appInfo?.[tabSessionId]?.showNotificationView || false,
+      notificationsCount: (state.Chat?.notifications || []).length
     })
   });
   // Determine if we should show the create thread button
@@ -442,29 +449,48 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     window.parent.postMessage({ type: "CLOSE_CHATBOT" }, "*");
   };
 
-  // Set team name when teams or currentTeamId changes
+  // Set team name when teams or currentTeamId changes.
+  // When currentTeamId is empty (e.g. a fresh notification-triggered chat),
+  // reset teamName so the header falls back to "Conversation" instead of
+  // showing the previously selected team's name.
   useEffect(() => {
-    if (!teams?.length || !currentTeamId) return;
+    if (!teams?.length || !currentTeamId) {
+      setTeamName(false);
+      return;
+    }
 
     const team = teams.find((item: any) => item?.id === currentTeamId);
-    if (team) {
-      setTeamName(team.name);
-    }
+    setTeamName(team ? team.name : false);
   }, [teams, currentTeamId]);
 
   // Memoized drawer toggle button
+  const hasUnreadIndicator = (unreadNotifications || 0) > 0 || (unreadTotalMsgs || 0) > 0;
+
   const DrawerToggleButton = useMemo(() => {
     if (!(subThreadList?.length > 1 || isHelloUser)) return null;
 
     return (
       <button
-        className="p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="relative p-2 rounded-full transition-colors text-current hover:bg-gray-200"
         onClick={() => setToggleDrawer(!isToggledrawer)}
       >
         {isToggledrawer ? null : <AlignLeft size={22} />}
+        {!isToggledrawer && hasUnreadIndicator && (
+          <span
+            aria-label="New notifications"
+            className="absolute top-1 right-1 block rounded-full"
+            style={{
+              width: '10px',
+              height: '10px',
+              background: '#ef4444',
+              border: '2px solid var(--background, #fff)',
+              boxShadow: '0 0 0 1px rgba(0,0,0,0.05)'
+            }}
+          />
+        )}
       </button>
     );
-  }, [subThreadList?.length, isHelloUser, isToggledrawer, setToggleDrawer]);
+  }, [subThreadList?.length, isHelloUser, isToggledrawer, setToggleDrawer, hasUnreadIndicator]);
 
   // Memoized create thread button
   const CreateThreadButton = useMemo(() => {
@@ -484,7 +510,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
   // Memoized header title section
   const HeaderTitleSection = useMemo(() => {
-    const displayTitle = isChatbotMinimized && lastMessage?.role === 'user' ? 'You' : chatTitle || chatbotTitle || (isHelloUser ? (agentTeamName || teamName || "Conversation") : "AI Assistant");
+    const isNotificationActive = showNotificationView && notificationsCount > 0;
+    const displayTitle = isNotificationActive ? 'Notifications' : (isChatbotMinimized && lastMessage?.role === 'user' ? 'You' : chatTitle || chatbotTitle || (isHelloUser ? (agentTeamName || teamName || "Conversation") : "AI Assistant"));
     const displaySubtitle = chatSubTitle || chatbotSubtitle || "Do you have any questions? Ask us!";
 
     // Minimized version of the header
@@ -514,14 +541,16 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
             {lastMessage && (
               <div className="flex items-center gap-1">
                 <p>:</p>
-                <div className="line-clamp-1 text-sm md:text-base" dangerouslySetInnerHTML={{
-                  __html: lastMessage?.message_type === 'pushNotification'
-                    ? "Custom Notification"
-                    : (lastMessage.messageJson?.text ||
-                      (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment" :
-                        lastMessage.messageJson?.message_type ||
-                        "New conversation"))
-                }}></div>
+                <div className="line-clamp-1 text-sm md:text-base">{(() => {
+                  if (lastMessage?.message_type === 'pushNotification') return "Custom Notification";
+                  const raw = lastMessage.messageJson?.text
+                    || (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment"
+                      : lastMessage.messageJson?.message_type || "New conversation");
+                  if (typeof document === 'undefined') return raw;
+                  const tmp = document.createElement('div');
+                  tmp.innerHTML = raw || '';
+                  return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim() || 'New conversation';
+                })()}</div>
               </div>
             )}
           </div>
@@ -570,7 +599,9 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     agentTeamName,
     isChatbotMinimized,
     lastMessage,
-    unReadCount
+    unReadCount,
+    showNotificationView,
+    notificationsCount
   ]);
 
   // Memoized fullscreen toggle button

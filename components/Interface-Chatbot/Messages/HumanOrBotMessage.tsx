@@ -198,7 +198,7 @@ ShadowDomComponent.displayName = 'ShadowDomComponent';
 const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: boolean }) => {
     const content = useMemo(() => {
         const messageType = message?.message_type;
-
+        
         switch (messageType) {
             case MESSAGE_TYPES.VIDEO_CALL:
                 return <RenderHelloVedioCallMessage message={message} />;

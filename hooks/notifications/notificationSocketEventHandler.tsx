@@ -1,50 +1,21 @@
 // useNotificationSocketEventHandler.ts
-import { setHelloEventMessage } from '@/store/chat/chatSlice';
+// Handles push-notification socket events from the notification channel.
+// 'Popup' / 'Custom' types are forwarded to the parent window for overlay rendering.
+// 'Message' type notifications are stored in Redux (state.Chat.notifications)
+// and trigger a launcher preview popup via the parent widget script.
+import { addNotification } from '@/store/chat/chatSlice';
 import { useAppDispatch } from '@/store/useTypedHooks';
-import { $ReduxCoreType } from '@/types/reduxCore';
-import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 import { generateNewId } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import socketManager from './notificationSocketManager';
 
-// Define types for better type safety
-export interface HelloMessage {
-    role: string;
-    from_name: string;
-    content: string;
-    urls?: any;
-    id: string;
-}
-
 /**
- * Hook for handling socket events
- * @param options - Options for socket events
- * @param options.messageRef - Reference to message element
+ * Hook that subscribes to the notification socket channel ("NewPublish" events)
+ * and dispatches the appropriate actions based on notification type.
  */
 export const useNotificationSocketEventHandler = ({ chatSessionId }: { chatSessionId: string }) => {
-    // Handler for new messages
     const dispatch = useAppDispatch();
-    const conversations = useCustomSelector((state) => state.Hello?.[chatSessionId]?.channelListData?.channels || [])
-    const addHelloMessage = (data) => {
-        conversations?.forEach((conversation) => {
-            const messageObj = {
-                "message_type": "pushNotification",
-                "type": "chat",
-                "session_id": "",
-                "content": {
-                    "text": data?.content,
-                    "attachment": []
-                },
-                "sender_id": "bot",
-                "chat_id": null,
-                "channel": conversation?.channel,
-                "new_event": true,
-                "id": generateNewId()
-            }
-            dispatch(setHelloEventMessage({ message: messageObj, subThreadId: conversation?.channel }));
-        })
-    }
 
     const handleNewMessage = useCallback((data: any, acknowledgement: any) => {
         const { response } = data;
@@ -56,22 +27,29 @@ export const useNotificationSocketEventHandler = ({ chatSessionId }: { chatSessi
                 if (message_type === 'Popup' || message_type?.toLowerCase() === 'custom') {
                     emitEventToParent('PUSH_NOTIFICATION', message)
                 } else if (message_type === 'Message') {
-                    addHelloMessage(message)
+                    const notificationId = generateNewId();
+                    dispatch(addNotification({
+                        id: notificationId,
+                        content: message?.content || '',
+                        timestamp: Date.now(),
+                    }))
+                    // Pass the notification id along so the parent widget can echo it back
+                    // via OPEN_WITH_NOTIFICATION, letting us remove/mark it read on open.
+                    emitEventToParent('LAUNCHER_MESSAGE_PREVIEW', { ...message, notificationId })
                 }
                 if (acknowledgement && typeof acknowledgement === 'function') {
                     acknowledgement(message)
                 }
+                break;
             default:
                 // Handle other types if needed
                 break;
         }
-    }, [addHelloMessage]);
+    }, [dispatch]);
 
     useEffect(() => {
-        // Subscribe to socket events
         socketManager.on("NewPublish", handleNewMessage);
 
-        // Clean up when component unmounts or dependencies change
         return () => {
             socketManager.off("NewPublish", handleNewMessage);
         };
