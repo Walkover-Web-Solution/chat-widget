@@ -551,47 +551,45 @@ const ChatbotDrawer = ({
       )}
 
       {/* Voice Call Section */}
-      {voice_call_widget && (
-        <div className={`marketing-banner bg-[var(--drawer-color)] px-4 pt-3 pb-3 ${(teamsList || []).length === 0 && (filteredChannels || []).length === 0
-          ? ''
-          : 'mt-auto border-t border-[var(--foreground)]/10'
-          }`}>
-          <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>Need specialized help?</p>
-          <div className="flex gap-2">
-            {voice_call_widget &&
-              <button
-                className={`grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors ${callState !== "idle"
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "hover:opacity-90"
-                  }`}
-                style={{
-                  background: callState !== "idle" ? undefined : primaryBgColor,
-                  color: foregroundColor,
-                }}
-                onClick={handleVoiceCall}
-                disabled={callState !== "idle"}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Phone size={16} />
-                  <strong>Call Us</strong>
-                </span>
-              </button>
-            }
-
-            {/*Send Message button in case of no team assign */}
+      <div className={`marketing-banner bg-[var(--drawer-color)] px-4 pt-3 pb-3 ${(teamsList || []).length === 0 && (filteredChannels || []).length === 0
+        ? ''
+        : 'mt-auto border-t border-[var(--foreground)]/10'
+        }`}>
+        <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>Need specialized help?</p>
+        <div className="flex gap-2">
+          {voice_call_widget &&
             <button
-              className="grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors hover:opacity-80"
-              style={{ border: "1.5px solid currentColor", color: isDarkMode ? foregroundColor : primaryTextColor }}
-              onClick={handleSendMessageWithNoTeam}
+              className={`grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors ${callState !== "idle"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "hover:opacity-90"
+                }`}
+              style={{
+                background: callState !== "idle" ? undefined : primaryBgColor,
+                color: foregroundColor,
+              }}
+              onClick={handleVoiceCall}
+              disabled={callState !== "idle"}
             >
               <span className="inline-flex items-center gap-2">
-                <Send size={16} />
-                <strong>Message</strong>
+                <Phone size={16} />
+                <strong>Call Us</strong>
               </span>
             </button>
-          </div>
+          }
+
+          {/*Send Message button in case of no team assign */}
+          <button
+            className="grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors hover:opacity-80"
+            style={{ border: "1.5px solid currentColor", color: isDarkMode ? foregroundColor : primaryTextColor }}
+            onClick={handleSendMessageWithNoTeam}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Send size={16} />
+              <strong>Message</strong>
+            </span>
+          </button>
         </div>
-      )}
+      </div>
     </>
   ), [
     channelList,
