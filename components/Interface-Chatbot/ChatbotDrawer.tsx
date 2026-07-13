@@ -306,18 +306,36 @@ const ChatbotDrawer = ({
                   const subtitleHtml = (() => {
                     if (lastMessage) {
                       const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
-                      const text = lastMessage?.message_type === 'pushNotification'
-                        ? "Custom Notification"
-                        : (lastMessage.messageJson?.text
-                          || (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment"
-                            : lastMessage.messageJson?.message_type || "New conversation"));
+                      let text: string;
+                      if (lastMessage?.message_type === 'pushNotification') {
+                        text = "Custom Notification";
+                      } else if (lastMessage.messageJson?.text) {
+                        text = lastMessage.messageJson.text;
+                      } else if (lastMessage.messageJson?.attachment?.length > 0) {
+                        text = "Attachment";
+                      } else if (lastMessage?.message_type  === 'interactive') {
+                        text = lastMessage.messageJson.body.text || "Interactive Message";
+                      } else if (lastMessage.messageJson?.message_type) {
+                        text = lastMessage.messageJson.message_type;
+                      } else {
+                        text = "New conversation";
+                      }
                       return `${isUserMessage ? "You: " : ""}${text}`;
                     }
                     if (channel?.last_message) {
                       const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message?.is_auto_response;
-                      const text = channel?.last_message?.message?.content?.text
-                        || (channel?.last_message?.message?.content?.attachment?.length > 0 ? "Attachment"
-                          : channel?.last_message?.message?.message_type || "New conversation");
+                      let text: string;
+                      if (channel?.last_message?.message?.content?.text) {
+                        text = channel.last_message.message.content.text;
+                      } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
+                        text = "Attachment";
+                      } else if (channel?.last_message?.message?.message_type === 'interactive') {
+                        text = channel.last_message.message.content?.interactive.body.text || "Interactive Message";
+                      } else if (channel?.last_message?.message?.message_type) {
+                        text = channel.last_message.message.message_type;
+                      } else {
+                        text = "New conversation";
+                      }
                       return `${isYou ? "You: " : ""}${text}`;
                     }
                     return "New conversation";
