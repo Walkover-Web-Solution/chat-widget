@@ -1,4 +1,5 @@
 import InterfaceMarkdown from '@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown';
+import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { useColor } from '../Chatbot/hooks/useColor';
 import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
@@ -6,7 +7,10 @@ import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
 
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
   const messageJson = message?.messageJson || {};
-  const sendMessageToHello = useSendMessageToHello({});
+  const { replyToMessage } = useReplyContext();
+  const sendMessageToHello = useSendMessageToHello({
+    replyToMessageId: replyToMessage?.message_id || replyToMessage?.id || message?.message_id || message?.id
+  });
   const { foregroundColor, primaryBgColor } = useColor();
 
   const renderHeader = (header: any) => {
