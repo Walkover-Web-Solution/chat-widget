@@ -248,15 +248,15 @@ export const useOnSendHello = () => {
         };
         const messageWithReply = typeof newMessage === 'object' ? {
           ...newMessage,
-          replied_msg_content: replyToMessage && replyToMessage?.messageJson?.category ? {
+          replied_msg_content: replyToMessage ? (replyToMessage?.messageJson?.category ? {
             ...replyToMessage?.messageJson,
             text: replyToMessage?.content,
             attachment: replyToMessage?.urls || []
           } : {
             text: getMessageContent(replyToMessage?.content),
             attachment: replyToMessage?.urls || []
-          },
-          replied_msg_type: replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : replyToMessage?.messageJson?.category ? MESSAGE_TYPES.INTERACTIVE : undefined,
+          }) : (newMessage as any).replied_msg_content,
+          replied_msg_type: replyToMessage ? (replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : replyToMessage?.messageJson?.category ? MESSAGE_TYPES.INTERACTIVE : undefined) : (newMessage as any).replied_msg_type,
           replied_msg_sender_id: replyToMessage ? (replyToMessage.is_auto_response || !replyToMessage.from_name ? 'bot' : replyToMessage.sender_id || replyToMessage.from_name) : null,
           replied_from_name: replyToMessage ? replyToMessage.from_name : null,
         } : newMessage;
@@ -394,9 +394,13 @@ export const useOnSendHello = () => {
 export const useSendMessageToHello = ({
   messageRef: propMessageRef,
   replyToMessageId,
+  replied_msg_type,
+  replied_msg_content,
 }: {
   messageRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
   replyToMessageId?: string,
+  replied_msg_type?: string,
+  replied_msg_content?: any,
 }) => {
   const context = useContext(MessageContext);
   const messageRef: any = propMessageRef ?? context.messageRef;
@@ -438,7 +442,9 @@ export const useSendMessageToHello = ({
         attachment: images || []
       },
       timetoken: Date.now(),
-      sender_id: "user"
+      sender_id: "user",
+      ...(replied_msg_type ? { replied_msg_type } : {}),
+      ...(replied_msg_content !== undefined ? { replied_msg_content } : {}),
     };
 
     // Always add message to chat so user can see it immediately
@@ -458,5 +464,5 @@ export const useSendMessageToHello = ({
     }
 
     return true;
-  }, [onSendHello, addHelloMessage, images, messageRef, currentChannelId, currentChatId, setNewMessage, replyToMessageId]);
+  }, [onSendHello, addHelloMessage, images, messageRef, currentChannelId, currentChatId, setNewMessage, replyToMessageId, replied_msg_type, replied_msg_content]);
 };

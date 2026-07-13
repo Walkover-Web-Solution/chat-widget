@@ -4,12 +4,15 @@ import { ExternalLink, MapPin } from 'lucide-react';
 import { useColor } from '../Chatbot/hooks/useColor';
 import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
 import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
+import { MESSAGE_TYPES } from "../Interface-Chatbot/Messages/MessageType";
 
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
   const messageJson = message?.messageJson || {};
   const { replyToMessage } = useReplyContext();
   const sendMessageToHello = useSendMessageToHello({
-    replyToMessageId: replyToMessage?.message_id || replyToMessage?.id || message?.message_id || message?.id
+    replyToMessageId: replyToMessage?.message_id || replyToMessage?.id || message?.message_id || message?.id,
+    replied_msg_type: MESSAGE_TYPES.INTERACTIVE,
+    replied_msg_content: messageJson
   });
   const { foregroundColor, primaryBgColor } = useColor();
 
