@@ -80,8 +80,10 @@ const ChatbotDrawer = ({
     voice_call_widget,
     show_msg91,
     isChatbotMinimized,
+    isFullScreen
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
+    const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
     return {
       subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
       teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
@@ -93,6 +95,7 @@ const ChatbotDrawer = ({
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
       show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
     };
   });
   const theme = useTheme();
@@ -351,21 +354,39 @@ const ChatbotDrawer = ({
                     };
                     if (lastMessage) {
                       const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
-                      const rawText = lastMessage?.message_type === 'pushNotification'
-                        ? "Custom Notification"
-                        : (lastMessage.messageJson?.text
-                          || (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment"
-                            : lastMessage.messageJson?.message_type || "New conversation"));
-                      const text = stripHtmlToText(rawText);
-                      return `${isUserMessage ? "You: " : ""}${text || "New conversation"}`;
+                      let rawText: string;
+                      if (lastMessage?.message_type === 'pushNotification') {
+                        rawText = "Custom Notification";
+                      } else if (lastMessage.messageJson?.text) {
+                        rawText = lastMessage.messageJson.text;
+                      } else if (lastMessage.messageJson?.attachment?.length > 0) {
+                        rawText = "Attachment";
+                      } else if (lastMessage?.message_type === 'interactive' && lastMessage.messageJson?.body?.text) {
+                        rawText = lastMessage.messageJson.body.text;
+                      } else if (lastMessage.messageJson?.message_type) {
+                        rawText = lastMessage.messageJson.message_type;
+                      } else {
+                        rawText = "New conversation";
+                      }
+                      const text = stripHtmlToText(rawText) || (lastMessage?.message_type === 'interactive' ? "Interactive Message" : "New conversation");
+                      return `${isUserMessage ? "You: " : ""}${text}`;
                     }
                     if (channel?.last_message) {
-                      const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message.is_auto_response;
-                      const rawText = channel?.last_message?.message?.content?.text
-                        || (channel?.last_message?.message?.content?.attachment?.length > 0 ? "Attachment"
-                          : channel?.last_message?.message?.message_type || "New conversation");
-                      const text = stripHtmlToText(rawText);
-                      return `${isYou ? "You: " : ""}${text || "New conversation"}`;
+                      const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message?.is_auto_response;
+                      let rawText: string;
+                      if (channel?.last_message?.message?.content?.text) {
+                        rawText = channel.last_message.message.content.text;
+                      } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
+                        rawText = "Attachment";
+                      } else if (channel?.last_message?.message?.message_type === 'interactive' && channel.last_message.message.content?.interactive?.body?.text) {
+                        rawText = channel.last_message.message.content.interactive.body.text;
+                      } else if (channel?.last_message?.message?.message_type) {
+                        rawText = channel.last_message.message.message_type;
+                      } else {
+                        rawText = "New conversation";
+                      }
+                      const text = stripHtmlToText(rawText) || (channel?.last_message?.message?.message_type === 'interactive' ? "Interactive Message" : "New conversation");
+                      return `${isYou ? "You: " : ""}${text}`;
                     }
                     return "New conversation";
                   })();
@@ -661,7 +682,7 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end gap-1">
-                {!(hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen) && (
+                {!(hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen || isFullScreen) && (
                   <button
                     className={headerIconBtnClass}
                     onClick={handleCloseChatbot}
