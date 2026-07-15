@@ -219,14 +219,17 @@ export const useOnSendHello = () => {
 
   const isBot = assigned_type === 'bot';
 
-  return useCallback(async (message?: string, newMessage?: HelloMessage | string, voiceCall?: boolean, newChannelId?: string, overrideChatId?: string, overrideTeamId?: string, repliedOn?: string) => {
+  return useCallback(async (message?: string, newMessage?: HelloMessage | string, voiceCall?: boolean, newChannelId?: string, overrideChatId?: string, overrideTeamId?: string, repliedOn?: string, forceNewChat?: boolean) => {
     if (!voiceCall && (!message?.trim() && (!images || images.length === 0))) return;
 
     try {
 
-      const channelIdToUse = newChannelId || currentChannelId || overrideChannelId;
-      const chatIdToUse = overrideChatId || currentChatId;
-      const teamIdToUse = overrideTeamId || currentTeamId;
+      // forceNewChat ignores any existing/stale redux ids so a brand new channel
+      // is always created, regardless of whether the redux reset (if any) has
+      // propagated to this closure yet
+      const channelIdToUse = forceNewChat ? '' : (newChannelId || currentChannelId || overrideChannelId);
+      const chatIdToUse = forceNewChat ? '' : (overrideChatId || currentChatId);
+      const teamIdToUse = forceNewChat ? '' : (overrideTeamId || currentTeamId);
 
       let workingChannelId = channelIdToUse;
       if (!chatIdToUse && !channelIdToUse) {

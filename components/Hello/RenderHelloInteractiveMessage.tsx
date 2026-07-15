@@ -187,24 +187,29 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                         {section?.title}
                       </div>
                     )}
-                    <ul className="menu menu-sm w-fit min-w-40 p-0 gap-2">
-                      {section?.rows?.map((row: any, rowIndex: number) => (
-                        <li key={row?.id || rowIndex} className='border border-current rounded-lg'>
-                          <a
-                            className="py-2"
-                            onClick={() => sendMessageToHello?.(row?.title)}
-                          >
-                            <div className="flex flex-col w-full items-start">
-                              <div className="font-medium break-words w-full text-inherit">{row?.title}</div>
-                              {row?.description && (
-                                <InterfaceMarkdown className="text-xs text-gray-500 mt-1 w-full break-words">
-                                  {row.description}
-                                </InterfaceMarkdown>
-                              )}
-                            </div>
-                          </a>
-                        </li>
-                      ))}
+                    <ul className="menu menu-sm flex-row w-fit min-w-40 p-0 gap-2">
+                      {section?.rows?.map((row: any, rowIndex: number) => {
+                        const titleWordCount = row?.title?.trim()?.split(/\s+/)?.filter(Boolean)?.length || 0;
+                        const descriptionWordCount = row?.description?.trim()?.split(/\s+/)?.filter(Boolean)?.length || 0;
+                        const isLongRow = titleWordCount > 3 || (row?.description && descriptionWordCount > 3);
+                        return (
+                          <li key={row?.id || rowIndex} className={`border border-current rounded-lg${isLongRow ? ' w-full' : ''}`}>
+                            <a
+                              className="py-2"
+                              onClick={() => sendMessageToHello?.(row?.title)}
+                            >
+                              <div className="flex flex-col w-full items-start">
+                                <div className="font-medium break-words w-full text-inherit">{row?.title}</div>
+                                {row?.description && (
+                                  <InterfaceMarkdown className="text-xs text-gray-500 mt-1 w-full break-words">
+                                    {row.description}
+                                  </InterfaceMarkdown>
+                                )}
+                              </div>
+                            </a>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))}

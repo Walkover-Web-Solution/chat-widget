@@ -1,5 +1,5 @@
 import { ThemeContext } from "@/components/AppWrapper";
-import { useSendMessageToHello } from "@/components/Chatbot/hooks/useHelloIntegration";
+import { useOnSendHello, useSendMessageToHello } from "@/components/Chatbot/hooks/useHelloIntegration";
 import { addDomainToHello, saveClientDetails } from "@/config/helloApi";
 import { CBManger } from "@/hooks/coBrowser/CBManger";
 import { EmbeddingScriptEventRegistryInstance } from "@/hooks/CORE/eventHandlers/embeddingScript/embeddingScriptEventHandler";
@@ -11,7 +11,7 @@ import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
 import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
-import { cleanObject, getLocalStorage, removeFromLocalStorage, setLocalStorage } from "@/utils/utilities";
+import { cleanObject, generateNewId, getLocalStorage, removeFromLocalStorage, setLocalStorage } from "@/utils/utilities";
 import isPlainObject from "lodash.isplainobject";
 import { useContext, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
@@ -24,11 +24,13 @@ const helloToChatbotPropsMap: Record<string, string> = {
 
 const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventRegistryInstance, chatSessionId: string) => {
     const sendMessageToHello = useSendMessageToHello({});
+    const onSendHello = useOnSendHello();
     const dispatch = useDispatch()
     const { handleThemeChange, handleModeChange } = useContext(ThemeContext);
     // We need to access the channel list. Let's use the custom selector to get it.
-    const { channelList } = useCustomSelector((state) => ({
-        channelList: state.Hello?.[chatSessionId]?.channelListData?.channels
+    const { channelList, companyId } = useCustomSelector((state) => ({
+        channelList: state.Hello?.[chatSessionId]?.channelListData?.channels,
+        companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || ''
     }));
 
     // Use a ref to keep track of the latest channel list without re-running the effect
@@ -37,10 +39,33 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         channelListRef.current = channelList;
     }, [channelList]);
 
+    // company_id is only known once widgetInfo has loaded (async, happens after
+    // helloData/initializeHelloServices). Keep it in a ref + queue any greet
+    // message that arrives before that, so generateChannelId never runs with an
+    // empty companyId (which produced "ch-comp-.<uuid>" channel_hex values).
+    const companyIdRef = useRef(companyId);
+    const pendingGreetMessageRef = useRef<string | null>(null);
+    useEffect(() => {
+        companyIdRef.current = companyId;
+        if (companyId && pendingGreetMessageRef.current) {
+            const pendingMessage = pendingGreetMessageRef.current;
+            pendingGreetMessageRef.current = null;
+            // Call the live onSendHello (not the ref) - it's already recreated
+            // with the fresh companyId in this same render, whereas onSendHelloRef
+            // only gets synced in a *later* effect below, so it would still be stale here
+            onSendHello(pendingMessage, buildInitialNewMessage(pendingMessage), false, undefined, undefined, undefined, undefined, true);
+        }
+    }, [companyId, onSendHello]);
+
     const sendMessageToHelloRef = useRef(sendMessageToHello);
     useEffect(() => {
         sendMessageToHelloRef.current = sendMessageToHello;
     }, [sendMessageToHello]);
+
+    const onSendHelloRef = useRef(onSendHello);
+    useEffect(() => {
+        onSendHelloRef.current = onSendHello;
+    }, [onSendHello]);
 
     const handleParentRouteChanged = (event: MessageEvent) => {
         if (event?.data?.data?.websiteUrl) {
@@ -206,6 +231,39 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         }
     }
 
+    function buildInitialNewMessage(greetMessage: string) {
+        return {
+            id: generateNewId(24),
+            role: "user",
+            chat_id: generateNewId(),
+            content: {
+                text: greetMessage,
+                attachment: []
+            },
+            timetoken: Date.now(),
+            sender_id: "user"
+        };
+    }
+
+    function handleSendInitialMessage(event: MessageEvent) {
+        const initialMessage = event?.data?.data?.message;
+        if (!initialMessage) return;
+
+        // Clear appInfo immediately so the UI drops any previously loaded conversation
+        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '' }));
+
+        if (!companyIdRef.current) {
+            // widgetInfo (and hence company_id) hasn't loaded yet - queue it and
+            // send once company_id is available (see the companyId effect above)
+            pendingGreetMessageRef.current = initialMessage;
+            return;
+        }
+
+        // forceNewChat (last arg) makes onSendHello ignore any redux channel/chat ids
+        // and always create a brand new chat, instead of racing the reset dispatch above
+        onSendHelloRef.current(initialMessage, buildInitialNewMessage(initialMessage), false, undefined, undefined, undefined, undefined, true);
+    }
+
     function handleHelloRuntimeData(event: MessageEvent) {
         const { data } = event?.data;
 
@@ -312,6 +370,8 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         eventHandler.addEventHandler('CHATBOT_CLOSE', () => handleChatbotVisibility(false))
 
         eventHandler.addEventHandler('STARTER_QUESTION_OPTION_CLICKED', handleStarterQuestionOptionClicked)
+
+        eventHandler.addEventHandler('SEND_INITIAL_MESSAGE', handleSendInitialMessage)
 
         eventHandler.addEventHandler('SHOW_TICKET', handleShowTicket)
 
