@@ -4,8 +4,9 @@ import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 import { ALLOWED_EVENTS_TO_SUBSCRIBE } from '@/utils/enums';
 import { Reply } from "lucide-react";
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { useReplyContext } from "../contexts/ReplyContext";
+import { MessageContext } from "../InterfaceChatbot";
 import ImageWithFallback from './ImageWithFallback';
 import "./Message.css";
 import MessageTime from './MessageTime';
@@ -20,6 +21,7 @@ const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor,
     const [showSenderTime, setShowSenderTime] = useState(false);
     const [showReplyButton, setShowReplyButton] = useState(false);
     const { setReplyToMessage } = useReplyContext();
+    const { messageRef } = useContext(MessageContext);
 
     const { sendEventToParentOnMessageClick } = useCustomSelector((state) => ({
         sendEventToParentOnMessageClick: state.Interface?.[chatSessionId]?.eventsSubscribedByParent?.includes(ALLOWED_EVENTS_TO_SUBSCRIBE.MESSAGE_CLICK) || false
@@ -41,7 +43,8 @@ const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor,
             is_auto_response: false,
             message_id: message?.message_id || message?.id
         });
-    }, [message, setReplyToMessage]);
+        setTimeout(() => messageRef?.current?.focus(), 0);
+    }, [message, setReplyToMessage, messageRef]);
 
     return (
         <div

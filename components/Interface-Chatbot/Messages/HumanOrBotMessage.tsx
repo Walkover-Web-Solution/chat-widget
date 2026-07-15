@@ -4,11 +4,12 @@ import RenderHelloVedioCallMessage from "@/components/Hello/RenderHelloVedioCall
 import { linkify } from "@/utils/utilities";
 import { Reply } from "lucide-react";
 import Image from "next/image";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import RenderHelloAttachmentMessage from "../../Hello/RenderHelloAttachmentMessage";
 import RenderHelloFeedbackMessage from "../../Hello/RenderHelloFeedbackMessage";
 import RenderHelloInteractiveMessage from "../../Hello/RenderHelloInteractiveMessage";
 import { useReplyContext } from "../contexts/ReplyContext";
+import { MessageContext } from "../InterfaceChatbot";
 import "./Message.css";
 import MessageTime from "./MessageTime";
 import { MESSAGE_TYPES } from "./MessageType";
@@ -247,11 +248,13 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
     const [showSenderTime, setShowSenderTime] = useState(isLastMessage);
     const [showReplyButton, setShowReplyButton] = useState(false);
     const { setReplyToMessage } = useReplyContext();
+    const { messageRef } = useContext(MessageContext);
 
     const handleReplyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         setReplyToMessage(message);
-    }, [message, setReplyToMessage]);
+        setTimeout(() => messageRef?.current?.focus(), 0);
+    }, [message, setReplyToMessage, messageRef]);
 
     return (
         <div
