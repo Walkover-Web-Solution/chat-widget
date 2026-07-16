@@ -2,6 +2,7 @@ import { errorToast } from "@/components/customToast";
 import { PAGE_SIZE } from "@/utils/enums";
 import axios from "@/utils/helloInterceptor";
 import { generateNewId, getLocalStorage, setLocalStorage } from "@/utils/utilities";
+import { extractFullMessageText } from "@/utils/readMore";
 
 const urlParams = new URLSearchParams(window.location.search);
 const env = urlParams.get('env');
@@ -291,6 +292,33 @@ export async function getHelloChatHistoryApi(channelId: string, skip: number = 0
     return response?.data || null;
   } catch (error: any) {
     errorToast(error?.response?.data?.message || "Failed to get chat history");
+    return null;
+  }
+}
+
+// Fetch the full body of a message that was delivered truncated (show_more).
+// The backend serves the full text from the same /get-history/ endpoint,
+// keyed by channel + message_id. Returns the full text string, or null on failure.
+export async function getFullMessageApi(channel: string, messageId: string): Promise<string | null> {
+  try {
+    const response = await axios.post(
+      `${HELLO_HOST_URL}/get-history/`,
+      {
+        channel,
+        message_id: messageId,
+        origin: "chat",
+        user_data: getUserData(),
+      },
+      {
+        headers: {
+          authorization: getAuthorization(),
+          "content-type": "application/json",
+        },
+      }
+    );
+    return extractFullMessageText(response?.data);
+  } catch (error: any) {
+    errorToast(error?.response?.data?.message || "Failed to load full message");
     return null;
   }
 }
