@@ -399,6 +399,47 @@ export async function sendMessageToHelloApi(message: string, attachment: Array<o
   }
 }
 
+// Function to send location to Hello chat
+export async function sendLocationToHelloApi(latitude: number, longitude: number, channelDetail?: any, chat_id?: string, helloVariables: any = {}, demo_widget: boolean = false, widget_msg_id?: string): Promise<any> {
+  try {
+    const response = await axios.post(
+      `${HELLO_HOST_URL}/v2/send/`,
+      {
+        type: !demo_widget ? "widget" : "trial_bot",
+        widget_msg_id: widget_msg_id || "",
+        message_type: "location",
+        content: {
+          longitude,
+          latitude,
+        },
+        ...((!chat_id || demo_widget) ? { channelDetail } : {}),
+        chat_id: chat_id || null,
+        ...(demo_widget ? {
+          "bot_id": helloVariables?.bot_id,
+          "bot_type": helloVariables?.bot_type,
+          session_id: generateNewId()
+        } : {}),
+        user_data: getUserData(),
+        sessionVariables: helloVariables,
+      },
+      {
+        headers: {
+          authorization: getAuthorization(),
+          "content-type": "application/json",
+        },
+      }
+    );
+
+    if (channelDetail && response?.data?.data?.uuid) {
+      setLocalStorage('k_clientId', response?.data?.data?.uuid);
+    }
+    return response?.data?.data;
+  } catch (error: any) {
+    errorToast(error?.message || "Failed to send location");
+    return null;
+  }
+}
+
 // Function to upload attachment to Hello chat
 export async function uploadAttachmentToHello(file: any, inboxId: string): Promise<any> {
   try {

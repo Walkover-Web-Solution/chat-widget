@@ -5,5 +5,6 @@ export const MESSAGE_TYPES = {
     ATTACHMENT: 'attachment',
     TEXT_ATTACHMENT: 'text-attachment',
     FEEDBACK: 'feedback',
-    PUSH_NOTIFICATION: 'pushNotification'
+    PUSH_NOTIFICATION: 'pushNotification',
+    LOCATION: 'location'
 } as const;

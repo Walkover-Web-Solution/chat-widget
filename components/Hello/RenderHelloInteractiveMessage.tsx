@@ -1,8 +1,10 @@
 import InterfaceMarkdown from '@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown';
+import { errorToast } from '@/components/customToast';
 import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
-import { ExternalLink, MapPin } from 'lucide-react';
+import { ExternalLink, Loader2, MapPin } from 'lucide-react';
+import { useState } from 'react';
 import { useColor } from '../Chatbot/hooks/useColor';
-import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
+import { useSendLocationToHello, useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
 import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
 import { MESSAGE_TYPES } from "../Interface-Chatbot/Messages/MessageType";
 
@@ -14,7 +16,9 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
     replied_msg_type: MESSAGE_TYPES.INTERACTIVE,
     replied_msg_content: messageJson
   });
+  const sendLocationToHello = useSendLocationToHello();
   const { foregroundColor, primaryBgColor } = useColor();
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const renderHeader = (header: any) => {
     if (header?.type === "text") {
@@ -299,6 +303,36 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
 
       case 'location_request':
         const locRequest = messageJson.actions?.location_request || messageJson.action?.location_request;
+
+        const handleShareLocation = () => {
+          if (locationLoading) return;
+
+          if (!navigator.geolocation) {
+            errorToast("Geolocation is not supported by your browser");
+            return;
+          }
+
+          setLocationLoading(true);
+
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              try {
+                const { latitude, longitude } = position.coords;
+                await sendLocationToHello(latitude, longitude);
+              } catch {
+                errorToast("Failed to send location. Please try again.");
+              } finally {
+                setLocationLoading(false);
+              }
+            },
+            () => {
+              setLocationLoading(false);
+              errorToast("Unable to get your location. Please enable location permissions.");
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        };
+
         return (
           <div className="flex flex-col gap-1">
             {messageJson.header && renderHeader(messageJson.header)}
@@ -310,10 +344,21 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             )}
 
             {locRequest && (
-              <div className="flex items-center gap-2 mt-1 text-sm font-medium text-inherit">
-                <MapPin size={16} strokeWidth={2} />
-                <span>{locRequest.text_to_show || locRequest.text || "Share Location"}</span>
-              </div>
+              <button
+                className="flex items-center gap-2 mt-1 text-sm font-medium text-inherit cursor-pointer border border-current rounded-md px-4 py-2 w-fit disabled:opacity-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShareLocation();
+                }}
+                disabled={locationLoading}
+              >
+                {locationLoading ? (
+                  <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+                ) : (
+                  <MapPin size={16} strokeWidth={2} />
+                )}
+                <span>{locationLoading ? "Getting location..." : (locRequest.text_to_show || locRequest.text || "Share Location")}</span>
+              </button>
             )}
 
             {messageJson.footer?.text && (

@@ -910,7 +910,7 @@
             iframe.title = 'iframe';
             iframe.allowFullscreen = true;
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation');
-            iframe.allow = 'microphone *; camera *; midi *; encrypted-media *';
+            iframe.allow = 'microphone *; camera *; midi *; encrypted-media *; geolocation *';
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.setAttribute('width', '100%');

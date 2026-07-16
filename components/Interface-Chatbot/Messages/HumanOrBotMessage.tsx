@@ -9,6 +9,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import RenderHelloAttachmentMessage from "../../Hello/RenderHelloAttachmentMessage";
 import RenderHelloFeedbackMessage from "../../Hello/RenderHelloFeedbackMessage";
 import RenderHelloInteractiveMessage from "../../Hello/RenderHelloInteractiveMessage";
+import LocationPreview from "../../Hello/LocationPreview";
 import { useReplyContext } from "../contexts/ReplyContext";
 import { MessageContext } from "../InterfaceChatbot";
 import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
@@ -215,6 +216,14 @@ const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: bo
 
             case MESSAGE_TYPES.FEEDBACK:
                 return <RenderHelloFeedbackMessage message={message} />;
+
+            case MESSAGE_TYPES.LOCATION: {
+                const loc = typeof message?.content === 'object' ? message?.content : null;
+                if (loc?.latitude && loc?.longitude) {
+                    return <LocationPreview latitude={loc.latitude} longitude={loc.longitude} />;
+                }
+                return <div className="text-sm">Location shared</div>;
+            }
 
             case MESSAGE_TYPES.PUSH_NOTIFICATION:
                 return (

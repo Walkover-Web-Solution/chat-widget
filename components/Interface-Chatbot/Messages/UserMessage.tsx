@@ -9,6 +9,7 @@ import React, { useCallback, useContext, useState } from 'react';
 import { useReplyContext } from "../contexts/ReplyContext";
 import { MessageContext } from "../InterfaceChatbot";
 import ImageWithFallback from './ImageWithFallback';
+import LocationPreview from '../../Hello/LocationPreview';
 import "./Message.css";
 import MessageTime from './MessageTime';
 import ReadMoreText from './ReadMoreText';
@@ -100,7 +101,9 @@ const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor,
                                 </div>
                             )}
 
-                            {message?.content && (
+                            {message?.message_type === 'location' && typeof message?.content === 'object' && message?.content?.latitude && message?.content?.longitude ? (
+                                <LocationPreview latitude={message.content.latitude} longitude={message.content.longitude} compact />
+                            ) : message?.content && (
                                 hasMoreContent(message) ? (
                                     <ReadMoreText
                                         preview={message?.content}

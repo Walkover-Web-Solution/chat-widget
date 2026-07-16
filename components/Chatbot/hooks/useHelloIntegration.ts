@@ -2,7 +2,7 @@ import { ChatContext } from '@/components/Chatbot-Wrapper/ChatbotWrapper';
 import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
 import { MessageContext } from '@/components/Interface-Chatbot/InterfaceChatbot';
 import { MESSAGE_TYPES } from '@/components/Interface-Chatbot/Messages/MessageType';
-import { getAllChannels, getHelloChatHistoryApi, sendMessageToHelloApi } from '@/config/helloApi';
+import { getAllChannels, getHelloChatHistoryApi, sendLocationToHelloApi, sendMessageToHelloApi } from '@/config/helloApi';
 import socketManager from '@/hooks/socketManager';
 import { store } from '@/store';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
@@ -445,6 +445,62 @@ export const useOnSendHello = () => {
     replyToMessage,
     overrideChannelId
   ]);
+};
+
+export const useSendLocationToHello = () => {
+  const { chatSessionId, tabSessionId } = useHelloContext();
+  const { setNewMessage } = useChatActions();
+  const { addHelloMessage } = useHelloMessages();
+  const { setLoading } = useChatActions();
+  const { startTimeoutTimer } = useHelloTimeout();
+
+  const { currentChatId, currentChannelId } = useReduxStateManagement({
+    chatSessionId,
+    tabSessionId
+  });
+
+  const { helloVariables, demo_widget, assigned_type } = useCustomSelector((state) => ({
+    helloVariables: state.draftData?.hello?.variables || {},
+    demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false,
+    assigned_type: state.Hello?.[chatSessionId]?.channelListData?.channels?.find(
+      (channel: any) => channel?.channel === currentChannelId
+    )?.assigned_type,
+  }));
+
+  return useCallback(async (latitude: number, longitude: number) => {
+    const messageId = generateNewId(24);
+    const newMessage = {
+      id: messageId,
+      role: "user",
+      chat_id: currentChatId || generateNewId(),
+      message_type: "location",
+      content: {
+        latitude,
+        longitude,
+      },
+      timetoken: Date.now(),
+      sender_id: "user",
+    };
+
+    addHelloMessage(newMessage, currentChannelId);
+
+    if (assigned_type === 'bot' || !assigned_type) {
+      setLoading(true);
+    }
+    startTimeoutTimer();
+
+    await sendLocationToHelloApi(
+      latitude,
+      longitude,
+      undefined,
+      currentChatId,
+      helloVariables,
+      demo_widget,
+      messageId
+    );
+
+    setNewMessage(true);
+  }, [currentChatId, currentChannelId, addHelloMessage, setNewMessage, setLoading, helloVariables, demo_widget, assigned_type, startTimeoutTimer]);
 };
 
 export const useSendMessageToHello = ({
