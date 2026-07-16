@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { UserAssistant } from "@/assests/assestsIndex";
 import RenderHelloVedioCallMessage from "@/components/Hello/RenderHelloVedioCallMessage";
+import { hasMoreContent } from "@/utils/readMore";
 import { linkify } from "@/utils/utilities";
 import { Reply } from "lucide-react";
 import Image from "next/image";
@@ -10,11 +11,12 @@ import RenderHelloFeedbackMessage from "../../Hello/RenderHelloFeedbackMessage";
 import RenderHelloInteractiveMessage from "../../Hello/RenderHelloInteractiveMessage";
 import { useReplyContext } from "../contexts/ReplyContext";
 import { MessageContext } from "../InterfaceChatbot";
+import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
 import "./Message.css";
 import MessageTime from "./MessageTime";
 import { MESSAGE_TYPES } from "./MessageType";
+import ReadMoreText from "./ReadMoreText";
 import RepliedMessage from "./RepliedMessage";
-import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
 
 /**
  * A component that displays a human or bot message card.
@@ -223,21 +225,29 @@ const MessageContent = React.memo(({ message, isBot }: { message: any; isBot: bo
                     />
                 );
 
-            default:
-                if (isBot && !message?.is_auto_response) {
+            default: {
+                const renderText = (text: string) =>
+                    isBot && !message?.is_auto_response ? (
+                        <InterfaceMarkdown>{text}</InterfaceMarkdown>
+                    ) : (
+                        <div className="max-w-none">
+                            <div dangerouslySetInnerHTML={{ __html: linkify(text) }}></div>
+                        </div>
+                    );
+
+                if (hasMoreContent(message)) {
                     return (
-                        <InterfaceMarkdown>
-                            {message?.content}
-                        </InterfaceMarkdown>
+                        <ReadMoreText
+                            preview={message?.content}
+                            messageId={message?.message_id || message?.id}
+                            renderContent={renderText}
+                        />
                     );
                 }
-                return (
-                    <div className="max-w-none">
-                        <div dangerouslySetInnerHTML={{ __html: linkify(message?.content) }}></div>
-                    </div>
-                );
+                return renderText(message?.content);
+            }
         }
-    }, [message?.message_type, message?.content, message?.id, isBot]);
+    }, [message?.message_type, message?.content, message?.id, message?.message_id, message?.show_more, isBot]);
 
     return content;
 });

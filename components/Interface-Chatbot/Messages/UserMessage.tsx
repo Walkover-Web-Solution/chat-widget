@@ -3,6 +3,7 @@ import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 import { ALLOWED_EVENTS_TO_SUBSCRIBE } from '@/utils/enums';
+import { hasMoreContent } from '@/utils/readMore';
 import { Reply } from "lucide-react";
 import React, { useCallback, useContext, useState } from 'react';
 import { useReplyContext } from "../contexts/ReplyContext";
@@ -10,6 +11,7 @@ import { MessageContext } from "../InterfaceChatbot";
 import ImageWithFallback from './ImageWithFallback';
 import "./Message.css";
 import MessageTime from './MessageTime';
+import ReadMoreText from './ReadMoreText';
 import RepliedMessage from './RepliedMessage';
 
 /**
@@ -99,9 +101,22 @@ const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor,
                             )}
 
                             {message?.content && (
-                                <p className="whitespace-pre-wrap text-sm md:text-base">
-                                    {message?.content}
-                                </p>
+                                hasMoreContent(message) ? (
+                                    <ReadMoreText
+                                        preview={message?.content}
+                                        messageId={message?.message_id || message?.id}
+                                        linkClassName="text-inherit underline opacity-90"
+                                        renderContent={(text) => (
+                                            <p className="whitespace-pre-wrap text-sm md:text-base">
+                                                {text}
+                                            </p>
+                                        )}
+                                    />
+                                ) : (
+                                    <p className="whitespace-pre-wrap text-sm md:text-base">
+                                        {message?.content}
+                                    </p>
+                                )
                             )}
                         </div>
                     </div>

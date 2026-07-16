@@ -1,4 +1,5 @@
 import { generateNewId } from "../utilities";
+import { readShowMore } from "../readMore";
 
 /**
  * Pick the id of the message being replied to, from whatever field the
@@ -109,6 +110,8 @@ function convertChatHistoryToGenericFormat(history: any, isHello: boolean = fals
                         role,
                         id: chat?.id || chat?.message?.id || chat?.timetoken,
                         all_ids: pickAllIds(chat?.id, chat?.message?.id, chat?.message?._id, chat?.message?.message_id, chat?.timetoken),
+                        message_id: chat?.message?.message_id || chat?.id || chat?.message?.id,
+                        show_more: readShowMore(chat?.message?.content) || readShowMore(chat?.message),
                         from_name: chat?.message?.from_name,
                         content: chat?.message?.message_type === 'interactive'
                             ? chat?.message?.content?.body?.text
@@ -231,6 +234,8 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
         urls: content?.body?.attachment || content?.attachment,
         id: message?.id || message?.message?.id || message?.timetoken,
         all_ids: pickAllIds(message?.id, message?.message?.id, message?.message?._id, message?._id, message?.message_id, message?.timetoken),
+        message_id: message?.message_id || message?.id || message?.message?.id,
+        show_more: readShowMore(content) || readShowMore(message),
         message_type: message?.message_type,
         messageJson: message?.content?.interactive || message?.content,
         time: message?.timetoken || null,
