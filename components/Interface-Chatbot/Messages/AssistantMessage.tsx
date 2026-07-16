@@ -5,6 +5,7 @@ import { Anchor, Code } from "@/components/Interface-Chatbot/Interface-Markdown/
 import { supportsLookbehind } from "@/utils/appUtility";
 import { isJSONString } from "@/utils/ChatbotUtility";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
+import { hasMoreContent } from "@/utils/readMore";
 import {
     Box,
     lighten
@@ -16,6 +17,8 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import ImageWithFallback from "./ImageWithFallback";
 import "./Message.css";
+import ReadMoreText from "./ReadMoreText";
+
 const remarkGfm = dynamic(() => import('remark-gfm'), { ssr: false });
 
 function FeedBackButtons({ msgId }: { msgId: string }) {
@@ -192,19 +195,34 @@ const AssistantMessageCard = React.memo(
                                                     />
                                                 );
                                             }
-                                            return (
+                                            const renderMarkdown = (text: string) => (
                                                 <ReactMarkdown
-                                                    {...(!supportsLookbehind() ? {} : { remarkPlugins: [remarkGfm] })}
+                                                    {...(!supportsLookbehind() ? {} : { remarkPlugins: [remarkGfm] } as any)}
                                                     components={{
                                                         code: Code,
                                                         a: Anchor,
                                                     }}
                                                 >
-                                                    {!isError
-                                                        ? message?.chatbot_message || message?.content
-                                                        : message.error}
+                                                    {text}
                                                 </ReactMarkdown>
                                             );
+
+                                            const bodyText = !isError
+                                                ? message?.chatbot_message || message?.content
+                                                : message.error;
+
+                                            // Truncated AI messages fetch their full body on demand.
+                                            if (!isError && hasMoreContent(message)) {
+                                                return (
+                                                    <ReadMoreText
+                                                        preview={bodyText}
+                                                        messageId={message?.message_id || message?.Id || message?.id}
+                                                        renderContent={renderMarkdown}
+                                                    />
+                                                );
+                                            }
+
+                                            return renderMarkdown(bodyText);
                                         })()}
                                     </div>
                                 )}

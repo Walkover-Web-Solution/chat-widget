@@ -1,4 +1,5 @@
 import { generateNewId } from "../utilities";
+import { readShowMore } from "../readMore";
 
 /**
  * Converts chat history to generic format.
@@ -63,6 +64,8 @@ function convertChatHistoryToGenericFormat(history: any, isHello: boolean = fals
                     return {
                         role,
                         id: chat?.id || chat?.message?.id || chat?.timetoken,
+                        message_id: chat?.message?.message_id || chat?.id || chat?.message?.id,
+                        show_more: readShowMore(chat?.message?.content) || readShowMore(chat?.message),
                         from_name: chat?.message?.from_name,
                         content: chat?.message?.message_type === 'interactive'
                             ? chat?.message?.content?.body?.text
@@ -179,6 +182,8 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
         content: content?.body?.text || content?.text,
         urls: content?.body?.attachment || content?.attachment,
         id: message?.id || message?.message?.id || message?.timetoken,
+        message_id: message?.message_id || message?.id || message?.message?.id,
+        show_more: readShowMore(content) || readShowMore(message),
         message_type: message?.message_type,
         messageJson: message?.content?.interactive || message?.content,
         time: message?.timetoken || null,
