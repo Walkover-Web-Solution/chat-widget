@@ -1,6 +1,8 @@
+import InterfaceMarkdown from "@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown";
+import { hasMoreContent } from "@/utils/readMore";
 import { linkify } from "@/utils/utilities";
 import ImageWithFallback from "../Interface-Chatbot/Messages/ImageWithFallback";
-import InterfaceMarkdown from "@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown";
+import ReadMoreText from "../Interface-Chatbot/Messages/ReadMoreText";
 
 function RenderHelloAttachmentMessage({ message, isBot }: { message: any; isBot?: boolean }) {
 
@@ -29,13 +31,28 @@ function RenderHelloAttachmentMessage({ message, isBot }: { message: any; isBot?
       {caption && (
         <div className="flex justify-between items-center w-full mt-1">
           <div className="prose max-w-none text-inherit">
-            {isBot ? (
-              <InterfaceMarkdown className="whitespace-pre-wrap">
-                {message?.content || caption}
-              </InterfaceMarkdown>
-            ) : (
-              <div dangerouslySetInnerHTML={{ __html: linkify(message?.content || caption) }}></div>
-            )}
+            {(() => {
+              const renderCaption = (text: string) =>
+                isBot ? (
+                  <InterfaceMarkdown className="whitespace-pre-wrap">
+                    {text}
+                  </InterfaceMarkdown>
+                ) : (
+                  <div dangerouslySetInnerHTML={{ __html: linkify(text) }}></div>
+                );
+
+              const previewText = message?.content || caption;
+              if (hasMoreContent(message)) {
+                return (
+                  <ReadMoreText
+                    preview={previewText}
+                    messageId={message?.message_id || message?.id}
+                    renderContent={renderCaption}
+                  />
+                );
+              }
+              return renderCaption(previewText);
+            })()}
           </div>
         </div>
       )}
