@@ -184,6 +184,30 @@ export const reducers: ValidateSliceCaseReducers<
     }
   },
 
+  setChannelClosedStatus(state, action: actionType<{ channelId?: string, is_closed: boolean }>) {
+    const chatSessionId = action.urlData?.chatSessionId
+    if (chatSessionId) {
+      const { channelId = state[chatSessionId]?.currentChannelId, is_closed } = action.payload;
+
+      if (!state[chatSessionId]?.channelListData?.channels?.length) return;
+
+      const channelIndex = state[chatSessionId].channelListData.channels.findIndex(
+        (channel: any) => channel.channel === channelId
+      );
+
+      if (channelIndex === -1) return;
+
+      const channel = state[chatSessionId].channelListData.channels[channelIndex];
+      channel.is_closed = is_closed;
+
+      // Keep closed chats pushed to the end of the list, same as the reload sort order
+      if (is_closed) {
+        const [closedChannel] = state[chatSessionId].channelListData.channels.splice(channelIndex, 1);
+        state[chatSessionId].channelListData.channels.push(closedChannel);
+      }
+    }
+  },
+
   setAgentTeams(state, action: actionType<any>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {

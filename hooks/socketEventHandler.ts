@@ -3,7 +3,7 @@ import helloVoiceService from '@/components/Chatbot/hooks/HelloVoiceService';
 import { useReduxStateManagement } from '@/components/Chatbot/hooks/useReduxManagement';
 import { useTabVisibility } from '@/components/Chatbot/hooks/useTabVisibility';
 import { setHelloEventMessage, setTyping, updateHelloMessage } from '@/store/chat/chatSlice';
-import { changeChannelAssigned, moveChannelToTop, setUnReadCount } from '@/store/hello/helloSlice';
+import { changeChannelAssigned, moveChannelToTop, setChannelClosedStatus, setUnReadCount } from '@/store/hello/helloSlice';
 import { getLocalStorage, playMessageRecivedSound, setLocalStorage } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
@@ -63,6 +63,9 @@ export const useSocketEvents = ({
                 const messageId = response.id || response?.message?.id || response.timetoken;
 
                 if (new_event) {
+                    // Reopen the chat on receiving a new message if it was previously marked closed
+                    dispatch(setChannelClosedStatus({ channelId: channel, is_closed: false }));
+
                     if (message_type === 'voice_call') {
                         if (status === "completed" || status === "no_answer" || status === "in-progress") {
                             addHelloMessage({ ...message, id: messageId }, channel);
@@ -116,6 +119,7 @@ export const useSocketEvents = ({
                         { ...message, id: messageId },
                         channel
                     );
+                    dispatch(setChannelClosedStatus({ channelId: channel, is_closed: true }));
                 }
                 break;
             }
@@ -136,7 +140,7 @@ export const useSocketEvents = ({
                 }
                 break;
             }
-            default:
+            default: 
                 // Handle other types if needed
                 break;
         }
