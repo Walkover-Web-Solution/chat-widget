@@ -351,23 +351,47 @@ const ChatbotDrawer = ({
                     || 'Conversation';
 
                   const subtitleHtml = (() => {
+                    const stripHtmlToText = (html: string) => {
+                      if (!html) return '';
+                      const tmp = document.createElement('div');
+                      tmp.innerHTML = html;
+                      return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+                    };
                     if (lastMessage) {
                       const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
-                      const rawText = lastMessage?.message_type === 'pushNotification'
-                        ? "Custom Notification"
-                        : (lastMessage.messageJson?.text
-                          || (lastMessage.messageJson?.attachment?.length > 0 ? "Attachment"
-                            : lastMessage.messageJson?.message_type || "New conversation"));
-                      const text = stripHtmlToText(rawText);
-                      return `${isUserMessage ? "You: " : ""}${text || "New conversation"}`;
+                      let rawText: string;
+                      if (lastMessage?.message_type === 'pushNotification') {
+                        rawText = "Custom Notification";
+                      } else if (lastMessage.messageJson?.text) {
+                        rawText = lastMessage.messageJson.text;
+                      } else if (lastMessage.messageJson?.attachment?.length > 0) {
+                        rawText = "Attachment";
+                      } else if (lastMessage?.message_type === 'interactive' && lastMessage.messageJson?.body?.text) {
+                        rawText = lastMessage.messageJson.body.text;
+                      } else if (lastMessage.messageJson?.message_type) {
+                        rawText = lastMessage.messageJson.message_type;
+                      } else {
+                        rawText = "New conversation";
+                      }
+                      const text = stripHtmlToText(rawText) || (lastMessage?.message_type === 'interactive' ? "Interactive Message" : "New conversation");
+                      return `${isUserMessage ? "You: " : ""}${text}`;
                     }
                     if (channel?.last_message) {
                       const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message?.is_auto_response;
-                      const rawText = channel?.last_message?.message?.content?.text
-                        || (channel?.last_message?.message?.content?.attachment?.length > 0 ? "Attachment"
-                          : channel?.last_message?.message?.message_type || "New conversation");
-                      const text = stripHtmlToText(rawText);
-                      return `${isYou ? "You: " : ""}${text || "New conversation"}`;
+                      let rawText: string;
+                      if (channel?.last_message?.message?.content?.text) {
+                        rawText = channel.last_message.message.content.text;
+                      } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
+                        rawText = "Attachment";
+                      } else if (channel?.last_message?.message?.message_type === 'interactive' && channel.last_message.message.content?.interactive?.body?.text) {
+                        rawText = channel.last_message.message.content.interactive.body.text;
+                      } else if (channel?.last_message?.message?.message_type) {
+                        rawText = channel.last_message.message.message_type;
+                      } else {
+                        rawText = "New conversation";
+                      }
+                      const text = stripHtmlToText(rawText) || (channel?.last_message?.message?.message_type === 'interactive' ? "Interactive Message" : "New conversation");
+                      return `${isYou ? "You: " : ""}${text}`;
                     }
                     return "New conversation";
                   })();
