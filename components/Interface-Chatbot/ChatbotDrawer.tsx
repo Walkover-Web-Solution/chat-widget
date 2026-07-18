@@ -1,6 +1,6 @@
 'use client';
 
-import { AlignLeft, ChevronDown, ChevronRight, ChevronUp, MessageSquareText, Phone, Send, Users, X } from "lucide-react";
+import { AlignLeft, Bot, ChevronDown, ChevronRight, ChevronUp, MessageSquareText, Phone, Send, Users, X } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -79,7 +79,8 @@ const ChatbotDrawer = ({
     voice_call_widget,
     show_msg91,
     isChatbotMinimized,
-    isFullScreen
+    isFullScreen,
+    agentTeams
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
     const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
@@ -94,7 +95,8 @@ const ChatbotDrawer = ({
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
       show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
-      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false,
+      agentTeams: state.Hello?.[chatSessionId]?.agent_teams || {}
     };
   });
   const theme = useTheme();
@@ -299,7 +301,12 @@ const ChatbotDrawer = ({
                     audio: 'Audio',
                   };
 
-                  const title = channel?.assigned_to?.name
+                  const assignedName = channel?.assigned_to?.name
+                    || (channel?.assigned_type === 'agent' ? agentTeams?.agents?.[channel?.assigned_id] : undefined)
+                    || (channel?.assigned_type === 'team' ? agentTeams?.teams?.[channel?.assigned_id] : undefined);
+
+                  const title = assignedName
+                    || (channel?.assigned_type === 'bot' ? 'AI Assistant' : undefined)
                     || (lastMsgType && titleByType[lastMsgType])
                     || 'Conversation';
 
@@ -351,15 +358,15 @@ const ChatbotDrawer = ({
                   );*/
 
                   const initials = (() => {
-                    if (channel?.assigned_to?.name) {
-                      const name = channel.assigned_to.name.toString() || '';
+                    if (assignedName) {
+                      const name = assignedName.toString() || '';
                       const parts = name.split(' ').filter(Boolean);
                       if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
                       return name.length > 1
                         ? (name[0] + name[1]).toUpperCase()
                         : (name[0] || 'A').toUpperCase();
                     }
-                    return 'A';
+                    return (title?.[0] || 'A').toUpperCase();
                   })();
 
                   return (
@@ -380,7 +387,7 @@ const ChatbotDrawer = ({
                             color: isClosed ? (isActive ? primaryTextColor : 'var(--icon-color)') : (!isActive && isDarkMode ? foregroundColor : primaryTextColor),
                           }}
                         >
-                          {initials}
+                          {channel?.assigned_type === 'bot' ? <Bot size={18} /> : initials}
                         </div>
                         {unread > 0 && (
                           <span
