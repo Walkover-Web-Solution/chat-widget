@@ -321,7 +321,7 @@ const ChatbotDrawer = ({
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
                         text = "Attachment";
                       } else if (lastMessage?.message_type  === 'interactive') {
-                        text = lastMessage.messageJson.body.text || "Interactive Message";
+                        text = lastMessage.messageJson?.body?.text || "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
                         text = lastMessage.messageJson.message_type;
                       } else {
@@ -337,7 +337,7 @@ const ChatbotDrawer = ({
                       } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
                         text = "Attachment";
                       } else if (channel?.last_message?.message?.message_type === 'interactive') {
-                        text = channel.last_message.message.content?.interactive.body.text || "Interactive Message";
+                        text = channel.last_message.message.content?.interactive?.body?.text || "Interactive Message";
                       } else if (channel?.last_message?.message?.message_type) {
                         text = channel.last_message.message.message_type;
                       } else {
