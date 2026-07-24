@@ -1,7 +1,7 @@
 'use client';
 
-import { AlignLeft, Bot, ChevronDown, ChevronRight, ChevronUp, MessageSquareText, Phone, Send, Users, X } from "lucide-react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { AlignLeft, Bell, Bot, ChevronDown, ChevronRight, ChevronUp, MessageSquareText, Phone, Send, Users, X } from "lucide-react";
+import { useContext, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
 // API and Services
@@ -24,6 +24,7 @@ import { useChatActions } from "../Chatbot/hooks/useChatActions";
 import { useColor } from "../Chatbot/hooks/useColor";
 import { useOnSendHello } from "../Chatbot/hooks/useHelloIntegration";
 import { useScreenSize } from "../Chatbot/hooks/useScreenSize";
+import { stripHtmlToText } from "@/utils/utilities";
 import { MessageContext } from "./InterfaceChatbot";
 
 const createRandomId = () => Math.random().toString(36).substring(2, 15);
@@ -54,11 +55,12 @@ const ChatbotDrawer = ({
 
   const { setNewMessage, setOptions, setImages, setLoading, setToggleDrawer } = useChatActions();
 
-  const { images, allMessages, allMessagesData, isToggledrawer } = useCustomSelector((state) => ({
+  const { images, allMessages, allMessagesData, isToggledrawer, notifications } = useCustomSelector((state) => ({
     images: state.Chat.images || [],
     allMessages: state.Chat.messageIds || [],
     allMessagesData: state.Chat.msgIdAndDataMap || {},
     isToggledrawer: state.Chat.isToggledrawer,
+    notifications: state.Chat.notifications || [],
   }))
 
   const { currentChatId, currentTeamId, currentChannelId } = useReduxStateManagement({ chatSessionId, tabSessionId });
@@ -161,7 +163,7 @@ const ChatbotDrawer = ({
 
   const handleChangeSubThread = (sub_thread_id: string) => {
     setLoading(false);
-    dispatch(setDataInAppInfoReducer({ subThreadId: sub_thread_id }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: sub_thread_id, showNotificationView: false }));
     setNewMessage(true);
     setOptions([]);
     focusTextField();
@@ -179,7 +181,7 @@ const ChatbotDrawer = ({
 
   const handleChangeChannel = async (channelId: string, chatId: string, teamId: string) => {
     // Update redux state
-    dispatch(setDataInAppInfoReducer({ subThreadId: channelId, currentChannelId: channelId, currentChatId: chatId, currentTeamId: teamId }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: channelId, currentChannelId: channelId, currentChatId: chatId, currentTeamId: teamId, showNotificationView: false }));
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
 
@@ -188,7 +190,7 @@ const ChatbotDrawer = ({
   };
 
   const handleChangeTeam = (teamId: string) => {
-    dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: teamId, currentChannelId: "", currentChatId: "", overrideChannelId: "" }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: teamId, currentChannelId: "", currentChatId: "", overrideChannelId: "", showNotificationView: false }));
 
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
@@ -216,6 +218,7 @@ const ChatbotDrawer = ({
             currentChannelId: firstValid?.channel,
             currentChatId: firstValid?.id,
             currentTeamId: firstValid?.team_id,
+            showNotificationView: false,
           })
         );
       }
@@ -225,6 +228,7 @@ const ChatbotDrawer = ({
         dispatch(
           setDataInAppInfoReducer({
             currentTeamId: firstValid?.id,
+            showNotificationView: false,
           })
         );
         overrideTeamId = firstValid?.id;
@@ -237,12 +241,19 @@ const ChatbotDrawer = ({
   };
 
   const handleSendMessageWithNoTeam = () => {
-    dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: "", currentChannelId: "", currentChatId: "", overrideChannelId: "" }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: "", currentChannelId: "", currentChatId: "", overrideChannelId: "", showNotificationView: false }));
 
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
     focusTextField();
   };
+
+  const unreadNotificationCount = notifications.filter(notification => !notification.read).length;
+
+  const handleOpenNotificationView = useCallback(() => {
+    dispatch(setDataInAppInfoReducer({ showNotificationView: true }));
+    if (isSmallScreen) setToggleDrawer(false);
+  }, [dispatch, isSmallScreen, setToggleDrawer]);
 
   // Memoized components
   const DrawerList = useMemo(() => (
@@ -268,13 +279,49 @@ const ChatbotDrawer = ({
     </div>
   ), [subThreadList, subThreadId, handleChangeSubThread]);
 
+  const hasChannels = useMemo(() => (channelList || []).length > 0 && channelList.some((thread: any) => thread?.id), [channelList]);
+
   const TeamsList = useMemo(() => (
     <>
-      {((channelList?.length > 0 && channelList.some((thread: any) => thread?.id)) || teamsList?.length > 0) && (
-        <div className="teams-container pb-2 relative gap-8 flex flex-col h-[calc(100vh_-_185px)] overflow-y-auto">
+      {(hasChannels || teamsList?.length > 0 || notifications.length > 0) && (
+        <div className="teams-container pb-2 relative flex flex-col h-[calc(100vh_-_185px)] overflow-y-auto">
+          {/* Notifications Row — shown above conversations when push notifications exist.
+              Clicking navigates to NotificationPage via showNotificationView state. */}
+          {notifications.length > 0 && (
+            <div className="notifications-section mb-2">
+              <div
+                className="notification-row px-4 py-2 cursor-pointer flex items-center gap-3 transition-all text-[var(--foreground)] hover:bg-gray-100 dark:hover:bg-white/5"
+                onClick={handleOpenNotificationView}
+              >
+                <div className="relative flex-shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: primaryBgColor }}
+                  >
+                    <Bell size={16} style={{ color: foregroundColor }} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-semibold">Notifications</span>
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  {unreadNotificationCount > 0 && (
+                    <span
+                      className="min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold"
+                      style={{ backgroundColor: 'var(--error-color, #ef4444)', color: 'var(--error-text-color, #fff)' }}
+                    >
+                      {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                    </span>
+                  )}
+                  <ChevronRight size={14} className="opacity-60" />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Conversations Section */}
-          {(channelList || []).length > 0 && channelList.some((thread: any) => thread?.id) && (
-            <div className="conversations-section">
+          {hasChannels && (
+            <div className={`conversations-section mb-3 ${notifications.length > 0 ? '' : 'mt-3'}`}>
               <div className="conversations-header pb-2">
                 <h3 className="px-4 text-[11px] font-semibold tracking-wider opacity-60 uppercase">Continue Conversations</h3>
               </div>
@@ -311,38 +358,46 @@ const ChatbotDrawer = ({
                     || 'Conversation';
 
                   const subtitleHtml = (() => {
+                    const stripHtmlToText = (html: string) => {
+                      if (!html) return '';
+                      const tmp = document.createElement('div');
+                      tmp.innerHTML = html;
+                      return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+                    };
                     if (lastMessage) {
                       const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
-                      let text: string;
+                      let rawText: string;
                       if (lastMessage?.message_type === 'pushNotification') {
-                        text = "Custom Notification";
+                        rawText = "Custom Notification";
                       } else if (lastMessage.messageJson?.text) {
-                        text = lastMessage.messageJson.text;
+                        rawText = lastMessage.messageJson.text;
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
-                        text = "Attachment";
-                      } else if (lastMessage?.message_type  === 'interactive') {
-                        text = lastMessage.messageJson?.body?.text || "Interactive Message";
+                        rawText = "Attachment";
+                      } else if (lastMessage?.message_type === 'interactive') {
+                        rawText = lastMessage?.messageJson?.body?.text || "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
-                        text = lastMessage.messageJson.message_type;
+                        rawText = lastMessage.messageJson.message_type;
                       } else {
-                        text = "New conversation";
+                        rawText = "New conversation";
                       }
+                      const text = stripHtmlToText(rawText) || (lastMessage?.message_type === 'interactive' ? "Interactive Message" : "New conversation");
                       return `${isUserMessage ? "You: " : ""}${text}`;
                     }
                     if (channel?.last_message) {
                       const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message?.is_auto_response;
-                      let text: string;
+                      let rawText: string;
                       if (channel?.last_message?.message?.content?.text) {
-                        text = channel.last_message.message.content.text;
+                        rawText = channel.last_message.message.content.text;
                       } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
-                        text = "Attachment";
+                        rawText = "Attachment";
                       } else if (channel?.last_message?.message?.message_type === 'interactive') {
-                        text = channel.last_message.message.content?.interactive?.body?.text || "Interactive Message";
+                        rawText = channel.last_message.message.content?.interactive?.body?.text || "Interactive Message";
                       } else if (channel?.last_message?.message?.message_type) {
-                        text = channel.last_message.message.message_type;
+                        rawText = channel.last_message.message.message_type;
                       } else {
-                        text = "New conversation";
+                        rawText = "New conversation";
                       }
+                      const text = stripHtmlToText(rawText) || (channel?.last_message?.message?.message_type === 'interactive' ? "Interactive Message" : "New conversation");
                       return `${isYou ? "You: " : ""}${text}`;
                     }
                     return "New conversation";
@@ -412,8 +467,9 @@ const ChatbotDrawer = ({
                         </div>
                         <div
                           className="text-xs opacity-70 line-clamp-1 break-all [&_*]:inline"
-                          dangerouslySetInnerHTML={{ __html: subtitleHtml }}
-                        />
+                        >
+                          {subtitleHtml}
+                        </div>
                       </div>
 
                       <div className="flex-shrink-0 flex items-center gap-1 opacity-60">
@@ -451,7 +507,7 @@ const ChatbotDrawer = ({
 
           {/* Teams Section */}
           {(teamsList || []).length > 0 && (
-            <div className="teams-section">
+            <div className={`teams-section ${notifications.length > 0 && hasChannels ? '' : 'mt-3'}`}>
               <div className="teams-header pb-2 flex items-center">
                 <h3 className="px-4 text-[11px] font-semibold tracking-wider opacity-60 uppercase">Talk to our teams</h3>
               </div>
@@ -526,49 +582,45 @@ const ChatbotDrawer = ({
       )}
 
       {/* Voice Call Section */}
-      {(voice_call_widget || (teamsList || []).length === 0) && (
-        <div className={`marketing-banner bg-[var(--drawer-color)] px-4 pt-3 pb-3 ${(teamsList || []).length === 0 && (filteredChannels || []).length === 0
-          ? ''
-          : 'mt-auto border-t border-[var(--foreground)]/10'
-          }`}>
-          <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>Need specialized help?</p>
-          <div className="flex gap-2">
-            {voice_call_widget &&
-              <button
-                className={`grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors ${callState !== "idle"
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "hover:opacity-90"
-                  }`}
-                style={{
-                  background: callState !== "idle" ? undefined : primaryBgColor,
-                  color: foregroundColor,
-                }}
-                onClick={handleVoiceCall}
-                disabled={callState !== "idle"}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Phone size={16} />
-                  <strong>Call Us</strong>
-                </span>
-              </button>
-            }
+      <div className={`marketing-banner bg-[var(--drawer-color)] px-4 pt-3 pb-3 ${(teamsList || []).length === 0 && (filteredChannels || []).length === 0
+        ? ''
+        : 'mt-auto border-t border-[var(--foreground)]/10'
+        }`}>
+        <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>Need specialized help?</p>
+        <div className="flex gap-2">
+          {voice_call_widget &&
+            <button
+              className={`grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors ${callState !== "idle"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "hover:opacity-90"
+                }`}
+              style={{
+                background: callState !== "idle" ? undefined : primaryBgColor,
+                color: foregroundColor,
+              }}
+              onClick={handleVoiceCall}
+              disabled={callState !== "idle"}
+            >
+              <span className="inline-flex items-center gap-2">
+                <Phone size={16} />
+                <strong>Call Us</strong>
+              </span>
+            </button>
+          }
 
-            {/*Send Message button in case of no team assign */}
-            {(teamsList || []).length === 0 && (
-              <button
-                className="grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors hover:opacity-80"
-                style={{ border: "1.5px solid currentColor", color: isDarkMode ? foregroundColor : primaryTextColor }}
-                onClick={handleSendMessageWithNoTeam}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Send size={16} />
-                  <strong>Message</strong>
-                </span>
-              </button>
-            )}
-          </div>
+          {/*Send Message button in case of no team assign */}
+          <button
+            className="grid place-items-center flex-1 text-sm py-2.5 rounded-xl transition-colors hover:opacity-80"
+            style={{ border: "1.5px solid currentColor", color: isDarkMode ? foregroundColor : primaryTextColor }}
+            onClick={handleSendMessageWithNoTeam}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Send size={16} />
+              <strong>Message</strong>
+            </span>
+          </button>
         </div>
-      )}
+      </div>
     </>
   ), [
     channelList,
@@ -584,7 +636,10 @@ const ChatbotDrawer = ({
     handleSendMessageWithNoTeam,
     handleVoiceCall,
     allMessages,
-    allMessagesData
+    allMessagesData,
+    notifications,
+    unreadNotificationCount,
+    handleOpenNotificationView,
     //tick
   ]);
 
@@ -651,7 +706,7 @@ const ChatbotDrawer = ({
           </div>
 
           {/* Content area with overflow handling - the scrollbar will appear at the edge */}
-          <div className="flex-1 overflow-y-auto flex flex-col pt-6">
+          <div className="flex-1 overflow-y-auto flex flex-col">
             {!isHelloUser ? DrawerList : TeamsList}
           </div>
 

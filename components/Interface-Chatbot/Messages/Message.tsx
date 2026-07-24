@@ -37,7 +37,7 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
    */
   const messageContent = useMemo(() => {
     const role = message?.role;
-
+    
     switch (role) {
       case ROLE_USER:
         return (

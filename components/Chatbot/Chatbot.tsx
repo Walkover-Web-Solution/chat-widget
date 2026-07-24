@@ -15,6 +15,7 @@ import ChatbotHeader from '../Interface-Chatbot/ChatbotHeader';
 import ChatbotHeaderTab from '../Interface-Chatbot/ChatbotHeaderTab';
 import ChatbotTextField from '../Interface-Chatbot/ChatbotTextField';
 import MessageList from '../Interface-Chatbot/Messages/MessageList';
+import NotificationPage from '../Interface-Chatbot/NotificationPage';
 import StarterQuestions from '../Interface-Chatbot/Messages/StarterQuestions';
 
 // Utils
@@ -88,16 +89,15 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const dispatch = useAppDispatch();
 
   // State management
-  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, subThreadId, helloMsgIds } = useCustomSelector((state) => {
+  const { show_widget_form, isToggledrawer, chatsLoading, subThreadId, showNotificationView, notificationsCount } = useCustomSelector((state) => {
     const widgetInfo = state.Hello?.[chatSessionId]?.widgetInfo
     return ({
       show_widget_form: typeof widgetInfo?.show_widget_form === 'boolean' ? widgetInfo?.show_widget_form : state.Hello?.[chatSessionId]?.showWidgetForm,
-      greetingMessage: state.Hello?.[chatSessionId]?.greeting as any,
       isToggledrawer: state.Chat.isToggledrawer,
       chatsLoading: state.Chat.chatsLoading,
-      messageIds: state.Chat.messageIds,
       subThreadId: state.Chat.subThreadId,
-      helloMsgIds: state.Chat.helloMsgIds
+      notificationsCount: (state.Chat.notifications || []).length,
+      showNotificationView: state.appInfo?.[tabSessionId]?.showNotificationView || false,
     })
   });
 
@@ -108,8 +108,6 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   useRtlayerEventManager({ timeoutIdRef, chatSessionId, tabSessionId });
 
   const { isHelloUser, currentChatId, isDefaultNavigateToChatScreen } = useReduxStateManagement({ chatSessionId, tabSessionId });
-
-  // Initialize RTLayer event listeners
 
   // Effect to open drawer for new human users
   useEffect(() => {
@@ -138,12 +136,6 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
     timeoutIdRef
   ]);
 
-  // Check if chat is empty
-  const isChatEmpty = isHelloUser
-    ? (!subThreadId || helloMsgIds[subThreadId]?.length === 0) &&
-    (!greetingMessage || (!greetingMessage.text && !greetingMessage?.options?.length))
-    : !subThreadId || messageIds[subThreadId]?.length === 0;
-
   return (
     <MessageContext.Provider value={contextValue}>
       <div className="flex h-screen w-full overflow-hidden relative">
@@ -170,17 +162,30 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
             </div>
           )}
 
-          {/* Form and UI components */}
-          {isHelloUser && show_widget_form && (
-            <FormComponent />
+          {/* Form / Call / Tab overlays — hide when user is browsing notification list
+              to prevent "Enter your details" form from covering notification content */}
+          {!(showNotificationView && notificationsCount > 0) && (
+            <>
+              {isHelloUser && show_widget_form && (
+                <FormComponent />
+              )}
+              <CallUI />
+              <ChatbotHeaderTab />
+            </>
           )}
-          <CallUI />
-          <ChatbotHeaderTab />
 
-          {isChatEmpty ? (
-            <EmptyChatView />
-          ) : (
+          {/* Main view routing:
+              1. showNotificationView + notifications → NotificationPage (list of push notifications)
+              2. subThreadId truthy → ActiveChatView (real channel OR notification-launched chat)
+              3. else → EmptyChatView (new chat / idle state) */}
+          {showNotificationView && notificationsCount > 0 ? (
+            <NotificationPage />
+          ) : subThreadId ? (
+            // A thread is selected (real channel OR notification-launched chat) → active chat
             <ActiveChatView isSmallScreen={isSmallScreen} />
+          ) : (
+            // Fresh state, nothing selected → empty / new chat view
+            <EmptyChatView />
           )}
         </div>
       </div>

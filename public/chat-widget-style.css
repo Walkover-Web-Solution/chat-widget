@@ -479,3 +479,94 @@
   border-radius: 8px;
   font-family: system-ui;
 }
+
+/* Launcher Message Preview - Intercom-style popup above launcher icon */
+.hello-launcher-msg-preview {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 2147483646;
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.hello-launcher-msg-preview:hover .hello-launcher-msg-preview-close {
+  visibility: visible;
+}
+
+.hello-launcher-msg-preview-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.hello-launcher-msg-preview-hide {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+
+.hello-launcher-msg-preview-close {
+  visibility: hidden;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #6b7280;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.hello-launcher-msg-preview-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.hello-launcher-msg-preview-content {
+  cursor: pointer;
+  min-height: 40px;
+  max-height: 220px;
+  overflow: hidden;
+}
+
+.hello-launcher-msg-preview-iframe {
+  width: 100%;
+  border: none;
+  background: transparent;
+  overflow: hidden;
+  display: block;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .hello-launcher-msg-preview {
+    width: calc(100vw - 32px);
+    right: -6px;
+  }
+}
+
+/* Left-aligned launcher support */
+.left_all_child .hello-launcher-msg-preview {
+  right: auto;
+  left: 0;
+}

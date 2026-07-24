@@ -272,7 +272,7 @@ export const useOnSendHello = () => {
         customer_name: null,
         customer_number: null,
         customer_mail: null,
-        team_id: teamIdToUse,
+        team_id: teamIdToUse || null,
         new: true,
         channel_hex: workingChannelId || undefined
       } : undefined;
