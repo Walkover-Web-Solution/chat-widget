@@ -141,8 +141,7 @@ const NotificationPage = () => {
                         <iframe
                           srcDoc={srcDoc}
                           sandbox="allow-same-origin"
-                          className="w-full block"
-                          style={{ height: '160px', border: 'none', pointerEvents: 'none' }}
+                          className="w-full block h-[160px] border-none pointer-events-none"
                           title={`notification-${notification.id}`}
                         />
                       </div>

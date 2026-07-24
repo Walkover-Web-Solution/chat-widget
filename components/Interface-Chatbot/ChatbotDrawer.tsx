@@ -308,7 +308,7 @@ const ChatbotDrawer = ({
                   {unreadNotificationCount > 0 && (
                     <span
                       className="min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold"
-                      style={{ backgroundColor: '#ef4444', color: '#fff' }}
+                      style={{ backgroundColor: 'var(--error-color, #ef4444)', color: 'var(--error-text-color, #fff)' }}
                     >
                       {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
                     </span>
@@ -374,7 +374,7 @@ const ChatbotDrawer = ({
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
                         rawText = "Attachment";
                       } else if (lastMessage?.message_type === 'interactive') {
-                        rawText = lastMessage?.messageJson?.body?.text || || "Interactive Message";
+                        rawText = lastMessage?.messageJson?.body?.text || "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
                         rawText = lastMessage.messageJson.message_type;
                       } else {
@@ -389,9 +389,9 @@ const ChatbotDrawer = ({
                       if (channel?.last_message?.message?.content?.text) {
                         rawText = channel.last_message.message.content.text;
                       } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
-                        text = "Attachment";
+                        rawText = "Attachment";
                       } else if (channel?.last_message?.message?.message_type === 'interactive') {
-                        text = channel.last_message.message.content?.interactive?.body?.text || "Interactive Message";
+                        rawText = channel.last_message.message.content?.interactive?.body?.text || "Interactive Message";
                       } else if (channel?.last_message?.message?.message_type) {
                         rawText = channel.last_message.message.message_type;
                       } else {

@@ -478,14 +478,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
         {!isToggledrawer && hasUnreadIndicator && (
           <span
             aria-label="New notifications"
-            className="absolute top-1 right-1 block rounded-full"
-            style={{
-              width: '10px',
-              height: '10px',
-              background: '#ef4444',
-              border: '2px solid var(--background, #fff)',
-              boxShadow: '0 0 0 1px rgba(0,0,0,0.05)'
-            }}
+            className="absolute top-1 right-1 block w-2.5 h-2.5 rounded-full bg-[var(--error-color,#ef4444)] border-2 border-[var(--background,#fff)] shadow-[0_0_0_1px_rgba(0,0,0,0.05)]"
           />
         )}
       </button>
