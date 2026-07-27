@@ -206,16 +206,21 @@ export const useOnSendHello = () => {
     tabSessionId
   });
 
-  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget } = useCustomSelector((state) => ({
-    assigned_type: state.Hello?.[chatSessionId]?.channelListData?.channels?.find(
-      (channel: any) => channel?.channel === currentChannelId
-    )?.assigned_type,
-    showWidgetForm: state.Hello?.[chatSessionId]?.showWidgetForm,
-    images: state.Chat.images,
-    helloVariables: state.draftData?.hello?.variables || {},
-    companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
-    demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false
-  }));
+  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget } = useCustomSelector((state) => {
+    const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
+      ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
+    return ({
+      assigned_type: state.Hello?.[chatSessionId]?.channelListData?.channels?.find(
+        (channel: any) => channel?.channel === currentChannelId
+      )?.assigned_type,
+      // explicit show_widget_form wins over the client-details heuristic, same as Chatbot.tsx
+      showWidgetForm: typeof show_widget_form === 'boolean' ? show_widget_form : state.Hello?.[chatSessionId]?.showWidgetForm,
+      images: state.Chat.images,
+      helloVariables: state.draftData?.hello?.variables || {},
+      companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
+      demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false
+    })
+  });
 
   const isBot = assigned_type === 'bot';
 

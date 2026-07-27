@@ -89,9 +89,11 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
 
   // State management
   const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, subThreadId, helloMsgIds } = useCustomSelector((state) => {
-    const widgetInfo = state.Hello?.[chatSessionId]?.widgetInfo
+    // script config wins, then runtime/API widgetInfo, then the client-details heuristic
+    const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
+      ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
     return ({
-      show_widget_form: typeof widgetInfo?.show_widget_form === 'boolean' ? widgetInfo?.show_widget_form : state.Hello?.[chatSessionId]?.showWidgetForm,
+      show_widget_form: typeof show_widget_form === 'boolean' ? show_widget_form : state.Hello?.[chatSessionId]?.showWidgetForm,
       greetingMessage: state.Hello?.[chatSessionId]?.greeting as any,
       isToggledrawer: state.Chat.isToggledrawer,
       chatsLoading: state.Chat.chatsLoading,
