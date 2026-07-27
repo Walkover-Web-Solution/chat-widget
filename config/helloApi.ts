@@ -363,6 +363,7 @@ export async function sendMessageToHelloApi(message: string, attachment: Array<o
       {
         type: !demo_widget ? "widget" : "trial_bot",
         widget_msg_id: widget_msg_id ? widget_msg_id : "",
+        ...(demo_widget ? { trial_company_id: helloVariables?.company_id || undefined } : {}),
         message_type: messageType,
         content: {
           text: message,
