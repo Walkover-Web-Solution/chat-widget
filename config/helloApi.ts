@@ -249,9 +249,8 @@ export async function getGreetingQuestions(companyId: string, botId: string, bot
 export async function saveClientDetails(clientData = {}): Promise<any> {
   try {
     const payload = {
+      ...clientData,
       user_data: getUserData(),
-      // is_anon: getIsAnonValue(),
-      ...clientData
     }
 
     const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
