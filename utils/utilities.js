@@ -49,6 +49,27 @@ export const generateChannelId = (companyId = '') => {
   return `ch-comp-${companyId}.${uuid}`;
 };
 
+/**
+ * Reads the session id out of a Hello `/v2/send/` response payload.
+ *
+ * The backend field name is not yet confirmed, so the plausible shapes are
+ * checked in order. Narrow this to a single access once the contract is known.
+ * Anything that is not a non-empty string counts as absent: callers must store
+ * nothing rather than substitute a placeholder, so a missing id degrades to
+ * "no session" instead of "a different session per message".
+ *
+ * @param {any} data - The send-response payload.
+ * @returns {string | undefined} The session id, or undefined when absent.
+ */
+export const extractSessionId = (data) => {
+  const candidates = [
+    data?.session_id
+  ];
+  return candidates.find(
+    (value) => typeof value === "string" && value.trim() !== ""
+  );
+};
+
 function getDomain() {
   const hostname = window.location.hostname;
   const parts = hostname?.split(".");

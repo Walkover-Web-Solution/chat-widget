@@ -125,7 +125,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
 
         // Reset redux keys
         const resetKeys = () => {
-            dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '' }));
+            dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '', demoSessionId: '' }));
         };
 
         const isWidgetTokenChanged = fullWidgetToken !== prevWidgetId;
@@ -292,7 +292,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         removeFromLocalStorage('a_clientId');
 
         // Reset appInfo state to clear stale channel data
-        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '' }));
+        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '', demoSessionId: '' }));
     }
 
     useEffect(() => {

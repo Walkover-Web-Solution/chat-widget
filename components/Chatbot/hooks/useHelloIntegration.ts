@@ -11,7 +11,7 @@ import { useAppDispatch } from '@/store/useTypedHooks';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 import { PAGE_SIZE } from '@/utils/enums';
-import { generateChannelId, generateNewId } from '@/utils/utilities';
+import { extractSessionId, generateChannelId, generateNewId } from '@/utils/utilities';
 import { useCallback, useContext, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useChatActions } from './useChatActions';
@@ -206,7 +206,7 @@ export const useOnSendHello = () => {
     tabSessionId
   });
 
-  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget } = useCustomSelector((state) => {
+  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId } = useCustomSelector((state) => {
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
     return ({
@@ -218,7 +218,8 @@ export const useOnSendHello = () => {
       images: state.Chat.images,
       helloVariables: state.draftData?.hello?.variables || {},
       companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
-      demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false
+      demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false,
+      demoSessionId: state.appInfo?.[tabSessionId]?.demoSessionId
     })
   });
 
@@ -305,15 +306,28 @@ export const useOnSendHello = () => {
       if (newMessage && typeof newMessage === 'object' && 'id' in newMessage) {
         widget_msg_id = newMessage.id;
       }
-
+      // Only reuse the stored id while the chat it was issued for is still the
+      // current one. forceNewChat and every identity reset blank channelIdToUse,
+      // so a new chat sends no session_id and gets a fresh one from the server.
+      const storedSessionId = demo_widget && channelIdToUse
+        ? demoSessionId
+        : undefined;
       // const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget);
-      const data = await sendMessageToHelloApi({ message, attachments, channelDetail, chat_id: chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, replied_on: repliedOn })
+      const data = await sendMessageToHelloApi({ message, attachments, channelDetail, chat_id: chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, replied_on: repliedOn, session_id: storedSessionId })
       if (data && (!chatIdToUse || !channelIdToUse || demo_widget)) {
+        // Store a returned demo session id in the same dispatch that sets the
+        // identity it belongs to, so the two can never be set out of step.
+        // Absent id writes nothing — no placeholder, no generated fallback.
+        const returnedSessionId = demo_widget ? extractSessionId(data) : undefined;
+        const sessionIdUpdate = returnedSessionId
+          ? { demoSessionId: returnedSessionId }
+          : {};
         dispatch(setDataInAppInfoReducer({
           subThreadId: data?.['channel'],
           currentChatId: data?.['id'],
           currentChannelId: data?.['channel'],
-          overrideChannelId: ""
+          overrideChannelId: "",
+          ...sessionIdUpdate
         }));
         // no need to append user message again this time
         // addHelloMessage(newMessage, data?.['channel']);
@@ -366,7 +380,8 @@ export const useOnSendHello = () => {
     companyId,
     demo_widget,
     replyToMessage,
-    overrideChannelId
+    overrideChannelId,
+    demoSessionId
   ]);
 };
 
