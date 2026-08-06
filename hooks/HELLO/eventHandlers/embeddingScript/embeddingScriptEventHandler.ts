@@ -150,7 +150,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
 
         // Reset redux keys
         const resetKeys = () => {
-            dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '' }));
+            dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '', demoSessionId: '' }));
         };
 
         const isWidgetTokenChanged = fullWidgetToken !== prevWidgetId;
@@ -250,7 +250,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         if (!initialMessage) return;
 
         // Clear appInfo immediately so the UI drops any previously loaded conversation
-        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '' }));
+        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '', demoSessionId: '' }));
 
         if (!companyIdRef.current) {
             // widgetInfo (and hence company_id) hasn't loaded yet - queue it and
@@ -346,7 +346,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         removeFromLocalStorage('a_clientId');
 
         // Reset appInfo state to clear stale channel data
-        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '' }));
+        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '', demoSessionId: '' }));
     }
 
     useEffect(() => {

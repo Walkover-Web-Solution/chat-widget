@@ -1,7 +1,7 @@
 import { errorToast } from "@/components/customToast";
 import { PAGE_SIZE } from "@/utils/enums";
 import axios from "@/utils/helloInterceptor";
-import { generateNewId, getLocalStorage, setLocalStorage } from "@/utils/utilities";
+import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
 import { extractFullMessageText } from "@/utils/readMore";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -347,7 +347,7 @@ export async function initializeHelloChat(): Promise<any> {
 }
 
 // Function to send message to Hello chat
-export async function sendMessageToHelloApi(message: string, attachment: Array<object> = [], channelDetail?: any, chat_id?: string, helloVariables: any = {}, voiceCall: boolean = false, demo_widget: boolean = false, widget_msg_id?: string, replied_on?: string): Promise<any> {
+export async function sendMessageToHelloApi(message: string, attachment: Array<object> = [], channelDetail?: any, chat_id?: string, helloVariables: any = {}, voiceCall: boolean = false, demo_widget: boolean = false, widget_msg_id?: string, replied_on?: string, session_id?: string): Promise<any> {
   let messageType = !voiceCall ? 'text' : 'voice_call'
   // Determine message type based on attachment and message content
   if (attachment?.length > 0) {
@@ -376,7 +376,7 @@ export async function sendMessageToHelloApi(message: string, attachment: Array<o
         ...(demo_widget ? {
           "bot_id": helloVariables?.bot_id,
           "bot_type": helloVariables?.bot_type,
-          session_id: generateNewId()
+          ...(session_id ? { session_id } : {})
         } : {}),
         user_data: getUserData(),
         sessionVariables: helloVariables,
