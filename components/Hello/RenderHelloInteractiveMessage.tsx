@@ -9,10 +9,11 @@ import { MESSAGE_TYPES } from "../Interface-Chatbot/Messages/MessageType";
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
   const messageJson = message?.messageJson || {};
   const { replyToMessage } = useReplyContext();
+  const isGreeting = message?.type === 'greeting_msg';
   const sendMessageToHello = useSendMessageToHello({
-    replyToMessageId: replyToMessage?.message_id || replyToMessage?.id || message?.message_id || message?.id,
-    replied_msg_type: MESSAGE_TYPES.INTERACTIVE,
-    replied_msg_content: messageJson
+    replyToMessageId: !isGreeting && (replyToMessage?.message_id || replyToMessage?.id || message?.message_id || message?.id),
+    replied_msg_type: !isGreeting && MESSAGE_TYPES.INTERACTIVE,
+    replied_msg_content: !isGreeting && messageJson
   });
   const { foregroundColor, primaryBgColor } = useColor();
 
