@@ -23,13 +23,28 @@ const FILE_EXTENSIONS = {
 const FALLBACK_ICON = "https://cdn1.iconfinder.com/data/icons/leto-files/64/leto_files-68-128.png";
 
 // Memoized utility function
-const getFileType = (url: string): string => {
-  if (!url) return "other"; // e.g. null, undefined, empty string
+const getFileType = async (url: string): Promise<string> => {
+  if (!url) return "other";
+
+  // fast path: still try extension first
   const extension = url?.split(".")?.pop()?.toLowerCase()?.split("?")[0] || "";
   if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(extension)) return "image";
   if (["mp4", "webm", "ogg", "mov"].includes(extension)) return "video";
   if (["mp3", "wav", "aac", "flac"].includes(extension)) return "audio";
   if (["pdf"].includes(extension)) return "pdf";
+
+  // fallback: ask the server what it actually is
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.startsWith("image/")) return "image";
+    if (contentType.startsWith("video/")) return "video";
+    if (contentType.startsWith("audio/")) return "audio";
+    if (contentType === "application/pdf") return "pdf";
+  } catch {
+    // network/CORS error, fall through
+  }
+
   return "other"; // e.g. xlsx, csv, html, zip, etc.
 };
 
