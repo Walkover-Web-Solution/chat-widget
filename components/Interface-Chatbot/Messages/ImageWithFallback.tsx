@@ -2,7 +2,7 @@ import { PdfLogo } from "@/assests/assestsIndex";
 import { useScreenSize } from "@/components/Chatbot/hooks/useScreenSize";
 import { Download, FileWarning } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type ImageWithFallbackProps = {
   src: string;
@@ -96,18 +96,26 @@ const ImageWithFallback = ({
   const [error, setError] = useState(false);
   const { isSmallScreen } = useScreenSize();
 
-  // Memoized file type calculation
-  const fileType = useMemo(() => getFileType(src), [src]);
+  // getFileType is async, so resolve it into state
+  const [fileType, setFileType] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getFileType(src).then((type) => {
+      if (!cancelled) setFileType(type);
+    });
+    return () => { cancelled = true; };
+  }, [src]);
 
   // Memoized video type for source element
   const videoType = useMemo(() =>
-    fileType === "video" ? `video/${src.split('.').pop()}` : "",
+    fileType === "video" ? `video/${src.split('?')[0].split('.').pop()}` : "",
     [fileType, src]
   );
 
   // Memoized audio type for source element
   const audioType = useMemo(() =>
-    fileType === "audio" ? `audio/${src.split('.').pop()}` : "",
+    fileType === "audio" ? `audio/${src.split('?')[0].split('.').pop()}` : "",
     [fileType, src]
   );
 
