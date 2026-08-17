@@ -249,6 +249,9 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         const initialMessage = event?.data?.data?.message;
         if (!initialMessage) return;
 
+        // If the conversation drawer is open, switch back to the active chat view
+        dispatch(setToggleDrawer(false));
+
         // Clear appInfo immediately so the UI drops any previously loaded conversation
         dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '', demoSessionId: '' }));
 
