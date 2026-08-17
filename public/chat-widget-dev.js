@@ -818,12 +818,6 @@
             const iframeComponent = document.getElementById(this.elements.chatbotIframeComponent);
             iframeComponent?.contentWindow?.postMessage(openMessage, '*');
             sendMessageToChatbot({ type: "CHATBOT_OPEN", data: { id } })
-
-            // When a initial message is configured, always start a fresh new chat
-            // and auto-send it as soon as the chat is opened
-            if (!id && this.helloProps?.initialMessage) {
-                sendMessageToChatbot({ type: "SEND_INITIAL_MESSAGE", data: { message: this.helloProps.initialMessage } });
-            }
         }
 
         closeChatbot() {
@@ -1457,6 +1451,12 @@
         modifyCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
         addUserEvent: (data) => sendMessageToChatbot({ type: "ADD_USER_EVENT_SEGMENTO", data }),
         open: (id = "") => manager.openChatbot(id),
+        openWithMessage: (message = "") => {
+            manager.openChatbot();
+            if (message) {
+                sendMessageToChatbot({ type: "SEND_INITIAL_MESSAGE", data: { message } });
+            }
+        },
         close: () => manager.closeChatbot(),
         hide: () => {
             manager.hideChatbotWithIcon();
