@@ -208,6 +208,42 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         }
     }
 
+    function buildInitialNewMessage(greetMessage: string) {
+        return {
+            id: generateNewId(24),
+            role: "user",
+            chat_id: generateNewId(),
+            content: {
+                text: greetMessage,
+                attachment: []
+            },
+            timetoken: Date.now(),
+            sender_id: "user"
+        };
+    }
+
+    function handleSendInitialMessage(event: MessageEvent) {
+        const initialMessage = event?.data?.data?.message;
+        if (!initialMessage) return;
+
+        // If the conversation drawer is open, switch back to the active chat view
+        dispatch(setToggleDrawer(false));
+
+        // Clear appInfo immediately so the UI drops any previously loaded conversation
+        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '', demoSessionId: '' }));
+
+        if (!companyIdRef.current) {
+            // widgetInfo (and hence company_id) hasn't loaded yet - queue it and
+            // send once company_id is available (see the companyId effect above)
+            pendingGreetMessageRef.current = initialMessage;
+            return;
+        }
+
+        // forceNewChat (last arg) makes onSendHello ignore any redux channel/chat ids
+        // and always create a brand new chat, instead of racing the reset dispatch above
+        onSendHelloRef.current(initialMessage, buildInitialNewMessage(initialMessage), false, undefined, undefined, undefined, undefined, true);
+    }
+    
     function handleHelloRuntimeData(event: MessageEvent) {
         const { data } = event?.data;
         if (data.themeColor) {
