@@ -1100,6 +1100,12 @@
         modifyCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
         addUserEvent: (data) => sendMessageToChatbot({ type: "ADD_USER_EVENT_SEGMENTO", data }),
         open: () => helloChatbotManager.openChatbot(),
+        openWithMessage: (message = "") => {
+            helloChatbotManager.openChatbot();
+            if (message) {
+                sendMessageToChatbot({ type: "SEND_INITIAL_MESSAGE", data: { message } });
+            }
+        },
         close: () => helloChatbotManager.closeChatbot(),
         hide: () => {
             helloChatbotManager.hideChatbotWithIcon();
