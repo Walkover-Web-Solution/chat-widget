@@ -206,7 +206,7 @@ export const useOnSendHello = () => {
     tabSessionId
   });
 
-  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget } = useCustomSelector((state) => {
+  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, rawHelloMsgList } = useCustomSelector((state) => {
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
     return ({
@@ -218,7 +218,8 @@ export const useOnSendHello = () => {
       images: state.Chat.images,
       helloVariables: state.draftData?.hello?.variables || {},
       companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
-      demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false
+      demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false,
+      rawHelloMsgList: state.Chat.rawHelloMsgList
     })
   });
 
@@ -306,8 +307,12 @@ export const useOnSendHello = () => {
         widget_msg_id = newMessage.id;
       }
 
+      const conversations = demo_widget && channelIdToUse
+        ? (rawHelloMsgList?.[channelIdToUse] || []).slice(0, 5).reverse()
+        : undefined;
+
       // const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget);
-      const data = await sendMessageToHelloApi({ message, attachments, channelDetail, chat_id: chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, replied_on: repliedOn })
+      const data = await sendMessageToHelloApi({ message, attachments, channelDetail, chat_id: chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, replied_on: repliedOn, conversations })
       if (data && (!chatIdToUse || !channelIdToUse || demo_widget)) {
         dispatch(setDataInAppInfoReducer({
           subThreadId: data?.['channel'],
@@ -366,7 +371,8 @@ export const useOnSendHello = () => {
     companyId,
     demo_widget,
     replyToMessage,
-    overrideChannelId
+    overrideChannelId,
+    rawHelloMsgList
   ]);
 };
 

@@ -346,7 +346,7 @@ export async function initializeHelloChat(): Promise<any> {
 }
 
 // Function to send message to Hello chat
-export async function sendMessageToHelloApi({ message = "", attachments = [], channelDetail, chat_id, helloVariables = {}, voiceCall = false, demo_widget = false, widget_msg_id, replied_on }: { message?: string, attachments?: any, channelDetail?: any, chat_id?: string | number, helloVariables?: any, voiceCall?: boolean, demo_widget?: boolean, widget_msg_id?: string, replied_on?: string }): Promise<any> {
+export async function sendMessageToHelloApi({ message = "", attachments = [], channelDetail, chat_id, helloVariables = {}, voiceCall = false, demo_widget = false, widget_msg_id, replied_on, conversations }: { message?: string, attachments?: any, channelDetail?: any, chat_id?: string | number, helloVariables?: any, voiceCall?: boolean, demo_widget?: boolean, widget_msg_id?: string, replied_on?: string, conversations?: any }): Promise<any> {
   let messageType = !voiceCall ? 'text' : 'voice_call';
   // Determine message type based on attachments and message content
   if (attachments?.length > 0) {
@@ -376,7 +376,8 @@ export async function sendMessageToHelloApi({ message = "", attachments = [], ch
         ...(demo_widget ? {
           "bot_id": helloVariables?.bot_id,
           "bot_type": helloVariables?.bot_type,
-          session_id: generateNewId()
+          session_id: generateNewId(),
+          ...(conversations ? { conversations } : {})
         } : {}),
         user_data: getUserData(),
         sessionVariables: helloVariables,
