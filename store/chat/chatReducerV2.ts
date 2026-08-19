@@ -10,6 +10,9 @@ interface ChatState {
     msgIdAndDataMap: Record<string, Record<string, any>>;
     helloMsgIds: Record<string, string[]>;
     helloMsgIdAndDataMap: Record<string, Record<string, any>>;
+    // Raw hello messages exactly as received (socket event / local send),
+    // newest first, before conversion to the generic render format
+    rawHelloMsgList: Record<string, any[]>;
     helloMessages: any[];
     starterQuestions: any[];
     isTyping: Record<string, any>;
@@ -52,6 +55,7 @@ export const initialChatState: ChatState = {
     msgIdAndDataMap: {},
     helloMsgIds: {},
     helloMsgIdAndDataMap: {},
+    rawHelloMsgList: {},
     helloMessages: [],
     starterQuestions: [],
     isTyping: {},
@@ -267,6 +271,10 @@ export const chatReducerV2 = {
         const messagesArray = convertEventMessageToGenericFormat(action.payload.message, state.isHelloUser);
 
         if (subThreadId) {
+            state.rawHelloMsgList[subThreadId] = [
+                action.payload.message,
+                ...(state.rawHelloMsgList[subThreadId] || [])
+            ];
             state.messageIds[subThreadId] = [
                 ...messagesArray?.map(msg => msg?.id),
                 ...(state.messageIds[subThreadId] || [])

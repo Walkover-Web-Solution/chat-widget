@@ -206,7 +206,7 @@ export const useOnSendHello = () => {
     tabSessionId
   });
 
-  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId } = useCustomSelector((state) => {
+  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId, rawHelloMsgList } = useCustomSelector((state) => {
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
     return ({
@@ -219,7 +219,8 @@ export const useOnSendHello = () => {
       helloVariables: state.draftData?.hello?.variables || {},
       companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
       demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false,
-      demoSessionId: state.appInfo?.[tabSessionId]?.demoSessionId
+      demoSessionId: state.appInfo?.[tabSessionId]?.demoSessionId,
+      rawHelloMsgList: state.Chat.rawHelloMsgList
     })
   });
 
@@ -316,7 +317,12 @@ export const useOnSendHello = () => {
       const storedSessionId = demo_widget && channelIdToUse
         ? demoSessionId
         : undefined;
-      const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, repliedOn, storedSessionId);
+
+      // For demo widgets on an existing chat, pass the last 5 raw messages
+      const conversations = demo_widget && channelIdToUse
+        ? (rawHelloMsgList?.[channelIdToUse] || []).slice(0, 5).reverse()
+        : undefined;
+      const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, repliedOn, storedSessionId, conversations);
       if (data && (!chatIdToUse || !channelIdToUse || demo_widget)) {
         // Store a returned demo session id in the same dispatch that sets the
         // identity it belongs to, so the two can never be set out of step.
@@ -384,7 +390,8 @@ export const useOnSendHello = () => {
     demo_widget,
     replyToMessage,
     overrideChannelId,
-    demoSessionId
+    demoSessionId,
+    rawHelloMsgList
   ]);
 };
 
