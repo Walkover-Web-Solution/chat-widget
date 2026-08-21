@@ -17,5 +17,6 @@ export interface $AppInfoReduxType {
         callToken: string,
         serviceChanged: string, //name of the service
         modelChanged: string, //name of the model
+        demoSessionId?: string,
     }
 }

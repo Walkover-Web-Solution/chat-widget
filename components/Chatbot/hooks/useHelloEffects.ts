@@ -86,7 +86,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     useEffect(() => {
         if (isHelloUser && demo_widget && helloVariables?.bot_id && helloVariables?.bot_type) {
-            dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: "", currentChannelId: "", currentChatId: "" }));
+            dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: "", currentChannelId: "", currentChatId: "", demoSessionId: "" }));
             setLoading(false)
         }
     }, [isHelloUser, demo_widget, helloVariables?.bot_id, helloVariables?.bot_type])
