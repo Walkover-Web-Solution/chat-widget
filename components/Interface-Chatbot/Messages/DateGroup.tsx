@@ -9,15 +9,7 @@ import dayjs from 'dayjs';
  * if they are from different dates.
  */
 
-/**
- * A component that groups messages by date, displaying a timestamp
- * between messages that are from different days. It checks if the 
- * previous message time and the current message time are on the same 
- * date and within 24 hours of each other, and only shows the timestamp 
- * if they are from different dates.
- */
-
-function DateGroup({ prevTime, messageTime, backgroundColor, textColor }: { prevTime: any, messageTime: number, backgroundColor: string, textColor: string }) {
+function DateGroup({ prevTime, messageTime, backgroundColor, foregroundColor }: { prevTime: any, messageTime: number, backgroundColor: string, foregroundColor: string }) {
     const messageTimeRange = dayjs(messageTime);
     const prevTimeRange = dayjs(prevTime);
 

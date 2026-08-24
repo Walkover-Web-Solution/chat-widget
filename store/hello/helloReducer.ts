@@ -71,10 +71,15 @@ export const reducers: ValidateSliceCaseReducers<
   setChannelListData(state, action: actionType<ChannelListData>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
+      const channels = action.payload?.channels || [];
+      const sortedChannels = [...channels].sort((a: any, b: any) => {
+        if (a.is_closed === b.is_closed) return 0;
+        return a.is_closed ? 1 : -1;
+      });
       state[chatSessionId] = {
         ...state[chatSessionId],
-        channelListData: action.payload,
-        Channel: action.payload?.channels?.[0]
+        channelListData: { ...action.payload, channels: sortedChannels },
+        Channel: sortedChannels[0]
       };
     }
   },
@@ -175,6 +180,30 @@ export const reducers: ValidateSliceCaseReducers<
       if (channelIndex > 0) {
         const [movedChannel] = state[chatSessionId].channelListData.channels.splice(channelIndex, 1);
         state[chatSessionId]?.channelListData.channels.unshift(movedChannel);
+      }
+    }
+  },
+
+  setChannelClosedStatus(state, action: actionType<{ channelId?: string, is_closed: boolean }>) {
+    const chatSessionId = action.urlData?.chatSessionId
+    if (chatSessionId) {
+      const { channelId = state[chatSessionId]?.currentChannelId, is_closed } = action.payload;
+
+      if (!state[chatSessionId]?.channelListData?.channels?.length) return;
+
+      const channelIndex = state[chatSessionId].channelListData.channels.findIndex(
+        (channel: any) => channel.channel === channelId
+      );
+
+      if (channelIndex === -1) return;
+
+      const channel = state[chatSessionId].channelListData.channels[channelIndex];
+      channel.is_closed = is_closed;
+
+      // Keep closed chats pushed to the end of the list, same as the reload sort order
+      if (is_closed) {
+        const [closedChannel] = state[chatSessionId].channelListData.channels.splice(channelIndex, 1);
+        state[chatSessionId].channelListData.channels.push(closedChannel);
       }
     }
   },

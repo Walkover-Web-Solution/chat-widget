@@ -27,8 +27,11 @@ import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
 import { createRandomId, DEFAULT_AI_SERVICE_MODALS, ParamsEnums } from "@/utils/enums";
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
+import { useColor } from "../Chatbot/hooks/useColor";
 import { ChatbotContext } from "../context";
+import QuickActionsMenu from "./QuickActionsMenu";
 import "./InterfaceChatbot.css";
+import { useScreenSize } from '../Chatbot/hooks/useScreenSize';
 
 export function ChatbotHeaderPreview() {
 
@@ -293,9 +296,34 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     setOptions,
     setToggleDrawer,
   } = useChatActions();
+  const { foregroundColor, headerHoverBg } = useColor();
+  const { isSmallScreen } = useScreenSize();
 
-  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds, lastMessage, unReadCount, isChatbotMinimized, isFullScreen } = useCustomSelector((state) => {
-    const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen;
+  // Wrapper component so header icon peers (buttons, dropdowns) inherit the
+  // correct icon/text color based on the primary gradient (white for dark mode,
+  // auto/light for light mode). The #chatbot-header-root selector is used by
+  // any downstream dropdowns/menus that mount outside the header root.
+  const HeaderColorWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div
+      id="chatbot-header-root"
+      className={`w-full ${isSmallScreen ? 'border-b border-gray-100' : ''}`}
+      style={{
+        backgroundColor: isSmallScreen ? 'var(--background)' : undefined,
+        ['--header-hover-bg' as any]: headerHoverBg,
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  const { isToggledrawer, bridgeName: reduxBridgeName, headerButtons, messageIds, lastMessage, unReadCount, isChatbotMinimized, isFullScreen, isOpenInParentContainer } = useCustomSelector((state) => {
+    const helloConfig = state.Hello?.[chatSessionId]?.helloConfig;
+    const fullScreen = helloConfig?.fullScreen
+
+    // Find parent id if pass in hello config
+    const parentId = Boolean(
+      (helloConfig as (typeof helloConfig & { parentId?: unknown }) | undefined)?.parentId
+    );
     return {
       isToggledrawer: state.Chat?.isToggledrawer,
       bridgeName: state.Chat.bridgeName || [],
@@ -309,7 +337,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
         (channel: any) => channel?.channel === currentChannelId
       )?.widget_unread_count || 0,
       isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
-      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false
+      isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false,
+      isOpenInParentContainer: parentId
     }
   })
 
@@ -323,7 +352,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     bridges = []
   } = chatbotConfig || {};
 
-  const [fullScreen, setFullScreen] = useState(false);
+
+  const fullScreen = !isSmallScreen;
   const [teamName, setTeamName] = useState(false);
 
   const shouldToggleScreenSize = `${width}${widthUnit}` !== '1200%';
@@ -397,8 +427,6 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
   // Handle fullscreen toggle
   const toggleFullScreen = (enter: boolean) => {
     if (!window?.parent) return;
-
-    setFullScreen(enter);
     const message = enter
       ? { type: "ENTER_FULL_SCREEN_CHATBOT" }
       : { type: "EXIT_FULL_SCREEN_CHATBOT" };
@@ -429,7 +457,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return (
       <button
-        className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+        className="p-2 rounded-full transition-colors text-current hover:bg-gray-200"
         onClick={() => setToggleDrawer(!isToggledrawer)}
       >
         {isToggledrawer ? null : <AlignLeft size={22} />}
@@ -444,7 +472,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     return (
       <div className="tooltip tooltip-right" data-tip="Create new thread">
         <button
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors icn"
+          className="p-2 rounded-full transition-colors text-current hover:bg-gray-200"
           onClick={handleCreateNewSubThread}
         >
           <SquarePen size={22} />
@@ -455,7 +483,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
   // Memoized header title section
   const HeaderTitleSection = useMemo(() => {
-    const displayTitle = isChatbotMinimized && lastMessage?.role === 'user' ? 'You' : chatTitle || chatbotTitle || (isHelloUser ? (agentTeamName || teamName || "Conversation")?.toString().split(" ")?.[0] : "AI Assistant");
+    const displayTitle = isChatbotMinimized && lastMessage?.role === 'user' ? 'You' : chatTitle || chatbotTitle || (isHelloUser ? (agentTeamName || teamName || "Conversation") : "AI Assistant");
     const displaySubtitle = chatSubTitle || chatbotSubtitle || "Do you have any questions? Ask us!";
 
     // Minimized version of the header
@@ -473,7 +501,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
           )}
           <div className="flex items-center">
             <div className="relative">
-              <h1 className="text-center font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis text-sm">
+              <h1 className="text-center font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis text-sm max-w-80">
                 {displayTitle}
               </h1>
               {unReadCount > 0 && (
@@ -552,7 +580,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return fullScreen ? (
       <div
-        className="cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-gray-200"
         onClick={() => toggleFullScreen(false)}
       >
         {/* <PictureInPicture2 size={22} color="var(--icon-color)" /> */}
@@ -560,7 +588,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       </div>
     ) : (
       <div
-        className="cursor-pointer p-2 rounded-full transition-colors hover:bg-gray-200 icn"
+        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-gray-200"
         onClick={() => toggleFullScreen(true)}
       >
         {/* <Maximize size={22} color="var(--icon-color)" /> */}
@@ -575,7 +603,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return (
       <div
-        className="cursor-pointer p-2 py-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 py-2 rounded-full transition-colors text-current hover:bg-gray-200"
         onClick={handleCloseChatbot}
       >
         <X size={22} />
@@ -599,7 +627,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     if (!isHelloUser) return null;
     return (
       <div
-        className="cursor-pointer p-2 py-2 rounded-full hover:bg-gray-200 transition-colors icn"
+        className="cursor-pointer p-2 py-2 rounded-full transition-colors text-current hover:bg-gray-200"
         onClick={handleToggleMinimize}
       >
         {isChatbotMinimized ? <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} /> : <Minus size={22} />}
@@ -607,58 +635,120 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     );
   }, [isHelloUser, isChatbotMinimized, fullScreen, toggleFullScreen])
 
+  // Expand button for the collapsed header — un-minimizes the chat back to default size
+  const ExpandButton = useMemo(() => {
+    if (!isChatbotMinimized) return null;
+    return (
+      <div
+        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        onClick={(e) => { e.stopPropagation(); handleToggleMinimize(); }}
+      >
+        <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} />
+      </div>
+    );
+  }, [isChatbotMinimized, handleToggleMinimize])
+
+  // Determine which quick-action items are available
+  const hasMinimizeAction = !!MinimizeButton;
+  const hasFullScreenAction = !!ScreenSizeToggleButton && !isFullScreen;
+  const hasExitFullScreenAction = !!ScreenSizeToggleButton && isFullScreen;
+  const hasNewConversationAction = !!CreateThreadButton;
+
+  const showQuickActions = (
+    hasMinimizeAction ||
+    hasFullScreenAction ||
+    hasExitFullScreenAction ||
+    hasNewConversationAction
+  );
+
+  const QuickActionsMenuComponent = useMemo(() => (
+    <QuickActionsMenu
+      isChatbotMinimized={isChatbotMinimized}
+      fullScreen={fullScreen}
+      showMinimize={hasMinimizeAction}
+      showFullScreen={!isOpenInParentContainer && (hasFullScreenAction || hasExitFullScreenAction)}
+      showNewConversation={hasNewConversationAction}
+      onMinimize={handleToggleMinimize}
+      onToggleFullScreen={() => toggleFullScreen(!fullScreen)}
+      onNewConversation={handleCreateNewSubThread}
+      position={isChatbotMinimized ? 'top' : 'bottom'}
+      triggerHoverBg={headerHoverBg}
+    />
+  ), [
+    isChatbotMinimized,
+    fullScreen,
+    hasMinimizeAction,
+    hasFullScreenAction,
+    hasExitFullScreenAction,
+    hasNewConversationAction,
+    handleToggleMinimize,
+    toggleFullScreen,
+    handleCreateNewSubThread,
+    headerHoverBg,
+  ])
+
   return isChatbotMinimized ?
-    <div className="px-2 sm:py-4 py-3 w-full cursor-pointer" onClick={handleToggleMinimize}>
-      <div className="flex items-center w-full relative px-2">
-        <div className="justify-start">
-          {HeaderTitleSection}
-        </div>
-        <div className="flex justify-end items-center gap-1 flex-1 sm:absolute sm:right-0">
-          <div className="flex items-center">
-            {MinimizeButton}
-            {CloseButton}
+    <HeaderColorWrapper>
+      <div className="px-2 sm:py-4 py-3 w-full cursor-pointer" onClick={handleToggleMinimize}>
+        <div className="flex items-center w-full relative px-2">
+          <div className="justify-start">
+            {HeaderTitleSection}
+          </div>
+          <div className="flex justify-end items-center gap-1 flex-1 sm:absolute sm:right-0">
+            <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+              {ExpandButton}
+              {CloseButton}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </HeaderColorWrapper>
     :
-    <div className="px-2 sm:py-4 py-3 w-full">
-      <div className="flex items-center w-full relative">
-        {/* Left side buttons */}
-        <div className="flex items-center flex-1 sm:absolute sm:left-0 sm:flex sm:items-center">
-          {DrawerToggleButton}
-          {CreateThreadButton}
-        </div>
+    <HeaderColorWrapper>
+      <div className="px-2 sm:py-4 py-3 w-full">
+        <div className="flex items-center w-full relative">
+          {/* Left side buttons */}
+          <div className="flex items-center flex-1 sm:absolute sm:left-0 sm:flex sm:items-center">
+            {DrawerToggleButton}
+            {CreateThreadButton}
+          </div>
 
-        {/* Center title section */}
-        <div className="flex justify-center items-center flex-1">
-          {HeaderTitleSection}
-        </div>
+          {/* Center title section */}
+          <div className="flex justify-center items-center flex-1">
+            {HeaderTitleSection}
+          </div>
 
-        {/* Right side buttons */}
-        <div className="flex justify-end items-center gap-1 flex-1 sm:absolute sm:right-0">
-          {allowBridgeSwitchViaProp && allowBridgeSwitch && (
-            <BridgeSwitchDropdown
-              currentSelectedBridgeSlug={bridgeName}
-              bridges={bridges}
-            />
-          )}
+          {/* Right side buttons */}
+          <div className="flex justify-end items-center gap-1 flex-1 sm:absolute sm:right-0">
+            {allowBridgeSwitchViaProp && allowBridgeSwitch && (
+              <BridgeSwitchDropdown
+                currentSelectedBridgeSlug={bridgeName}
+                bridges={bridges}
+              />
+            )}
 
-          {allowModalSwitch && <AiServicesToSwitch chatSessionId={chatSessionId} />}
+            {allowModalSwitch && <AiServicesToSwitch chatSessionId={chatSessionId} />}
+            {!isFullScreen && (
+            <>
+                {headerButtons?.map((item, index) => (
+                  <React.Fragment key={`header-button-${index}`}>
+                    {renderIconsByType(item)}
+                  </React.Fragment>
+                ))}
 
-          {headerButtons?.map((item, index) => (
-            <React.Fragment key={`header-button-${index}`}>
-              {renderIconsByType(item)}
-            </React.Fragment>
-          ))}
-
-          {!isFullScreen && <div className="flex items-center">
-            {ScreenSizeToggleButton}
-            {(isMobileSDK || !isHelloUser) ? CloseButton : MinimizeButton}
-          </div>}
+                {showQuickActions && (
+                  <div className="flex items-center">
+                    {QuickActionsMenuComponent}
+                  </div>
+                )}
+                {CloseButton}
+              </>
+              )
+            }
+          </div>
         </div>
       </div>
-    </div>
+    </HeaderColorWrapper>
 };
 
 export default React.memo(addUrlDataHoc(ChatbotHeader, [ParamsEnums.currentTeamId, ParamsEnums.currentChannelId, ParamsEnums.threadId, ParamsEnums.bridgeName]));
