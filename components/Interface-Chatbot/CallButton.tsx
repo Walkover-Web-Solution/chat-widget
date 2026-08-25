@@ -20,7 +20,7 @@ function CallButton({ chatSessionId }: CallButtonProps) {
         voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
     }));
     const sendMessageToHello = useOnSendHello();
-    const { backgroundColor } = useColor();
+    const { primaryBgColor } = useColor();
     const { callState } = useCallUI();
 
     // Handler for voice call
@@ -49,10 +49,10 @@ function CallButton({ chatSessionId }: CallButtonProps) {
                 ? "cursor-not-allowed opacity-50"
                 : "cursor-pointer hover:bg-gray-200"
                 }`}
-            style={{ backgroundColor: lighten(backgroundColor, 0.8) }}
+            style={{ backgroundColor: lighten(primaryBgColor, 0.8) }}
             onClick={() => { if (!isCallDisabled) handleVoiceCall() }}
         >
-            <Phone className={`w-4 h-4 md:w-4 md:h-4`} style={{ color: darken(backgroundColor, 0.2) }} />
+            <Phone className={`w-4 h-4 md:w-4 md:h-4`} style={{ color: darken(primaryBgColor, 0.2) }} />
         </div>
     );
 }

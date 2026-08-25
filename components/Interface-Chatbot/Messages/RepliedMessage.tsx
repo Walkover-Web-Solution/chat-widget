@@ -51,7 +51,7 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
     }
 
     return (
-        <div className={`pointer-events-none mb-1 p-2 rounded-md border-l-2 border-blue-400 not-prose ${message?.role !== 'user' ? 'bg-gray-200 dark:bg-gray-800' : 'bg-black bg-opacity-10 border-white'}`}>
+        <div className={`pointer-events-none mb-1 p-2 rounded-md border-l-2 not-prose ${message?.role !== 'user' ? 'bg-gray-200 dark:bg-gray-800 border-blue-400' : 'bg-black bg-opacity-10 border-white'}`}>
             <div className={`text-xs text-gray-600 mb-1 font-medium ${message?.role !== 'user' ? 'dark:text-gray-200' : 'text-inherit'}`}>{senderName}</div>
             {message.replied_msg_type === MESSAGE_TYPES.INTERACTIVE ? (
                 <RenderHelloInteractiveMessage message={{ messageJson: message.replied_msg_content }} />
