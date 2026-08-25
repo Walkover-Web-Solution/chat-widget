@@ -13,6 +13,7 @@ export const {
   getHelloDetailsSuccess,
   setIsVision,
   setHelloConfig,
+  setInitialHelloConfig,
   setWidgetInfo,
   setChannelListData,
   setJwtToken,

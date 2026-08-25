@@ -58,6 +58,20 @@ export const reducers: ValidateSliceCaseReducers<
     }
   },
 
+  // Used for the initial 'helloData' payload from the embed script, which always
+  // carries the complete current config. Replaces helloConfig instead of merging,
+  // so flags omitted from the new config (e.g. fullScreen) don't leak stale
+  // values that were persisted (via redux-persist) from a previous session.
+  setInitialHelloConfig(state, action: actionType<HelloData>) {
+    const chatSessionId = action.urlData?.chatSessionId
+    if (chatSessionId) {
+      state[chatSessionId] = {
+        ...state[chatSessionId],
+        helloConfig: action.payload
+      };
+    }
+  },
+
   setWidgetInfo(state, action: actionType<HelloData>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {

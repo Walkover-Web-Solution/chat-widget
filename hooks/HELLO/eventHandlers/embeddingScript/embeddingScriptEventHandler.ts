@@ -6,7 +6,7 @@ import { EmbeddingScriptEventRegistryInstance } from "@/hooks/CORE/eventHandlers
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
 import { setToggleDrawer } from "@/store/chat/chatSlice";
 import { setDataInDraftReducer, setVariablesForHelloBot } from "@/store/draftData/draftDataSlice";
-import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo } from "@/store/hello/helloSlice";
+import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setInitialHelloConfig, setWidgetInfo } from "@/store/hello/helloSlice";
 import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
 import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
@@ -193,7 +193,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         }
 
         SetSessionStorage('helloConfig', JSON.stringify(event.data.data));
-        dispatch(setHelloConfig(event.data.data));
+        dispatch(setInitialHelloConfig(event.data.data));
 
         // Hide form if user data available
         if (mail && number && name) {
