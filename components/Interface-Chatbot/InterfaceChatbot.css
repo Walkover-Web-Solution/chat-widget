@@ -36,7 +36,7 @@
   padding: 5px !important;
   border-radius: 50px !important;
   cursor: pointer !important;
-  z-index: 999999 !important;
+  z-index: 99 !important;
   pointer-events: auto !important;
   background-color: var(--down-btn-bg-color, #333) !important;
   color: var(--down-btn-text-color, white) !important;

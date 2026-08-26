@@ -18,7 +18,7 @@ import RepliedMessage from './RepliedMessage';
  * It includes an image with fallback, message content, and sender time.
  */
 
-const UserMessageCard = React.memo(({ message, backgroundColor, textColor, chatSessionId }: any) => {
+const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor, chatSessionId }: any) => {
     const [showSenderTime, setShowSenderTime] = useState(false);
     const [showReplyButton, setShowReplyButton] = useState(false);
     const { setReplyToMessage } = useReplyContext();
@@ -67,7 +67,7 @@ const UserMessageCard = React.memo(({ message, backgroundColor, textColor, chatS
                         className="p-2.5 min-w-[40px] sm:max-w-[80%] max-w-[90%] rounded-[10px_10px_1px_10px] break-words user-message-bubble"
                         style={{
                             backgroundColor: backgroundColor,
-                            color: textColor
+                            color: foregroundColor
                         }}
                         onClick={() => setShowSenderTime(!showSenderTime)}
                     >
@@ -86,7 +86,7 @@ const UserMessageCard = React.memo(({ message, backgroundColor, textColor, chatS
                                                     alt={`Image ${index + 1}`}
                                                     style={{
                                                         backgroundColor: backgroundColor,
-                                                        color: textColor,
+                                                        color: foregroundColor,
                                                         borderRadius: "10px",
                                                         maxHeight: "300px",
                                                     }}
