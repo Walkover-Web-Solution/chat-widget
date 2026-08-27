@@ -85,7 +85,11 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
   }, [message, foregroundColor, primaryBgColor, addMessage]);
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full"
+      id={`msg-${message?.message_id || message?.id}`}
+      data-msg-ids={[message?.message_id, message?.id, ...(message?.all_ids || [])].filter(Boolean).join(' ')}
+    >
       {message?.time && (
         <DateGroup
           prevTime={prevTime}

@@ -220,3 +220,13 @@
   --link-text-color: #90CAF9;
   /* A light blue for dark themes */
 }
+.replied-msg-highlight {
+  animation: replied-msg-flash 1.4s ease-out;
+  border-radius: 10px;
+}
+
+@keyframes replied-msg-flash {
+  0%   { background-color: rgba(59, 130, 246, 0.25); }
+  60%  { background-color: rgba(59, 130, 246, 0.15); }
+  100% { background-color: transparent; }
+}
