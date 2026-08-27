@@ -350,7 +350,7 @@ function CarouselMessage({ messageJson, backgroundColor, foregroundColor, sendMe
       <div className="carousel rounded-box w-full max-w-fit overflow-x-auto gap-3 py-2 px-1">
         {messageJson.action?.cards?.map((card: any, index: number) => {
           return (
-            <div key={index} className="carousel-item relative w-56 flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow-sm h-auto overflow-hidden flex-shrink-0 p-4">
+            <div key={index} className="carousel-item relative w-56 flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow-sm h-auto overflow-hidden flex-shrink-0 p-4 text-black">
               {card.header && renderHeader(card.header)}
 
               <div className="flex flex-col flex-grow">
