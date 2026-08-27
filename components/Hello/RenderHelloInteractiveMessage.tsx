@@ -330,6 +330,17 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
           </div>
         );
 
+      case 'carousel':
+        return (
+          <CarouselMessage
+            messageJson={messageJson}
+            backgroundColor={primaryBgColor}
+            foregroundColor={foregroundColor}
+            sendMessageToHello={sendMessageToHello}
+            renderHeader={renderHeader}
+          />
+        );
+
       default:
         return <div className="bg-inherit rounded-md text-inherit">Unsupported Message Type</div>;
     }
