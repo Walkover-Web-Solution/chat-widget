@@ -319,8 +319,8 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
         return (
           <CarouselMessage
             messageJson={messageJson}
-            backgroundColor={backgroundColor}
-            textColor={textColor}
+            backgroundColor={primaryBgColor}
+            foregroundColor={foregroundColor}
             sendMessageToHello={sendMessageToHello}
             renderHeader={renderHeader}
           />
