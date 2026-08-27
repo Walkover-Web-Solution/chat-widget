@@ -11,7 +11,7 @@ interface InterfaceMarkdownProps {
 
 function InterfaceMarkdown({ children, className }: InterfaceMarkdownProps) {
   return (
-    <div className={`prose prose-sm md:prose-base max-w-none text-inherit dark:prose-invert${className ? ` ${className}` : ""}`}>
+    <div className={`prose prose-sm md:prose-base max-w-none dark:prose-invert${className ? ` ${className}` : ""}`}>
       <ReactMarkdown
         {...(!supportsLookbehind() ? {} : { remarkPlugins: [remarkGfm] })}
         components={{
