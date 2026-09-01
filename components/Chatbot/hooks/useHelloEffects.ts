@@ -17,6 +17,7 @@ import { useCallback, useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import helloVoiceService from './HelloVoiceService';
 import { useChatActions } from './useChatActions';
+import { consumePreSubscribed } from '@/utils/preSubscribedChannels';
 import { useFetchChannels, useFetchHelloPreviousHistory } from './useHelloIntegration';
 import { useReduxStateManagement } from './useReduxManagement';
 import { useScreenSize } from './useScreenSize';
@@ -80,6 +81,9 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     useEffect(() => {
         if (isHelloUser && currentChannelId && !demo_widget) {
+            // Already subscribed before the first send, so this fetch adds nothing — and
+            // can subtract: setInitialMessages replaces the thread, erasing a socket reply.
+            if (consumePreSubscribed(currentChannelId)) return;
             fetchHelloPreviousHistory()
         }
     }, [currentChannelId, isHelloUser, demo_widget])

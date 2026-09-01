@@ -11,11 +11,16 @@ import { useAppDispatch } from '@/store/useTypedHooks';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 import { PAGE_SIZE } from '@/utils/enums';
+import { markPreSubscribed } from '@/utils/preSubscribedChannels';
 import { extractSessionId, generateChannelId, generateNewId } from '@/utils/utilities';
 import { useCallback, useContext, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useChatActions } from './useChatActions';
 import { useReduxStateManagement } from './useReduxManagement';
+
+// Max wait for a new chat's subscription before sending anyway, so a dead socket
+// delays the first message instead of blocking it.
+const PRE_SUBSCRIBE_TIMEOUT_MS = 2000;
 
 interface HelloMessage {
   role: string;
@@ -307,6 +312,19 @@ export const useOnSendHello = () => {
       if (demo_widget && channelIdToUse) {
         await socketManager.subscribe([channelIdToUse]);
       }
+
+      // A new chat proposes its own channel id (channelDetail.channel_hex), so subscribe
+      // before sending — otherwise a bot reply in that window goes to a dead channel.
+      const newChannelToSubscribe = (!chatIdToUse && !channelIdToUse && workingChannelId) ? workingChannelId : '';
+      let preSubscribed = false;
+      if (newChannelToSubscribe) {
+        // subscribe() queues indefinitely while the socket is down, so race it — an
+        // unreachable socket must not stop the message being sent.
+        preSubscribed = await Promise.race([
+          socketManager.subscribe([newChannelToSubscribe]).then(() => true).catch(() => false),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), PRE_SUBSCRIBE_TIMEOUT_MS)),
+        ]);
+      }
       let widget_msg_id: string | undefined;
       if (newMessage && typeof newMessage === 'object' && 'id' in newMessage) {
         widget_msg_id = newMessage.id;
@@ -323,6 +341,10 @@ export const useOnSendHello = () => {
         : undefined;
       // const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget);
       const data = await sendMessageToHelloApi({ message, attachments, channelDetail, chat_id: chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, replied_on: repliedOn, session_id: storedSessionId, conversations })
+      // Failed send (the API returns null on error) would strand the subscription.
+      if (!data && preSubscribed) {
+        socketManager.unsubscribe([newChannelToSubscribe]).catch(() => undefined);
+      }
       if (data && (!chatIdToUse || !channelIdToUse || demo_widget)) {
         // Store a returned demo session id in the same dispatch that sets the
         // identity it belongs to, so the two can never be set out of step.
@@ -331,6 +353,11 @@ export const useOnSendHello = () => {
         const sessionIdUpdate = returnedSessionId
           ? { demoSessionId: returnedSessionId }
           : {};
+        // Only claim it when the server honoured our proposed id. Marked before the
+        // dispatch, since the dispatch is what triggers the history effect.
+        if (preSubscribed && data?.['channel'] === newChannelToSubscribe) {
+          markPreSubscribed(newChannelToSubscribe);
+        }
         dispatch(setDataInAppInfoReducer({
           subThreadId: data?.['channel'],
           currentChatId: data?.['id'],
@@ -347,6 +374,14 @@ export const useOnSendHello = () => {
           }
         }
         if (data?.['channel']) {
+          // Server ignored our proposed id: drop the dead subscription, or it gets
+          // revived on every reconnect.
+          if (newChannelToSubscribe && data?.['channel'] !== newChannelToSubscribe) {
+            console.warn("Server returned a different channel than the one proposed; pre-subscription did not apply.", { proposed: newChannelToSubscribe, returned: data?.['channel'] });
+            if (preSubscribed) {
+              socketManager.unsubscribe([newChannelToSubscribe]).catch(() => undefined);
+            }
+          }
           try {
             if (demo_widget) {
               await socketManager.subscribe([data?.['channel']]);

@@ -319,7 +319,7 @@ const ChatbotDrawer = ({
                         text = lastMessage.messageJson.text;
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
                         text = "Attachment";
-                      } else if (lastMessage?.message_type  === 'interactive') {
+                      } else if (lastMessage?.message_type === 'interactive') {
                         text = lastMessage.messageJson?.body?.text || "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
                         text = lastMessage.messageJson.message_type;
@@ -636,7 +636,7 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end gap-1">
-                {!(hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen) && (
+                {!(hideCloseButton === true || String(hideCloseButton) === "true" || !isSmallScreen || isFullScreen) && (
                   <button
                     className={headerIconBtnClass}
                     onClick={handleCloseChatbot}
