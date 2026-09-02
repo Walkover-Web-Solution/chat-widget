@@ -1,9 +1,5 @@
 import io from "socket.io-client";
-
-const urlParams = new URLSearchParams(window.location.search);
-const env = urlParams.get('env');
-
-const socketUrl = env !== 'stage' ? process.env.NEXT_PUBLIC_SOCKET_URL : 'https://stagechat.phone91.com';
+import { getSocketUrl } from "@/config/regionConfig";
 
 class SocketManager {
   constructor() {
@@ -14,6 +10,8 @@ class SocketManager {
     this.connectionCallbacks = [];
     this.reconnectionCallbacks = [];
     this.connecting = false;
+    // URL the current socket was opened against, so a region change can be detected.
+    this.socketUrl = null;
   }
 
   /**
@@ -27,8 +25,13 @@ class SocketManager {
       return this;
     }
 
-    // If already connected or connecting, don't reconnect
-    if (this.isConnected || this.connecting) {
+    // Resolved at connect time (not module load) so the region returned by
+    // widget-info is honoured without requiring a reload.
+    const socketUrl = getSocketUrl();
+
+    // If already connected or connecting to the same region, don't reconnect.
+    // A region change falls through and rebuilds the socket against the new URL.
+    if ((this.isConnected || this.connecting) && this.socketUrl === socketUrl) {
       return this;
     }
 
@@ -36,8 +39,11 @@ class SocketManager {
 
     if (this.socket) {
       this.disconnect();
+      this.connecting = true; // disconnect() resets it
     }
 
+    console.log(this.socketUrl, '-=-=-=socket url=-=-=')
+    this.socketUrl = socketUrl;
     this.socket = io(socketUrl, {
       auth: { token: jwtToken },
       transports: ['websocket', 'polling'],
@@ -79,7 +85,7 @@ class SocketManager {
 
     this.socket.io.on("reconnect", (attempt) => {
       console.log("Reconnected to WebSocket server", attempt);
-      
+
       // Execute reconnection callbacks
       this.reconnectionCallbacks.forEach(callback => {
         try {
@@ -327,6 +333,7 @@ class SocketManager {
       this.socket = null;
       this.isConnected = false;
       this.connecting = false;
+      this.socketUrl = null;
       this.channels = [];
       this.connectionCallbacks = [];
       this.reconnectionCallbacks = [];

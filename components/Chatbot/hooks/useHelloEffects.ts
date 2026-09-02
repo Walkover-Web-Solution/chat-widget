@@ -1,5 +1,5 @@
 import { ThemeContext } from '@/components/AppWrapper';
-import { deleteReadReceipt, getAgentTeamApi, getClientToken, getGreetingQuestions, getJwtToken, initializeHelloChat, registerAnonymousUser, saveClientDetails } from '@/config/helloApi';
+import { deleteReadReceipt, getAgentTeamApi, getClientToken, getGreetingQuestions, getJwtToken, getRoutingRegion, initializeHelloChat, registerAnonymousUser, saveClientDetails } from '@/config/helloApi';
 import useNotificationSocket from '@/hooks/notifications/notificationSocket';
 import useNotificationSocketEventHandler from '@/hooks/notifications/notificationSocketEventHandler';
 import useSocket from '@/hooks/socket';
@@ -188,25 +188,14 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
             let needsAnonymousRegistration = !a_clientId && !k_clientId && !unique_id && widgetToken && isHelloUser && !mail && !number;
 
-            if (needsAnonymousRegistration) {
-                const data = await registerAnonymousUser();
-                if (data === null) needsAnonymousRegistration = false;
-                a_clientId = getLocalStorage(`a_clientId`);
-            } else {
-                // it gives the Hello Client Id for the registered user
-                const response = await fetchChannels();
-                channels = response?.channels || [];
-                k_clientId = getLocalStorage(`k_clientId`);
-            }
-
-            //  used to subscribe to cobrowse
-            emitEventToParent('uuid', { uuid: k_clientId || a_clientId })
-            // Step 2: Handle domain (if needed)
-
             let widgetData = null;
             let jwtData = null;
             let botType = '';
             if (isHelloUser && widgetToken) {
+                // Step 0: resolve the region every call below is pinned to.
+                await getRoutingRegion();
+
+                // Step 1: widget-info, against the resolved region.
                 try {
                     widgetData = await initializeHelloChat();
                     if (!widgetData) {
@@ -236,6 +225,21 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
                     return; // Exit early, don't proceed to getJwtToken
                 }
             }
+
+            // Step 2: Register / resolve the client - now against the region above.
+            if (needsAnonymousRegistration) {
+                const data = await registerAnonymousUser();
+                if (data === null) needsAnonymousRegistration = false;
+                a_clientId = getLocalStorage(`a_clientId`);
+            } else {
+                // it gives the Hello Client Id for the registered user
+                const response = await fetchChannels();
+                channels = response?.channels || [];
+                k_clientId = getLocalStorage(`k_clientId`);
+            }
+
+            //  used to subscribe to cobrowse
+            emitEventToParent('uuid', { uuid: k_clientId || a_clientId })
 
             // Only get JWT token if widgetData is valid and HelloClientId exists
             if (widgetData && (getLocalStorage(`a_clientId`) || getLocalStorage(`k_clientId`))) {
