@@ -207,9 +207,24 @@
   text-decoration: none;
 }
 
-.user-message-bubble .link-text {
+/* Links inside the user bubble must not use the themed link color,
+   which is the same blue as the bubble background. The state selectors are
+   listed explicitly to outrank daisyUI's .link-primary:hover. */
+.user-message-bubble a,
+.user-message-bubble a:link,
+.user-message-bubble a:visited,
+.user-message-bubble a:hover,
+.user-message-bubble a:focus,
+.user-message-bubble a:active,
+.user-message-bubble .link-text,
+.user-message-bubble .link-text:hover {
   color: inherit;
   text-decoration: underline;
+}
+
+.user-message-bubble a:hover,
+.user-message-bubble .link-text:hover {
+  opacity: 0.8;
 }
 
 .link-text:hover {
