@@ -231,13 +231,13 @@ export const useOnSendHello = () => {
 
   const isBot = assigned_type === 'bot';
 
-  return useCallback(async ({ message, newMessage, voiceCall, overrideChannelId: customChannelId, overrideChatId, overrideTeamId, repliedOn }: { message?: string, newMessage?: any, voiceCall?: boolean, overrideChannelId?: string, overrideChatId?: string | number, overrideTeamId?: string, repliedOn?: string }) => {
+  return useCallback(async ({ message, newMessage, voiceCall, overrideChannelId: customChannelId, overrideChatId, overrideTeamId, repliedOn, forceNewChat }: { message?: string, newMessage?: any, voiceCall?: boolean, overrideChannelId?: string, overrideChatId?: string | number, overrideTeamId?: string, repliedOn?: string, forceNewChat?: boolean }) => {
     if (!voiceCall && (!message?.trim() && (!images || images.length === 0))) return;
 
     try {
-      const channelIdToUse = customChannelId || overrideChannelId || currentChannelId;
-      const chatIdToUse = overrideChatId || currentChatId;
-      const teamIdToUse = overrideTeamId || currentTeamId;
+      const channelIdToUse = forceNewChat ? '' : (customChannelId || overrideChannelId || currentChannelId);
+      const chatIdToUse = forceNewChat ? '' : (overrideChatId || currentChatId);
+      const teamIdToUse = forceNewChat ? '' : (overrideTeamId || currentTeamId);
 
       let workingChannelId = channelIdToUse;
       if (!chatIdToUse && !channelIdToUse) {
