@@ -1452,7 +1452,7 @@
         addUserEvent: (data) => sendMessageToChatbot({ type: "ADD_USER_EVENT_SEGMENTO", data }),
         open: (id = "") => manager.openChatbot(id),
         openWithMessage: (message = "") => {
-            helloChatbotManager.openChatbot();
+            manager.openChatbot();
             if (message) {
                 sendMessageToChatbot({ type: "SEND_INITIAL_MESSAGE", data: { message } });
             }
