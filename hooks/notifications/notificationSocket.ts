@@ -14,6 +14,13 @@ const useNotificationSocket = ({ chatSessionId }: { chatSessionId: string }) => 
   }));
 
   useEffect(() => {
+    console.log(jwtToken, 'jwtToken')
+    console.log(company_id, 'company_id')
+    console.log(pushConfig, 'pushConfig')
+    console.log(isMobileSDK, 'isMobileSDK')
+    console.log(getLocalStorage('a_clientId'), 'a_clientId')
+    console.log(getLocalStorage('k_clientId'), 'k_clientId')
+
     if (!jwtToken || !company_id || (!getLocalStorage('a_clientId') && !getLocalStorage('k_clientId')) || (isMobileSDK ? !pushConfig : false)) return;
 
     socketManager.connect(jwtToken);
