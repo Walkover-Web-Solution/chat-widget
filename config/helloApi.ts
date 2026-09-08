@@ -3,11 +3,13 @@ import { PAGE_SIZE } from "@/utils/enums";
 import axios from "@/utils/helloInterceptor";
 import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
 import { extractFullMessageText } from "@/utils/readMore";
+import { getHelloHostUrl, setRegionUrls } from "@/config/regionConfig";
+import socketManager from "@/hooks/socketManager";
 
-const urlParams = new URLSearchParams(window.location.search);
-const env = urlParams.get('env');
-const HELLO_HOST_URL = env !== 'stage' ? process.env.NEXT_PUBLIC_MSG91_HOST_URL : 'https://stageapi.phone91.com';
 const PUSH_NOTIFICATION_URL = process.env.NEXT_PUBLIC_PUSH_NOTIFICATION_URL;
+
+// Resolved per call, since the region is only known after routing-region responds.
+const HELLO_HOST_URL = () => getHelloHostUrl();
 
 export const getAuthorization = () => {
   const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
@@ -36,7 +38,7 @@ export function getIsAnonValue(): boolean {
 export async function registerAnonymousUser(): Promise<any> {
   try {
     const response = await axios.post(
-      `${HELLO_HOST_URL}/anonymous-client-details/`,
+      `${HELLO_HOST_URL()}/anonymous-client-details/`,
       {},
       {
         headers: {
@@ -59,8 +61,8 @@ export async function registerAnonymousUser(): Promise<any> {
 // Get JWT token for socket subscription
 export async function getJwtToken(): Promise<string | null> {
   try {
-    // const response = await axios.get(`${HELLO_HOST_URL}/jwt-token/?is_anon=${getIsAnonValue()}`, {
-    const response = await axios.get(`${HELLO_HOST_URL}/jwt-token/`, {
+    // const response = await axios.get(`${HELLO_HOST_URL()}/jwt-token/?is_anon=${getIsAnonValue()}`, {
+    const response = await axios.get(`${HELLO_HOST_URL()}/jwt-token/`, {
       headers: {
         authorization: getAuthorization(),
       },
@@ -122,7 +124,7 @@ export async function getAllChannels(): Promise<any> {
       }
     }
     const response = await axios.post(
-      `${HELLO_HOST_URL}/pubnub-channels/list/`,
+      `${HELLO_HOST_URL()}/pubnub-channels/list/`,
       {
         name,
         mail,
@@ -182,7 +184,7 @@ export async function getAllChannels(): Promise<any> {
 // Get agent team list
 export async function getAgentTeamApi(): Promise<any> {
   try {
-    const response = await axios.post(`${HELLO_HOST_URL}/agent-team/`, {
+    const response = await axios.post(`${HELLO_HOST_URL()}/agent-team/`, {
       user_data: getUserData(),
       // is_anon: getIsAnonValue(),
     }, {
@@ -207,7 +209,7 @@ export async function getGreetingQuestions(companyId: string, botId: string, bot
     if (botType === 'lex') {
       // For Lex bot type, use POST request
       const greetingResponse = await axios.post(
-        `${HELLO_HOST_URL}/chat-bot/welcome/get-welcome/`,
+        `${HELLO_HOST_URL()}/chat-bot/welcome/get-welcome/`,
         {
           company_id: companyId,
           bot_id: botId,
@@ -224,7 +226,7 @@ export async function getGreetingQuestions(companyId: string, botId: string, bot
     } else {
       // For ChatGPT or other bot types, use GET request
       const greetingResponse = await axios.get(
-        `${HELLO_HOST_URL}/chat-gpt/greeting/`,
+        `${HELLO_HOST_URL()}/chat-gpt/greeting/`,
         {
           params: {
             company_id: companyId,
@@ -257,7 +259,7 @@ export async function saveClientDetails(clientData = {}): Promise<any> {
     const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
     if (!clientId) return null;
 
-    const response = await axios.put(`${HELLO_HOST_URL}/v2/client/${clientId}`, payload, {
+    const response = await axios.put(`${HELLO_HOST_URL()}/v2/client/${clientId}`, payload, {
       headers: {
         authorization: getAuthorization(),
       },
@@ -273,7 +275,7 @@ export async function saveClientDetails(clientData = {}): Promise<any> {
 export async function getHelloChatHistoryApi(channelId: string, skip: number = 0): Promise<any> {
   try {
     const response = await axios.post(
-      `${HELLO_HOST_URL}/get-history/`,
+      `${HELLO_HOST_URL()}/get-history/`,
       {
         channel: channelId,
         origin: "chat",
@@ -302,7 +304,7 @@ export async function getHelloChatHistoryApi(channelId: string, skip: number = 0
 export async function getFullMessageApi(channel: string, messageId: string): Promise<string | null> {
   try {
     const response = await axios.post(
-      `${HELLO_HOST_URL}/get-history/`,
+      `${HELLO_HOST_URL()}/get-history/`,
       {
         channel,
         message_id: messageId,
@@ -323,11 +325,45 @@ export async function getFullMessageApi(channel: string, messageId: string): Pro
   }
 }
 
+// Resolve the regional backend. Must run first: it pins every subsequent call
+// (widget-info included) and the socket to the widget's region.
+export async function getRoutingRegion(): Promise<any> {
+  try {
+    console.log(getLocalStorage('WidgetId'), '==-=-=-')
+    const response = await axios.post(
+      `${HELLO_HOST_URL()}/routing-region/`,
+      {
+        user_data: getUserData(),
+      },
+      {
+        headers: {
+          authorization: `${getLocalStorage('WidgetId')}`,
+          "content-type": "application/json",
+        },
+      }
+    );
+
+    const routingData = response?.data;
+
+    const regionChanged = setRegionUrls(routingData?.region_url, routingData?.socket_url);
+    if (regionChanged) {
+      // Drop any socket still pointed at the previous region so it reconnects.
+      socketManager.disconnect();
+    }
+
+    return routingData;
+  } catch (error: any) {
+    // Non-fatal: env defaults apply.
+    console.error("Failed to resolve routing region:", error?.message || error);
+    return null;
+  }
+}
+
 // Main function to initialize Hello chat
 export async function initializeHelloChat(): Promise<any> {
   try {
     const response = await axios.post(
-      `${HELLO_HOST_URL}/widget-info/`,
+      `${HELLO_HOST_URL()}/widget-info/`,
       {
         "user_data": getUserData(),
         // "is_anon": getIsAnonValue()
@@ -339,6 +375,7 @@ export async function initializeHelloChat(): Promise<any> {
         },
       }
     );
+
     return response?.data;
   } catch (error: any) {
     errorToast(error?.message || "Failed to initialize Hello chat");
@@ -360,7 +397,7 @@ export async function sendMessageToHelloApi(message: string, attachment: Array<o
 
   try {
     const response = await axios.post(
-      `${HELLO_HOST_URL}/v2/send/`,
+      `${HELLO_HOST_URL()}/v2/send/`,
       {
         type: !demo_widget ? "widget" : "trial_bot",
         widget_msg_id: widget_msg_id ? widget_msg_id : "",
@@ -408,7 +445,7 @@ export async function uploadAttachmentToHello(file: any, inboxId: string): Promi
     formData.append('attachment', file);
 
     const response = await axios.post(
-      `${HELLO_HOST_URL}/v2/upload/?type=chat&inbox_id=${inboxId}`,
+      `${HELLO_HOST_URL()}/v2/upload/?type=chat&inbox_id=${inboxId}`,
       formData,
       {
         headers: {
@@ -428,9 +465,9 @@ export async function uploadAttachmentToHello(file: any, inboxId: string): Promi
 export async function getClientToken(): Promise<any> {
   try {
     // const isAnon = getIsAnonValue();
-    // `${HELLO_HOST_URL}/web-rtc/get-client-token/?is_anon=${isAnon}`,
+    // `${HELLO_HOST_URL()}/web-rtc/get-client-token/?is_anon=${isAnon}`,
     const response = await axios.get(
-      `${HELLO_HOST_URL}/web-rtc/get-client-token/`,
+      `${HELLO_HOST_URL()}/web-rtc/get-client-token/`,
       {
         headers: {
           authorization: getAuthorization(),
@@ -451,9 +488,9 @@ export async function getClientToken(): Promise<any> {
 export async function getCallToken(channelId?: string): Promise<any> {
   try {
     // const isAnon = getIsAnonValue();
-    // `${HELLO_HOST_URL}/web-rtc/get-call-token/?is_anon=${isAnon}${channelId ? `&channel=${channelId}` : ''}`,
+    // `${HELLO_HOST_URL()}/web-rtc/get-call-token/?is_anon=${isAnon}${channelId ? `&channel=${channelId}` : ''}`,
     const response = await axios.get(
-      `${HELLO_HOST_URL}/web-rtc/get-call-token/?${channelId ? `channel=${channelId}` : ''}`,
+      `${HELLO_HOST_URL()}/web-rtc/get-call-token/?${channelId ? `channel=${channelId}` : ''}`,
       {
         headers: {
           authorization: getAuthorization(),
@@ -474,7 +511,7 @@ export async function getCallToken(channelId?: string): Promise<any> {
 export async function addDomainToHello({ domain, userEvent = {} }: { domain?: string, userEvent?: Record<string, any> }): Promise<any> {
   try {
     const response = await axios.put(
-      `${HELLO_HOST_URL}/add-domain/`,
+      `${HELLO_HOST_URL()}/add-domain/`,
       {
         dom: domain || undefined,
         user_data: {
@@ -502,7 +539,7 @@ export async function addDomainToHello({ domain, userEvent = {} }: { domain?: st
 export async function deleteReadReceipt(channelId: string): Promise<any> {
   try {
     const response = await axios.delete(
-      `${HELLO_HOST_URL}/read-receipt/${channelId}`,
+      `${HELLO_HOST_URL()}/read-receipt/${channelId}`,
       {
         headers: {
           'authorization': getAuthorization(),
@@ -526,7 +563,7 @@ export async function submitFeedback(params: {
 }): Promise<any> {
   try {
     const response = await axios.post(
-      `${HELLO_HOST_URL}/receive-feedback/`,
+      `${HELLO_HOST_URL()}/receive-feedback/`,
       {
         feedback_msg: params.feedbackMsg,
         rating: params.rating,
