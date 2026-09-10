@@ -89,7 +89,7 @@ const ChatbotDrawer = ({
       teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
       channelList: state.Hello?.[chatSessionId]?.channelListData?.channels || [],
       isHelloUser: state.draftData?.isHelloUser || false,
-      Name: state?.Hello?.[chatSessionId]?.clientInfo?.Name || state.Hello?.[chatSessionId]?.channelListData?.customer_name || '',
+      Name: state?.Hello?.[chatSessionId]?.clientInfo?.Name || (state.Hello?.[chatSessionId]?.channelListData?.pseudo_name === false ? state.Hello?.[chatSessionId]?.channelListData?.customer_name : '') || '',
       tagline: state.Hello?.[chatSessionId]?.widgetInfo?.tagline || '',
       hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : state.appInfo?.[tabSessionId]?.hideCloseButton || false,
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
