@@ -4,6 +4,7 @@ import { MessageContext } from '@/components/Interface-Chatbot/InterfaceChatbot'
 import { MESSAGE_TYPES } from '@/components/Interface-Chatbot/Messages/MessageType';
 import { getAllChannels, getHelloChatHistoryApi, sendMessageToHelloApi } from '@/config/helloApi';
 import socketManager from '@/hooks/socketManager';
+import { store } from '@/store';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
 import { setData, setHelloEventMessage, setImages, setInitialMessages, setOpenHelloForm, setPaginateMessages } from '@/store/chat/chatSlice';
 import { setChannelListData, setHelloClientInfo, setHelloKeysData } from '@/store/hello/helloSlice';
@@ -31,6 +32,11 @@ interface HelloMessage {
   chat_id?: string;
   urls?: string[];
   channel?: string;
+  replied_msg_id?: string;
+  replied_msg_content?: any;
+  replied_msg_type?: string;
+  replied_msg_sender_id?: string | null;
+  replied_from_name?: string | null;
 }
 
 export const useHelloContext = () => {
@@ -142,6 +148,82 @@ export const useGetMoreHelloChats = () => {
         setChatsLoading(false);
       });
   }, [currentChannelId, uuid, setChatsLoading, addHelloMessage, hasMoreMessages, skip, globalDispatch]);
+};
+
+const MAX_HISTORY_PAGES_TO_SEARCH = 50;
+
+function findRepliedMessageElement(repliedMsgId: string): HTMLElement | null {
+  const byId = document.getElementById(`msg-${repliedMsgId}`);
+  if (byId) return byId;
+  if (typeof CSS !== 'undefined' && CSS.escape) {
+    return document.querySelector<HTMLElement>(`[data-msg-ids~="${CSS.escape(String(repliedMsgId))}"]`);
+  }
+  return null;
+}
+
+function waitForNextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+/**
+ * Locates the message a reply-quote points to (by its persisted
+ * replied_msg_id) and scrolls to it. If the target isn't currently rendered
+ * (older messages not paginated in yet), it progressively fetches older
+ * history pages -- same API/actions as useGetMoreHelloChats -- until the
+ * message is found or history is exhausted.
+ */
+export const useScrollToRepliedMessage = () => {
+  const { chatSessionId, tabSessionId } = useHelloContext();
+  const { uuid, currentChannelId } = useReduxStateManagement({ chatSessionId, tabSessionId });
+
+  return useCallback(async (repliedMsgId: string): Promise<boolean> => {
+    let target = findRepliedMessageElement(repliedMsgId);
+    let attempts = 0;
+
+    while (!target && attempts < MAX_HISTORY_PAGES_TO_SEARCH) {
+      const state = store.getState();
+      const hasMoreMessages = state.Chat?.hasMoreMessages;
+      const skip = state.Chat?.skip ?? 0;
+
+      if (!hasMoreMessages || !currentChannelId || !uuid) break;
+
+      attempts++;
+      try {
+        const response = await getHelloChatHistoryApi(currentChannelId, skip);
+        const helloChats = response?.data?.data;
+        if (Array.isArray(helloChats) && helloChats.length > 0) {
+          store.dispatch(setPaginateMessages({ messages: helloChats }));
+          store.dispatch(setData({
+            hasMoreMessages: helloChats.length >= PAGE_SIZE.hello,
+            skip: skip + helloChats.length,
+          }));
+        } else {
+          store.dispatch(setData({ hasMoreMessages: false }));
+          break;
+        }
+      } catch (error) {
+        console.error("[useScrollToRepliedMessage] failed to fetch older messages:", error);
+        break;
+      }
+
+      await waitForNextFrame();
+      target = findRepliedMessageElement(repliedMsgId);
+    }
+
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('replied-msg-highlight');
+      setTimeout(() => target?.classList.remove('replied-msg-highlight'), 1500);
+      return true;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[useScrollToRepliedMessage] could not locate message id="${repliedMsgId}" even after exhausting available history.`);
+    }
+    return false;
+  }, [currentChannelId, uuid]);
 };
 
 export const useFetchChannels = () => {
@@ -268,6 +350,7 @@ export const useOnSendHello = () => {
           replied_msg_type: replyToMessage ? (replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : replyToMessage?.messageJson?.category ? MESSAGE_TYPES.INTERACTIVE : undefined) : (newMessage as any).replied_msg_type,
           replied_msg_sender_id: replyToMessage ? (replyToMessage.is_auto_response || !replyToMessage.from_name ? 'bot' : replyToMessage.sender_id || replyToMessage.from_name) : null,
           replied_from_name: replyToMessage ? replyToMessage.from_name : null,
+          replied_msg_id: replyToMessage ? (replyToMessage.message_id || replyToMessage.id) : (newMessage as any).replied_msg_id,
         } : newMessage;
         addHelloMessage(messageWithReply, workingChannelId);
       }
@@ -484,6 +567,7 @@ export const useSendMessageToHello = ({
       sender_id: "user",
       ...(replied_msg_type ? { replied_msg_type } : {}),
       ...(replied_msg_content !== undefined ? { replied_msg_content } : {}),
+      ...(replyToMessageId ? { replied_msg_id: replyToMessageId } : {}),
     };
 
     // Always add message to chat so user can see it immediately
