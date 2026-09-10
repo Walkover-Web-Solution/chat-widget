@@ -164,11 +164,13 @@ export async function getAllChannels(): Promise<any> {
     }
 
     // Update userData with customer details from response if available
-    if (response?.data?.customer_name || response?.data?.customer_number || response?.data?.customer_mail) {
+    // Only treat customer_name as a real name when pseudo_name is explicitly false
+    const realCustomerName = response?.data?.pseudo_name === false ? response?.data?.customer_name : undefined;
+    if (realCustomerName || response?.data?.customer_number || response?.data?.customer_mail) {
       const userData = JSON.parse(getLocalStorage('client') || '{}');
       const updatedUserData = {
         ...userData,
-        name: response?.data?.customer_name || userData.name,
+        name: realCustomerName || userData.name,
         number: response?.data?.customer_number?.replace(/^\+/, '') || userData.number,
         mail: response?.data?.customer_mail || userData.mail
       };
