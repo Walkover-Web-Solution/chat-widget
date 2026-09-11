@@ -10,6 +10,8 @@ type ImageWithFallbackProps = {
   style?: React.CSSProperties;
   canDownload?: boolean;
   preview?: boolean;
+  /** Layout only: fill the parent box with object-cover and no radius. Use canDownload to control the download button. */
+  thumbnail?: boolean;
 };
 
 // Constants
@@ -91,7 +93,8 @@ const ImageWithFallback = ({
   alt = "attachment",
   style,
   canDownload = true,
-  preview = false
+  preview = false,
+  thumbnail = false,
 }: ImageWithFallbackProps) => {
   const [error, setError] = useState(false);
   const { isSmallScreen } = useScreenSize();
@@ -122,9 +125,11 @@ const ImageWithFallback = ({
   // Memoized callbacks
   const handleError = useCallback(() => setError(true), []);
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((e?: React.MouseEvent) => {
+    // Thumbnails live inside clickable rows; opening the preview must not trigger the row's action.
+    if (thumbnail) e?.stopPropagation();
     window.open(src, "_blank");
-  }, [src]);
+  }, [src, thumbnail]);
 
   const downloadFile = useCallback(() => {
     window.parent.postMessage({
@@ -135,12 +140,14 @@ const ImageWithFallback = ({
 
   // Memoized container classes
   const containerClasses = useMemo(() =>
-    `flex relative group ${isSmallScreen ? 'max-w-[80%]' : 'max-w-[40%]'} h-auto rounded-2xl cursor-pointer transition-all duration-300`,
-    [isSmallScreen]
+    thumbnail
+      ? 'flex relative group w-full h-full overflow-hidden'
+      : `flex relative group ${isSmallScreen ? 'max-w-[80%]' : 'max-w-[40%]'} h-auto rounded-2xl cursor-pointer transition-all duration-300`,
+    [isSmallScreen, thumbnail]
   );
 
   const renderContent = useCallback(() => {
-    if (error) return <ErrorDisplay />;
+    if (error) return thumbnail ? <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400"><FileWarning size={16} /></div> : <ErrorDisplay />;
 
     switch (fileType) {
       case "image":
@@ -151,14 +158,16 @@ const ImageWithFallback = ({
             onError={handleError}
             onClick={handleClick}
             style={style}
-            className="rounded-2xl shadow-sm group-hover:shadow-md transition-all duration-300"
+            className={thumbnail
+              ? 'w-full h-full object-cover block'
+              : 'rounded-2xl shadow-sm group-hover:shadow-md transition-all duration-300'}
           />
         );
 
       case "video":
         return preview ? (
           <div
-            className="max-w-full rounded-md relative"
+            className={thumbnail ? 'w-full h-full relative' : 'max-w-full rounded-md relative'}
             style={style}
             onClick={handleClick}
           >
@@ -222,7 +231,7 @@ const ImageWithFallback = ({
           />
         );
     }
-  }, [error, fileType, src, alt, style, preview, handleError, handleClick, videoType, audioType]);
+  }, [error, fileType, src, alt, style, preview, thumbnail, handleError, handleClick, videoType, audioType]);
 
   return (
     <div className={containerClasses}>
