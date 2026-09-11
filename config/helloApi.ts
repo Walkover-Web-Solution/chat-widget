@@ -345,8 +345,9 @@ export async function getRoutingRegion(): Promise<any> {
 
     const regionChanged = setRegionUrls(routingData?.region_url, routingData?.socket_url);
     if (regionChanged) {
-      // Drop any socket still pointed at the previous region so it reconnects.
-      socketManager.disconnect();
+      // Rebuild any socket still pointed at the previous region. Channels and pending
+      // subscriptions are preserved, so nothing queued before the region resolved is lost.
+      socketManager.reconnect();
     }
 
     return routingData;
