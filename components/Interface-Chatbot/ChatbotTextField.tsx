@@ -246,7 +246,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
               <ImageWithFallback
                 src={isHelloUser ? image?.path : image}
                 alt={`Uploaded Preview ${index + 1}`}
-                style={{ width: 128, height: 128 }}
+                thumbnail
                 canDownload={false}
                 preview={true}
               />
