@@ -152,7 +152,6 @@ const ChatbotDrawer = ({
           bridgeName: bridgeName,
           threadId: threadId,
         })
-
       );
       setOptions([]);
 
@@ -179,7 +178,7 @@ const ChatbotDrawer = ({
 
   const handleChangeChannel = async (channelId: string, chatId: string, teamId: string) => {
     // Update redux state
-    dispatch(setDataInAppInfoReducer({ subThreadId: channelId, currentChannelId: channelId, currentChatId: chatId, currentTeamId: teamId }));
+    dispatch(setDataInAppInfoReducer({ subThreadId: channelId, currentChannelId: channelId, currentChatId: chatId, currentTeamId: teamId, overrideChannelId: "" }));
     if (isSmallScreen) setToggleDrawer(false);
     if (images?.length > 0) setImages([]);
 
@@ -232,7 +231,7 @@ const ChatbotDrawer = ({
     }
     if (isSmallScreen) setToggleDrawer(false);
     // pass overrides so sendMessageToHello uses latest values in the same tick
-    const data = await sendMessageToHello('', '', true, overrideChannelId || currentChannelId, overrideChatId || currentChatId, overrideTeamId || currentTeamId);
+    const data = await sendMessageToHello({ voiceCall: true, overrideChannelId: overrideChannelId || currentChannelId, overrideChatId: overrideChatId || currentChatId, overrideTeamId: overrideTeamId || currentTeamId });
     helloVoiceService.initiateCall(data?.['call_jwt_token'] || '');
   };
 
@@ -320,7 +319,7 @@ const ChatbotDrawer = ({
                         text = lastMessage.messageJson.text;
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
                         text = "Attachment";
-                      } else if (lastMessage?.message_type  === 'interactive') {
+                      } else if (lastMessage?.message_type === 'interactive') {
                         text = lastMessage.messageJson?.body?.text || "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
                         text = lastMessage.messageJson.message_type;
@@ -637,7 +636,7 @@ const ChatbotDrawer = ({
                 )}
               </div>
               <div className="w-10 flex items-center justify-end gap-1">
-                {!(hideCloseButton === true || hideCloseButton === "true" || !isSmallScreen || isFullScreen) && (
+                {!(hideCloseButton === true || String(hideCloseButton) === "true" || !isSmallScreen || isFullScreen) && (
                   <button
                     className={headerIconBtnClass}
                     onClick={handleCloseChatbot}
@@ -645,41 +644,44 @@ const ChatbotDrawer = ({
                   >
                     <X size={20} />
                   </button>
-                )}
-              </div>
-            </div>
-          </div>
+                )
+                }
+              </div >
+            </div >
+          </div >
 
           {/* Content area with overflow handling - the scrollbar will appear at the edge */}
-          <div className="flex-1 overflow-y-auto flex flex-col pt-6">
+          < div className="flex-1 overflow-y-auto flex flex-col pt-6" >
             {!isHelloUser ? DrawerList : TeamsList}
-          </div>
+          </div >
 
           {/* Footer with branding - always stays at bottom */}
-          {(isHelloUser && show_msg91) || !isHelloUser ? (
-            <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
-              <div className="text-xs opacity-50 flex items-baseline gap-1" style={{ color: 'var(--foreground)' }}>
-                {isHelloUser && show_msg91 ? (
-                  <>
-                    Powered by
-                    <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
-                      <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    Powered by
-                    <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity">
-                      <span className="font-bold">GTWY</span>
-                    </a>
-                  </>
-                )}
+          {
+            (isHelloUser && show_msg91) || !isHelloUser ? (
+              <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
+                <div className="text-xs opacity-50 flex items-baseline gap-1" style={{ color: 'var(--foreground)' }}>
+                  {isHelloUser && show_msg91 ? (
+                    <>
+                      Powered by
+                      <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
+                        <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      Powered by
+                      <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity">
+                        <span className="font-bold">GTWY</span>
+                      </a>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
+            ) : null
+          }
+        </div >
+      </div >
+    </div >
   );
 };
 

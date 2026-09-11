@@ -12,10 +12,9 @@ import { errorToast } from '../customToast';
 
 interface CallButtonProps {
     chatSessionId: string,
-    currentChannelId: string,
 }
 
-function CallButton({ chatSessionId, currentChannelId }: CallButtonProps) {
+function CallButton({ chatSessionId }: CallButtonProps) {
     const { isHelloUser, voice_call_widget } = useCustomSelector((state) => ({
         isHelloUser: state.draftData?.isHelloUser || false,
         voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
@@ -33,7 +32,7 @@ function CallButton({ chatSessionId, currentChannelId }: CallButtonProps) {
             stream?.getTracks()?.forEach(track => track?.stop());
 
             // Only if granted → call API
-            const data = await sendMessageToHello('', '', true);
+            const data = await sendMessageToHello({ voiceCall: true })
             helloVoiceService.initiateCall(data?.['call_jwt_token'] || '');
         } catch (err) {
             errorToast('Microphone access denied or unavailable');
@@ -58,4 +57,4 @@ function CallButton({ chatSessionId, currentChannelId }: CallButtonProps) {
     );
 }
 
-export default React.memo(addUrlDataHoc(CallButton, [ParamsEnums.currentChannelId]));
+export default React.memo(addUrlDataHoc(CallButton, []));

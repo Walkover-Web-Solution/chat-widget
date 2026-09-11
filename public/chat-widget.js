@@ -151,7 +151,8 @@
                 delayElapsed: false,
                 domainTrackingStarted: false,
                 urlMonitorAdded: false,
-                chatbotSize: 'NORMAL'
+                chatbotSize: 'NORMAL',
+                unreadCountResolver: null
             };
 
             this.initializeEventListeners();
@@ -257,6 +258,7 @@
 
         setupMessageListeners() {
             window.addEventListener('message', (event) => {
+                // Only process messages from trusted origins
                 const trustedOrigins = [
                     scriptOrigin,           // Origin where script was loaded from
                     window.location.origin  // Origin of the parent page
@@ -419,71 +421,259 @@
             }
         }
 
+        getHTMLDimensions(htmlContent) {
+            // Create a temporary container
+            const tempContainer = document.createElement('body');
+
+            // Style it to be invisible but measurable            
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.height = 'initial !important';
+            tempContainer.style.width = 'initial !important';
+
+            // Set the HTML content
+            tempContainer.innerHTML = htmlContent;
+
+            // Append to body to trigger layout calculation
+            document.body.appendChild(tempContainer);
+
+            // Get dimensions            
+            const rect = tempContainer.getBoundingClientRect();
+            const dimensions = {
+                width: rect.width,
+                height: rect.height
+            };
+
+            // Clean up
+            document.body.removeChild(tempContainer);
+
+            return dimensions;
+        }
+
         handlePushNotification(data) {
-            // Create a full-screen transparent overlay
-            const overlay = document.createElement('div');
-            overlay.id = 'notification-overlay';
-            overlay.classList.add('notification-overlay');
-
-            // Set position classes based on horizontal and vertical position values
-            const horizontalPosition = data.horizontal_position || 'center';
-            const verticalPosition = data.vertical_position || 'center';
-
-            // Add position classes
-            overlay.classList.add(`h-${horizontalPosition}`, `v-${verticalPosition}`);
+            const message_type = data.message_type;
+            //const message_type = 'Custom';            
 
             // Create the modal container
             const modalContainer = document.createElement('div');
             modalContainer.classList.add('notification-modal');
 
-            const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-
-            iframe.style.background = 'transparent';
-
-            modalContainer.appendChild(iframe);
-
             // Create close button (cross icon)
-            const closeButton = document.createElement('div');
-            closeButton.innerHTML = '&times;';
-            closeButton.classList.add('notification-close-btn');
+            const loader = document.createElement('div');
+            loader.innerHTML = 'Loading...';
+            loader.classList.add('msg-push-loader');
 
-            // Add click event to close button
-            closeButton.addEventListener('click', () => {
-                this.removeNotification(overlay);
-            });
+            // Add the close button to the modal container after content            
+            modalContainer.appendChild(loader);
 
-            // Add the close button to the modal container after content
-            modalContainer.appendChild(closeButton);
+            const iframe = document.createElement('iframe');
+            iframe.classList.add('msg-push-hide');
 
-            // Append the modal to the overlay
-            overlay.appendChild(modalContainer);
+            if (message_type === 'Popup') {
+                // Create a full-screen transparent overlay                
+                const overlay = document.createElement('div');
+                overlay.id = 'notification-overlay';
+                overlay.classList.add('notification-overlay');
 
-            // Append the overlay to the body
-            document.body.appendChild(overlay);
+                // Create close button (cross icon)
+                const closeButton = document.createElement('div');
+                closeButton.innerHTML = '&times;';
+                closeButton.classList.add('notification-close-btn');
 
+                modalContainer.appendChild(closeButton);
 
-            // Once the iframe is added to the DOM, we can access its document
-            setTimeout(() => {
+                // Add click event to close button
+                closeButton.addEventListener('click', () => {
+                    this.removeNotification(overlay);
+                });
+
+                // Close popup when pressing ESC key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.removeNotification(overlay);
+                    }
+                });
+
+                // Set position classes based on horizontal and vertical position values
+                const horizontalPosition = data.horizontal_position || 'center';
+                const verticalPosition = data.vertical_position || 'center';
+
+                // Add position classes
+                overlay.classList.add(`h-${horizontalPosition}`, `v-${verticalPosition}`);
+
+                modalContainer.appendChild(iframe);
+
+                // Append the modal to the overlay
+                overlay.appendChild(modalContainer);
+
+                // Append the overlay to the body
+                document.body.appendChild(overlay);
+
+                // Once the iframe is added to the DOM, we can access its document
+                setTimeout(() => {
+                    // Get reference to the iframe's document
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                    // Set iframe.onload handler BEFORE writing content to avoid missing the load event
+                    iframe.onload = function () {
+                        iframe.classList.remove('msg-push-hide');
+                        loader.classList.add('msg-push-hide');
+                        const body = iframeDoc.body;
+
+                        let height = 0, width = 0, top = 0, bgFound = false;
+                        const position = ['absolute', 'relative', 'fixed'];
+                        if (body.children.length) {
+                            for (let i = 0; i < body.children.length; i++) {
+                                const el = body.children[i];
+                                const computedStyle = getComputedStyle(el);
+                                const bgColor = computedStyle.backgroundColor;
+                                const bgImage = computedStyle.backgroundImage;
+
+                                // Check if element has a visible background (not transparent/none)
+                                if ((bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') ||
+                                    (bgImage && bgImage !== 'none')) {
+                                    bgFound = true;
+                                }
+                            }
+                        } else {
+                            const bodyComputedStyle = getComputedStyle(body);
+                            const bodyBgColor = bodyComputedStyle.backgroundColor;
+                            const bodyBgImage = bodyComputedStyle.backgroundImage;
+
+                            // Check if body has a visible background (not transparent/none)
+                            if ((bodyBgColor && bodyBgColor !== 'rgba(0, 0, 0, 0)' && bodyBgColor !== 'transparent') ||
+                                (bodyBgImage && bodyBgImage !== 'none')) {
+                                bgFound = true;
+                            }
+                        }
+
+                        if (window.innerHeight < height) {
+                            overlay.classList.remove(`v-${verticalPosition}`);
+                        }
+
+                        iframe.style.border = 'none';
+
+                        if (!bgFound) {
+                            body.style.backgroundColor = '#ffffff';
+                        }
+                    };
+
+                    // Build complete HTML content with stylesheet if needed
+                    let htmlContent = '<!DOCTYPE html><html><head>';
+                    if (this.urls && this.urls.styleSheet) {
+                        htmlContent += `<link rel="stylesheet" href="${this.urls.styleSheet}" type="text/css">`;
+                    }
+                    htmlContent += `</head><body>${data.content}</body></html>`;
+
+                    const dimensions = this.getHTMLDimensions(htmlContent);
+                    iframe.style.width = `${dimensions.width}px`;
+                    //iframe.style.height = `${dimensions.height}px`;
+
+                    requestAnimationFrame(() => {
+                        const checkHeight = setInterval(() => {
+                            const iframeBodyRect = iframeDoc.body.getBoundingClientRect();
+                            iframe.style.height = `${iframeBodyRect.height}px`;
+                            modalContainer.style.height = `${iframeBodyRect.height}px`;
+                        }, 500);
+                        setTimeout(() => {
+                            clearInterval(checkHeight);
+                        }, 10000);
+                    });
+
+                    // Write complete content in one operation
+                    iframeDoc.open();
+                    iframeDoc.write(htmlContent);
+                    iframeDoc.close();
+                }, 100);
+            }
+
+            if (message_type?.toLowerCase() === 'custom') {
+                // Close popup when pressing ESC key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.removeNotification(modalContainer);
+                    }
+                });
+
+                iframe.style.height = '100vh';
+                iframe.style.width = '100vw';
+
+                modalContainer.appendChild(iframe);
+                document.body.appendChild(modalContainer);
+
                 // Get reference to the iframe's document
                 const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                // Write the content to the iframe
+                // Set iframe.onload handler BEFORE writing content to avoid missing the load event
+                iframe.onload = function () {
+                    iframe.classList.remove('msg-push-hide');
+                    loader.classList.add('msg-push-hide');
+                    const body = iframeDoc.body;
+
+                    let height = 0,
+                        width = 0,
+                        top = 0,
+                        bottom = null,
+                        left = null,
+                        right = null,
+                        paddingTop = 0,
+                        paddingBottom = 0,
+                        position = 'fixed';
+
+                    for (let i = 0; i < body.children.length; i++) {
+                        const el = body.children[i];
+                        if (el.tagName.toLowerCase() === 'script' || el.tagName.toLowerCase() === 'style') {
+                            continue;
+                        }
+                        const rect = el.getBoundingClientRect();
+
+                        // Use inline styles if set, otherwise use computed styles                        
+                        top = parseFloat(getComputedStyle(el).top) ? parseFloat(getComputedStyle(el).top) : rect.top;
+                        bottom = parseFloat(getComputedStyle(el).bottom) ? parseFloat(getComputedStyle(el).bottom) : rect.bottom;
+                        left = parseFloat(getComputedStyle(el).left) ? parseFloat(getComputedStyle(el).left) : rect.left;
+                        right = parseFloat(getComputedStyle(el).right) ? parseFloat(getComputedStyle(el).right) : rect.right;
+                        paddingTop = parseFloat(getComputedStyle(el).paddingTop);
+                        paddingBottom = parseFloat(getComputedStyle(el).paddingBottom);
+
+                        height += parseFloat(getComputedStyle(el).height) + paddingTop + paddingBottom;
+                        width += parseFloat(getComputedStyle(el).width);
+
+                        height = Math.max(height, rect.height);
+                        width = Math.max(width, rect.width);
+
+                        height += paddingTop + paddingBottom;
+                        top = top > bottom ? 'unset' : top < 0 ? 0 : top;
+                        bottom = bottom > top ? 'unset' : bottom < 0 ? 0 : bottom;
+                        left = left > right ? 'unset' : left < 0 ? 0 : left;
+                        right = right > left ? 'unset' : right < 0 ? 0 : right;
+
+                        const style = window.getComputedStyle(el);
+                        const boxShadow = style.boxShadow;
+                        if (boxShadow && boxShadow !== 'none') {
+                            height += 40;
+                            width += 40;
+                        }
+                    }
+
+                    modalContainer.style.width = `${width}px`;
+                    modalContainer.style.height = `${height}px`;
+                    modalContainer.style.position = position;
+                    modalContainer.style.top = `${top}px`;
+                    modalContainer.style.bottom = `${bottom}px`;
+                    modalContainer.style.left = `${left}px`;
+                    modalContainer.style.right = `${right}px`;
+
+                    iframe.style.width = `${width}px`;
+                    iframe.style.height = `${height}px`;
+                    iframe.style.border = 'none';
+                    body.style.height = `auto`;
+                    body.style.minHeight = `auto`;
+                };
+
+                // Write complete content in one operation
                 iframeDoc.open();
                 iframeDoc.write(data.content);
                 iframeDoc.close();
-
-                // Add external stylesheet if needed
-                if (this.urls && this.urls.styleSheet) {
-                    const externalStyle = iframeDoc.createElement('link');
-                    externalStyle.rel = 'stylesheet';
-                    externalStyle.href = this.urls.styleSheet;
-                    externalStyle.type = 'text/css';
-                    iframeDoc.head.appendChild(externalStyle);
-                }
-            }, 0);
+            }
         }
 
         removeNotification(overlayElement) {
@@ -699,6 +889,7 @@
 
         loadContent() {
             if (this.state.bodyLoaded) return;
+
             const { chatBotIcon } = this.createChatbotIcon();
             document.body.appendChild(chatBotIcon);
             document.head.appendChild(this.createStyleLink());
@@ -1229,7 +1420,7 @@
                 manager.helloLaunchWidget = data.launch_widget || false;
             }
             if ('variables' in data) {
-                sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data });
+                sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data: { ...data, name: 'initChatwidget' } });
             }
             // Only recreate iframe container if parentId is provided
             if (data.parentId) {
@@ -1247,7 +1438,7 @@
         SendDataToBot: (data) => {
             // Check if data has variables - send to iframe
             if (data && 'variables' in data) {
-                sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data });
+                sendMessageToChatbot({ type: "SET_VARIABLES_FOR_BOT", data: { ...data, name: 'SendDataToBot' } });
             } else {
                 // Handle parentId and other local operations
                 SendDataToBot(data);

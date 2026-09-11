@@ -6,7 +6,6 @@ import linkifyHtml from "linkify-html";
 import { customAlphabet } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
 import { GetSessionStorageData } from "./ChatbotUtility";
-
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale)
 
