@@ -906,7 +906,7 @@
             iframe.id = this.elements.chatbotIframeComponent;
             iframe.title = 'iframe';
             iframe.allowFullscreen = true;
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation');
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation');
             iframe.allow = 'microphone *; camera *; midi *; encrypted-media *';
             iframe.style.width = '100%';
             iframe.style.height = '100%';

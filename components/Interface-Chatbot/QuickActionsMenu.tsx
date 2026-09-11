@@ -53,7 +53,7 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   onMinimize,
   onToggleFullScreen,
   onNewConversation,
-  triggerClassName = "cursor-pointer p-2 rounded-full transition-colors hover:bg-gray-200 ",
+  triggerClassName = "cursor-pointer p-2 rounded-full transition-colors hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]",
   menuClassName = "absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-[var(--drawer-color)] ring-1 ring-black/5 dark:ring-[var(--icon-color)]/20 focus:outline-none z-50 py-1",
   triggerIconSize = 22,
   useIconColor = false,
