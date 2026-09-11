@@ -14,6 +14,7 @@ const useNotificationSocket = ({ chatSessionId }: { chatSessionId: string }) => 
   }));
 
   useEffect(() => {
+
     if (!jwtToken || !company_id || (!getLocalStorage('a_clientId') && !getLocalStorage('k_clientId')) || (isMobileSDK ? !pushConfig : false)) return;
 
     socketManager.connect(jwtToken);
@@ -24,7 +25,8 @@ const useNotificationSocket = ({ chatSessionId }: { chatSessionId: string }) => 
         .catch(error => {
           console.error("Failed to subscribe to channels:", error);
         });
-      if (isMobileSDK && pushConfig) {
+      // Only register for FCM when a token is present; otherwise just stay on the socket channel
+      if (isMobileSDK && (pushConfig?.access_token || pushConfig?.fcm)) {
         console.log('callling subscribeForFCMPushNotification', { ...pushConfig, user_channel: socketChannel })
         subscribeForFCMPushNotification({ ...pushConfig, user_channel: socketChannel }, jwtToken)
           .catch(error => {
