@@ -16,7 +16,6 @@ import {
 import Image from "next/image";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
-
 // App imports
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";

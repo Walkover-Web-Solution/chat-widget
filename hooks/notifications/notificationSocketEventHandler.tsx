@@ -1,7 +1,6 @@
 // useNotificationSocketEventHandler.ts
 import { setHelloEventMessage } from '@/store/chat/chatSlice';
 import { useAppDispatch } from '@/store/useTypedHooks';
-import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
 import { generateNewId } from '@/utils/utilities';

@@ -234,15 +234,11 @@ export const useOnSendHello = () => {
 
   const isBot = assigned_type === 'bot';
 
-  return useCallback(async (message?: string, newMessage?: HelloMessage | string, voiceCall?: boolean, newChannelId?: string, overrideChatId?: string, overrideTeamId?: string, repliedOn?: string, forceNewChat?: boolean) => {
+  return useCallback(async ({ message, newMessage, voiceCall, overrideChannelId: customChannelId, overrideChatId, overrideTeamId, repliedOn, forceNewChat }: { message?: string, newMessage?: any, voiceCall?: boolean, overrideChannelId?: string, overrideChatId?: string | number, overrideTeamId?: string, repliedOn?: string, forceNewChat?: boolean }) => {
     if (!voiceCall && (!message?.trim() && (!images || images.length === 0))) return;
 
     try {
-
-      // forceNewChat ignores any existing/stale redux ids so a brand new channel
-      // is always created, regardless of whether the redux reset (if any) has
-      // propagated to this closure yet
-      const channelIdToUse = forceNewChat ? '' : (newChannelId || currentChannelId || overrideChannelId);
+      const channelIdToUse = forceNewChat ? '' : (customChannelId || overrideChannelId || currentChannelId);
       const chatIdToUse = forceNewChat ? '' : (overrideChatId || currentChatId);
       const teamIdToUse = forceNewChat ? '' : (overrideTeamId || currentTeamId);
 
@@ -338,12 +334,12 @@ export const useOnSendHello = () => {
       const storedSessionId = demo_widget && channelIdToUse
         ? demoSessionId
         : undefined;
-
       // For demo widgets on an existing chat, pass the last 5 raw messages
       const conversations = demo_widget && channelIdToUse
         ? (rawHelloMsgList?.[channelIdToUse] || []).slice(0, 5).reverse()
         : undefined;
-      const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, repliedOn, storedSessionId, conversations);
+      // const data = await sendMessageToHelloApi(message, attachments, channelDetail, chatIdToUse, helloVariables, voiceCall, demo_widget);
+      const data = await sendMessageToHelloApi({ message, attachments, channelDetail, chat_id: chatIdToUse, helloVariables, voiceCall, demo_widget, widget_msg_id, replied_on: repliedOn, session_id: storedSessionId, conversations })
       // Failed send (the API returns null on error) would strand the subscription.
       if (!data && preSubscribed) {
         socketManager.unsubscribe([newChannelToSubscribe]).catch(() => undefined);
@@ -445,7 +441,7 @@ export const useSendMessageToHello = ({
   replied_msg_content?: any,
 }) => {
   const context = useContext(MessageContext);
-  const messageRef = propMessageRef ?? context.messageRef;
+  const messageRef: any = propMessageRef ?? context.messageRef;
   const { chatSessionId } = useHelloContext();
   const { setNewMessage } = useChatActions();
   const { addHelloMessage } = useHelloMessages();
@@ -493,7 +489,7 @@ export const useSendMessageToHello = ({
     // addHelloMessage(newMessage, channelIdToUse);
 
     // Send message to API
-    onSendHello(textMessage, newMessage, false, undefined, undefined, undefined, replyToMessageId);
+    onSendHello({ message: textMessage, newMessage: newMessage, repliedOn: replyToMessageId });
     setNewMessage(true);
 
     // Clear input field

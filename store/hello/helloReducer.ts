@@ -53,12 +53,12 @@ export const reducers: ValidateSliceCaseReducers<
     if (chatSessionId) {
       state[chatSessionId] = {
         ...state[chatSessionId],
-        helloConfig: action.payload
+        helloConfig: { ...state[chatSessionId]?.helloConfig, ...action.payload }
       };
     }
   },
 
-  setWidgetInfo(state, action: actionType<HelloData>) {
+  setWidgetInfo(state, action: actionType<any>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
       state[chatSessionId] = {

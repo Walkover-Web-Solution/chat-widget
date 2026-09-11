@@ -68,7 +68,7 @@ const ActiveChatView = React.memo(({ isSmallScreen }: { isSmallScreen: boolean }
       <MessageList />
     </div>
     <div
-      className={"max-w-5xl mx-auto p-3 pb-3 w-full" + (isSmallScreen ? ' border-t border-gray-100' : "") }
+      className={"max-w-5xl mx-auto p-3 pb-3 w-full" + (isSmallScreen ? ' border-t border-gray-100' : "")}
       style={{ backgroundColor: (isSmallScreen ? 'var(--background)' : undefined) }}
     >
       <ChatbotTextField />
@@ -110,8 +110,6 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   useRtlayerEventManager({ timeoutIdRef, chatSessionId, tabSessionId });
 
   const { isHelloUser, currentChatId, isDefaultNavigateToChatScreen } = useReduxStateManagement({ chatSessionId, tabSessionId });
-
-  // Initialize RTLayer event listeners
 
   // Effect to open drawer for new human users
   useEffect(() => {

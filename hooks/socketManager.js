@@ -88,7 +88,6 @@ class SocketManager {
 
     this.socket.io.on("reconnect", (attempt) => {
       console.log("Reconnected to WebSocket server", attempt);
-
       // Execute reconnection callbacks
       this.reconnectionCallbacks.forEach(callback => {
         try {

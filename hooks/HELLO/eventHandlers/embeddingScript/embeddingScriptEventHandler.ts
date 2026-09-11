@@ -53,7 +53,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
             // Call the live onSendHello (not the ref) - it's already recreated
             // with the fresh companyId in this same render, whereas onSendHelloRef
             // only gets synced in a *later* effect below, so it would still be stale here
-            onSendHello(pendingMessage, buildInitialNewMessage(pendingMessage), false, undefined, undefined, undefined, undefined, true);
+            onSendHello({ message: pendingMessage, newMessage: buildInitialNewMessage(pendingMessage), forceNewChat: true });
         }
     }, [companyId, onSendHello]);
 
@@ -199,6 +199,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         if (mail && number && name) {
             dispatch(setHelloKeysData({ showWidgetForm: false }));
         }
+        return;
     };
 
     function handleChatbotVisibility(isChatbotOpen = false, id = "") {
@@ -262,14 +263,13 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
             return;
         }
 
-        // forceNewChat (last arg) makes onSendHello ignore any redux channel/chat ids
+        // forceNewChat makes onSendHello ignore any redux channel/chat ids
         // and always create a brand new chat, instead of racing the reset dispatch above
-        onSendHelloRef.current(initialMessage, buildInitialNewMessage(initialMessage), false, undefined, undefined, undefined, undefined, true);
+        onSendHelloRef.current({ message: initialMessage, newMessage: buildInitialNewMessage(initialMessage), forceNewChat: true });
     }
 
     function handleHelloRuntimeData(event: MessageEvent) {
         const { data } = event?.data;
-
         if (data.themeColor) {
             handleThemeChange(data.themeColor);
         }
@@ -368,7 +368,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
 
         eventHandler.addEventHandler('helloRunTimeData', handleHelloRuntimeData)
 
-        eventHandler.addEventHandler('CHATBOT_OPEN', (event: MessageEvent) => { handleChatbotVisibility(true, event?.data?.data?.id) })
+        eventHandler.addEventHandler('CHATBOT_OPEN', (event: MessageEvent) => handleChatbotVisibility(true, event?.data?.data?.id))
 
         eventHandler.addEventHandler('CHATBOT_CLOSE', () => handleChatbotVisibility(false))
 
