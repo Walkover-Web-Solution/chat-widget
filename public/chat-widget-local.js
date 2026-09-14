@@ -368,9 +368,9 @@
                         this.state.unreadCountResolver = null;
                     }
                     break;
-                case 'RELOAD_PARENT':
-                    // window.location.reload()
-                    break;
+                // case 'RELOAD_PARENT':
+                //     window.location.reload()
+                //     break;
                 default:
                     break;
             }
