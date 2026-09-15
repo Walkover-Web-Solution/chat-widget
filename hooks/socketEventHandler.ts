@@ -47,8 +47,14 @@ export const useSocketEvents = ({
         }
         const { type } = message || {};
 
+        // Own message: has a chat_id and either no client_sender_id (legacy) or one that matches this client.
+        // In peer (widget-to-widget) channels the other peer's messages also carry a chat_id, so chat_id alone
+        // cannot be used to tell "mine" from "theirs".
+        const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
+        const isOwnMessage = !!message?.chat_id && (!message?.client_sender_id || message?.client_sender_id === clientId);
+
         // Handle unread count updates
-        if (message?.new_event && (type === 'chat' || type === 'feedback') && !message?.chat_id) {
+        if (message?.new_event && (type === 'chat' || type === 'feedback') && !isOwnMessage) {
             const channelId = message?.channel;
             dispatch(setUnReadCount({
                 channelId,
@@ -80,8 +86,8 @@ export const useSocketEvents = ({
                         }
                         return
                     }
-                    if (!chat_id) {
-                        // assistant or human agent message
+                    if (!isOwnMessage) {
+                        // assistant, human agent, or other peer's message
                         setLoading(false);
 
                         // Play notification sound when message is received
@@ -92,7 +98,7 @@ export const useSocketEvents = ({
                             subThreadId: channel,
                             data: false
                         }));
-                    } else if (chat_id && !isTabVisible) {
+                    } else if (!isTabVisible) {
                         addHelloMessage({ ...message, id: messageId }, channel);
                     } else if (chat_id && isTabVisible) {
                         // move channel to top on user message
@@ -148,7 +154,7 @@ export const useSocketEvents = ({
                 }
                 break;
             }
-            default: 
+            default:
                 // Handle other types if needed
                 break;
         }
