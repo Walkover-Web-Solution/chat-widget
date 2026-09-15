@@ -3,7 +3,7 @@ import helloVoiceService from '@/components/Chatbot/hooks/HelloVoiceService';
 import { useReduxStateManagement } from '@/components/Chatbot/hooks/useReduxManagement';
 import { useTabVisibility } from '@/components/Chatbot/hooks/useTabVisibility';
 import { setHelloEventMessage, setTyping, updateHelloMessage } from '@/store/chat/chatSlice';
-import { changeChannelAssigned, moveChannelToTop, setChannelClosedStatus, setUnReadCount } from '@/store/hello/helloSlice';
+import { changeChannelAssigned, moveChannelToTop, setChannelBlockedStatus, setChannelClosedStatus, setUnReadCount } from '@/store/hello/helloSlice';
 import { getLocalStorage, playMessageRecivedSound, setLocalStorage } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
@@ -120,6 +120,14 @@ export const useSocketEvents = ({
                         channel
                     );
                     dispatch(setChannelClosedStatus({ channelId: channel, is_closed: true }));
+                }
+                break;
+            }
+            case 'block': {
+                // Peer (widget-to-widget) channel blocked/unblocked by the other side
+                const { channel, value } = message || {};
+                if (message?.new_event && channel) {
+                    dispatch(setChannelBlockedStatus({ channelId: channel, is_blocked: !!value }));
                 }
                 break;
             }

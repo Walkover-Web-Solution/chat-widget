@@ -208,6 +208,20 @@ export const reducers: ValidateSliceCaseReducers<
     }
   },
 
+  setChannelBlockedStatus(state, action: actionType<{ channelId?: string, is_blocked: boolean }>) {
+    const chatSessionId = action.urlData?.chatSessionId
+    if (chatSessionId) {
+      const { channelId = state[chatSessionId]?.currentChannelId, is_blocked } = action.payload;
+
+      const channel = state[chatSessionId]?.channelListData?.channels?.find(
+        (channel: any) => channel.channel === channelId
+      );
+      if (!channel) return;
+
+      channel.is_blocked = is_blocked;
+    }
+  },
+
   setAgentTeams(state, action: actionType<any>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
