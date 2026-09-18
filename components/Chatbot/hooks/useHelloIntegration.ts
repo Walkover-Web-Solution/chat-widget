@@ -151,12 +151,15 @@ export const useFetchChannels = () => {
     return getAllChannels()
       .then(data => {
         dispatch(setChannelListData(data));
-        if (data?.customer_name && data?.customer_mail && data?.customer_number) {
+        // customer_name is a generated pseudo name unless pseudo_name is explicitly false (user filled the form)
+        const isRealName = data?.pseudo_name === false;
+        const customerName = isRealName ? data?.customer_name : undefined;
+        if (customerName && data?.customer_mail && data?.customer_number) {
           dispatch(setHelloKeysData({ showWidgetForm: false }))
         } else {
           dispatch(setHelloKeysData({ showWidgetForm: true }))
         }
-        dispatch(setHelloClientInfo({ clientInfo: { Name: data?.customer_name, Email: data?.customer_mail, Phonenumber: data?.customer_number } }));
+        dispatch(setHelloClientInfo({ clientInfo: { Name: customerName, Email: data?.customer_mail, Phonenumber: data?.customer_number } }));
         return data;
       })
       .catch(error => {
