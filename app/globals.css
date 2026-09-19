@@ -22,6 +22,8 @@
   --message-card-background: #f0f0f0;
   --icon-color: #555555;
   --drawer-color: #ffffff;
+  --error-color: #ef4444;
+  --error-text-color: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -30,6 +32,8 @@
   --message-card-background: #1f1f1f;
   --icon-color: #ffffff;
   --drawer-color: #1f1f1f;
+  --error-color: #ef4444;
+  --error-text-color: #ffffff;
 }
 
 .infinite-scroll-component {

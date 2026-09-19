@@ -4,7 +4,7 @@ import { addDomainToHello, saveClientDetails } from "@/config/helloApi";
 import { CBManger } from "@/hooks/coBrowser/CBManger";
 import { EmbeddingScriptEventRegistryInstance } from "@/hooks/CORE/eventHandlers/embeddingScript/embeddingScriptEventHandler";
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
-import { setToggleDrawer } from "@/store/chat/chatSlice";
+import { removeNotification, setHelloEventMessage, setOpenHelloForm, setSubThreadId, setToggleDrawer } from "@/store/chat/chatSlice";
 import { setDataInDraftReducer, setVariablesForHelloBot } from "@/store/draftData/draftDataSlice";
 import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo } from "@/store/hello/helloSlice";
 import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
@@ -352,6 +352,44 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         dispatch(setDataInAppInfoReducer({ subThreadId: '', currentChannelId: '', currentChatId: '', currentTeamId: '', demoSessionId: '' }));
     }
 
+    // Parent posts OPEN_WITH_NOTIFICATION when user clicks the launcher message preview.
+    // Opens a fresh chat thread and inserts the notification as a bot-side message.
+    function handleOpenWithNotification(event: MessageEvent) {
+        const content = event?.data?.data?.content || '';
+        const notificationId = event?.data?.data?.notificationId || '';
+        const newSubThreadId = `notification-${generateNewId()}`;
+
+        dispatch(setDataInAppInfoReducer({
+            subThreadId: newSubThreadId,
+            currentTeamId: '',
+            currentChannelId: '',
+            currentChatId: '',
+            overrideChannelId: '',
+            showNotificationView: false,
+        }));
+        dispatch(setSubThreadId(newSubThreadId));
+        dispatch(setToggleDrawer(false));
+        if (notificationId) {
+            dispatch(removeNotification(notificationId));
+        }
+        dispatch(setOpenHelloForm(false));
+        dispatch(setHelloEventMessage({
+            subThreadId: newSubThreadId,
+            message: {
+                type: 'chat',
+                message_type: 'pushNotification',
+                sender_id: 'bot',
+                is_auto_response: true,
+                content: {
+                    text: content,
+                    attachment: []
+                },
+                from_name: '',
+                id: generateNewId(),
+            }
+        }));
+    }
+
     useEffect(() => {
 
         eventHandler.addEventHandler('parent-route-changed', handleParentRouteChanged)
@@ -381,6 +419,8 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         eventHandler.addEventHandler('GET_TICKET_UNREAD_COUNT', handleGetTicketUnreadCount)
 
         eventHandler.addEventHandler('SHUTDOWN_CHATBOT', handleShutdownChatbot)
+
+        eventHandler.addEventHandler('OPEN_WITH_NOTIFICATION', handleOpenWithNotification)
 
     }, [])
 
