@@ -15,6 +15,7 @@ import ChatbotHeader from '../Interface-Chatbot/ChatbotHeader';
 import ChatbotHeaderTab from '../Interface-Chatbot/ChatbotHeaderTab';
 import ChatbotTextField from '../Interface-Chatbot/ChatbotTextField';
 import MessageList from '../Interface-Chatbot/Messages/MessageList';
+import NotificationPage from '../Interface-Chatbot/NotificationPage';
 import StarterQuestions from '../Interface-Chatbot/Messages/StarterQuestions';
 
 // Utils
@@ -88,7 +89,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   const dispatch = useAppDispatch();
 
   // State management
-  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, subThreadId, helloMsgIds } = useCustomSelector((state) => {
+  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, helloMsgIds, subThreadId, showNotificationView, notificationsCount } = useCustomSelector((state) => {
     // script config wins, then runtime/API widgetInfo, then the client-details heuristic
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
@@ -99,7 +100,9 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
       chatsLoading: state.Chat.chatsLoading,
       messageIds: state.Chat.messageIds,
       subThreadId: state.Chat.subThreadId,
-      helloMsgIds: state.Chat.helloMsgIds
+      helloMsgIds: state.Chat.helloMsgIds,
+      notificationsCount: (state.Chat.notifications || []).length,
+      showNotificationView: state.appInfo?.[tabSessionId]?.showNotificationView || false,
     })
   });
 
@@ -140,7 +143,7 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
 
   // Check if chat is empty
   const isChatEmpty = isHelloUser
-    ? (!subThreadId || helloMsgIds[subThreadId]?.length === 0) &&
+  ? (!subThreadId || helloMsgIds[subThreadId]?.length === 0) &&
     (!greetingMessage || (!greetingMessage.text && !greetingMessage?.options?.length))
     : !subThreadId || messageIds[subThreadId]?.length === 0;
 
@@ -170,16 +173,25 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
             </div>
           )}
 
-          {/* Form and UI components */}
-          {isHelloUser && show_widget_form && (
-            <FormComponent />
+          {/* Form / Call / Tab overlays — hide when user is browsing notification list
+              to prevent "Enter your details" form from covering notification content */}
+          {!(showNotificationView && notificationsCount > 0) && (
+            <>
+              {isHelloUser && show_widget_form && (
+                <FormComponent />
+              )}
+              <CallUI />
+              <ChatbotHeaderTab />
+            </>
           )}
-          <CallUI />
-          <ChatbotHeaderTab />
 
-          {isChatEmpty ? (
+          {showNotificationView && notificationsCount > 0 ? (
+            <NotificationPage />
+          ) : isChatEmpty ? (
+            // Fresh state, nothing selected → empty / new chat view
             <EmptyChatView />
           ) : (
+            // A thread is selected (real channel OR notification-launched chat) → active chat
             <ActiveChatView isSmallScreen={isSmallScreen} />
           )}
         </div>
