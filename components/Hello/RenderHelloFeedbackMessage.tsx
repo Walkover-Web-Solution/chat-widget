@@ -2,7 +2,7 @@ import { submitFeedback } from '@/config/helloApi';
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 function addDynamicValuesInText(text: string, dynamic_values: Record<string, string>): string {
   if (!text || !dynamic_values) return text;
@@ -13,10 +13,10 @@ function addDynamicValuesInText(text: string, dynamic_values: Record<string, str
 }
 
 function RenderHelloFeedbackMessage({ message, chatSessionId }: { message: any, chatSessionId: string }) {
-  const [feedbackText, setFeedbackText] = useState("");
-  const [selectedRating, setSelectedRating] = useState("");
+  const [feedbackText, setFeedbackText] = useState(message?.feedback_msg || "");
+  const [selectedRating, setSelectedRating] = useState(message?.rating || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(Boolean(message?.rating || message?.feedback_msg));
   const { widgetLogo, feedBackHeaderText } = useCustomSelector((state: $ReduxCoreType) => ({
     widgetLogo: state?.Hello?.[chatSessionId]?.widgetInfo?.logo?.path,
     feedBackHeaderText: addDynamicValuesInText(state.Hello?.[chatSessionId]?.widgetInfo?.feedback_text, message?.dynamic_values)
@@ -41,7 +41,16 @@ function RenderHelloFeedbackMessage({ message, chatSessionId }: { message: any, 
     }
   }, [feedbackText, selectedRating, message]);
 
-  const handleRatingSelect = useCallback((rating) => () => {
+  useEffect(() => {
+    if (message?.rating || message?.feedback_msg) {
+      setSelectedRating(message?.rating || "");
+      setFeedbackText(message?.feedback_msg || "");
+      setFeedbackSubmitted(true);
+    }
+  }, [message?.rating, message?.feedback_msg]);
+
+
+  const handleRatingSelect = useCallback((rating: string) => () => {
     setSelectedRating(rating);
   }, []);
 
