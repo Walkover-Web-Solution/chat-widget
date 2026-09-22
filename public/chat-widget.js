@@ -1055,6 +1055,20 @@
         changeContainer(parentId, parentContainer = this.parentContainer) {
             const container = parentId && document.getElementById(parentId);
             if (!parentContainer) return;
+            const targetParent = container || document.body;
+            // Already where it should be: nothing to move. Moving an iframe in the DOM
+            // reloads it, so never touch the tree when the parent is unchanged.
+            if (parentContainer.parentNode === targetParent) return;
+            const iframe = parentContainer.querySelector('iframe');
+            const wasLoading = !!(iframe && iframe.getAttribute('src'));
+            if (wasLoading) {
+                // Detach the document cleanly before the move. A moved iframe restarts
+                // anyway; doing it explicitly avoids the old document racing the new one
+                // (it could have consumed helloData and started API calls, leaving the
+                // new document without WidgetId / client id in storage).
+                this.state.interfaceLoaded = false;
+                iframe.removeAttribute('src');
+            }
             if (container) {
                 container.style.position = 'relative';
                 parentContainer.style.position = 'absolute';
@@ -1093,6 +1107,10 @@
                 // Reset parentId in props since container doesn't exist
                 // this.updateProps({ parentId: null });
                 document.body.appendChild(parentContainer);
+            }
+            if (wasLoading) {
+                // Reload once, in the final position. Its interfaceLoaded will re-send helloData.
+                this.processChatbotDetails();
             }
         }
 
