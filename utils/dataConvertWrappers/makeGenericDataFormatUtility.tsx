@@ -1,4 +1,4 @@
-import { generateNewId } from "../utilities";
+import { generateNewId, getLocalStorage } from "../utilities";
 import { readShowMore } from "../readMore";
 
 /**
@@ -8,17 +8,22 @@ import { readShowMore } from "../readMore";
  * @returns The converted chat history.
  */
 function convertChatHistoryToGenericFormat(history: any, isHello: boolean = false) {
+    const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
     switch (isHello) {
         case true:
             return history
                 .map((chat: any) => {
+                    const msg = chat?.message;
+                    // Own message: has a chat_id and either no client_sender_id (legacy) or one that matches this client
+                    const isOwnMessage = !!msg?.chat_id && (!msg?.client_sender_id || msg?.client_sender_id === clientId);
+
                     let role;
-                    if (chat?.message?.chat_id && chat?.message?.message_type !== 'voice_call') {
-                        role = 'user'
-                    } else if (chat?.message?.sender_id === 'workflow' || chat?.message?.sender_id === 'bot' || chat?.message?.is_auto_response) {
-                        role = "Bot"
-                    } else if (chat?.message?.message_type === 'voice_call') {
+                    if (msg?.message_type === 'voice_call') {
                         role = "voice_call"
+                    } else if (isOwnMessage) {
+                        role = 'user'
+                    } else if (msg?.sender_id === 'workflow' || msg?.sender_id === 'bot' || msg?.is_auto_response) {
+                        role = "Bot"
                     } else {
                         role = "Human"
                     }
@@ -133,7 +138,8 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
     }
 
 
-    const { sender_id, from_name, content, type, is_auto_response, message_type } = message || {};
+    const { sender_id, from_name, content, type, is_auto_response, message_type, client_sender_id } = message || {};
+    const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
 
     // Handle feedback type messages    
     if (type === 'feedback') {
@@ -175,9 +181,21 @@ function convertEventMessageToGenericFormat(message: any, isHello: boolean = fal
         }];
     }
 
+    // Decide which side the bubble renders on (right = "user", left = "Bot" / "Human")
+    // Own message: legacy "user" sender, or a client_sender_id that matches this client
+    const isOwnMessage = sender_id === "user" || (!!clientId && client_sender_id === clientId);
+    const isBotMessage = sender_id === "bot" || sender_id === "workflow" || !!is_auto_response;
+    // Anyone else who identifies themselves (agent via sender_id, peer via client_sender_id) is "Human"
+    const isOtherSender = !!sender_id || !!client_sender_id;
+
+    const role = isOwnMessage ? "user"
+        : isBotMessage ? "Bot"
+        : isOtherSender ? "Human"
+        : "user"; // no sender info at all: treat as our own message
+
     // Handle regular messages
     return [{
-        role: sender_id === "user" ? "user" : (sender_id === "bot" || sender_id === "workflow") ? "Bot" : sender_id ? "Human" : is_auto_response ? "Bot" : "user",
+        role,
         from_name,
         content: content?.body?.text || content?.text,
         urls: content?.body?.attachment || content?.attachment,
