@@ -45,8 +45,10 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   // Reply context
   const { replyToMessage, clearReply } = useReplyContext();
 
-  const { isHelloUser, mode, inbox_id, show_send_button, assigned_type, ticketMode } = useCustomSelector((state) => ({
+  const { isHelloUser, mode, inbox_id, show_send_button, assigned_type, ticketMode, isChannelBlocked } = useCustomSelector((state) => ({
     isHelloUser: state.draftData?.isHelloUser || false,
+    // Peer (widget-to-widget) channel blocked by the other side: sending is disabled
+    isChannelBlocked: !!state.Hello?.[chatSessionId]?.channelListData?.channels?.find((channel: any) => channel?.channel === currentChannelId)?.is_blocked,
     mode: state.Hello?.[chatSessionId]?.mode || [],
     inbox_id: state.Hello?.[chatSessionId]?.widgetInfo?.inbox_id,
     show_send_button: typeof state.Hello?.[chatSessionId]?.helloConfig?.show_send_button === 'boolean' ? state.Hello?.[chatSessionId]?.helloConfig?.show_send_button : true,
@@ -89,6 +91,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   };
 
   const handleSendMessage = useCallback((messageObj: { message?: string } = {}) => {
+    if (isChannelBlocked) return;
     setInputValue('');
     if (isHelloUser) {
       sendMessageToHello?.();
@@ -98,7 +101,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
     }
     // Clear reply after sending message
     clearReply();
-  }, [isHelloUser, sendMessage, sendMessageToHello, clearReply]);
+  }, [isHelloUser, sendMessage, sendMessageToHello, clearReply, isChannelBlocked]);
 
   const handleMessage = useCallback((event: MessageEvent) => {
     if (event?.data?.type === "open") {
@@ -345,6 +348,20 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
     setTimeout(() => {
       focusTextField();
     }, 50);
+  }
+
+  if (isChannelBlocked) {
+    return (
+      <div className={`relative w-full shadow-sm ${className}`}>
+        <div
+          className="w-full p-3 rounded-xl border border-gray-300 bg-gray-100 dark:bg-[rgb(48,48,48)] text-center text-sm text-gray-500 dark:text-gray-400"
+          role="status"
+          aria-live="polite"
+        >
+          You can no longer send messages in this conversation.
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -23,6 +23,8 @@ export const {
   setAgentTeams,
   setHelloClientInfo,
   moveChannelToTop,
-  setChannelClosedStatus
+  setChannelClosedStatus,
+  setChannelBlockedStatus,
+  addChannel
 } = interfaceSlice.actions;
 export default interfaceSlice.reducer;
