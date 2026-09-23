@@ -1,7 +1,7 @@
-import { safeLocalStorage, safeSessionStorage } from "./safeStorage";
+import createWebStorage from "redux-persist/es/storage/createWebStorage";
 
 type Storage = {
-  getItem: (key: string) => Promise<string | null>;
+  getItem: (key: string) => Promise<null>;
   setItem: (key: string, value: any) => Promise<any>;
   removeItem: (key: string) => Promise<void>;
 };
@@ -12,29 +12,11 @@ export const createNoopStorage = (): Storage => ({
   removeItem: (_key: string) => Promise.resolve(),
 });
 
-// redux-persist adapter over safeStorage: real storage first, in-memory fallback
-// when the browser blocks it (e.g. cross-origin iframe in WhatsApp's iOS webview).
-const createSafeWebStorage = (
-  backend: typeof safeLocalStorage | typeof safeSessionStorage
-): Storage => ({
-  getItem: (key: string) => Promise.resolve(backend.getItem(key)),
-  setItem: (key: string, value: any) => {
-    backend.setItem(key, value);
-    return Promise.resolve(value);
-  },
-  removeItem: (key: string) => {
-    backend.removeItem(key);
-    return Promise.resolve();
-  },
-});
-
 const createStorage = () => {
-  if (typeof window === "undefined") {
-    return { local: createNoopStorage(), session: createNoopStorage() };
-  }
+  if (typeof window === "undefined") return createNoopStorage();
   return {
-    local: createSafeWebStorage(safeLocalStorage),
-    session: createSafeWebStorage(safeSessionStorage),
+    local: createWebStorage("local"),
+    session: createWebStorage("session"),
   };
 };
 

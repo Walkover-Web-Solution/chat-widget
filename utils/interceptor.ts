@@ -1,4 +1,3 @@
-import { safeLocalStorage, safeSessionStorage } from "./safeStorage";
 import defaultAxios from "axios";
 // import { buildKeyGenerator, setupCache } from "axios-cache-interceptor";
 import { errorToast } from "../components/customToast";
@@ -20,10 +19,10 @@ axios.interceptors.request.use(
   async (config) => {
     // Check if URL contains 'rag' to determine which token to use
     if (config.url?.includes("rag")) {
-      config.headers["proxy_auth_token"] = safeSessionStorage.getItem("ragToken");
+      config.headers["proxy_auth_token"] = sessionStorage.getItem("ragToken");
     } else {
       config.headers["Authorization"] =
-      safeSessionStorage.getItem("interfaceToken")
+      sessionStorage.getItem("interfaceToken")
     }
     return config;
   },
@@ -39,7 +38,7 @@ axios.interceptors.response.use(
   async function (error) {
     if (error?.response?.status === 401) {
       removeCookie(getCurrentEnvironment());
-      safeLocalStorage.clear();
+      localStorage.clear();
 
       const redirectUrl = new URL(window.location.origin);
 
