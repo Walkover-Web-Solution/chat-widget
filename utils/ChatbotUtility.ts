@@ -1,7 +1,8 @@
+import { safeSessionStorage } from "./safeStorage";
 import { emitEventToParent } from "./emitEventsToParent/emitEventsToParent";
 
 export const SetSessionStorage = (key: string, value: string) => {
-  sessionStorage.setItem(key, value);
+  safeSessionStorage.setItem(key, value);
 };
 
 export const GetSessionStorageData = (key: string): string | null => {
@@ -9,7 +10,7 @@ export const GetSessionStorageData = (key: string): string | null => {
     return null;
   }
   try {
-    return sessionStorage.getItem(key);
+    return safeSessionStorage.getItem(key);
   } catch (error) {
     console.error(`Error retrieving session storage data for key "${key}":`, { error });
     return null;
