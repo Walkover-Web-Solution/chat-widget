@@ -1,9 +1,5 @@
 import io from "socket.io-client";
-
-const urlParams = new URLSearchParams(window.location.search);
-const env = urlParams.get('env');
-
-const socketUrl = env !== 'stage' ? process.env.NEXT_PUBLIC_SOCKET_URL : 'https://stagechat.phone91.com';
+import { getSocketUrl } from "@/config/regionConfig";
 
 class SocketManager {
   constructor() {
@@ -14,6 +10,11 @@ class SocketManager {
     this.connectionCallbacks = [];
     this.reconnectionCallbacks = [];
     this.connecting = false;
+    // URL the current socket was opened against, so a region change can be detected.
+    this.socketUrl = null;
+    // Last token used, so the socket can be rebuilt (e.g. on a region change)
+    // without the caller having to pass it again.
+    this.jwtToken = null;
   }
 
   /**
@@ -27,17 +28,25 @@ class SocketManager {
       return this;
     }
 
-    // If already connected or connecting, don't reconnect
-    if (this.isConnected || this.connecting) {
+    // Resolved at connect time (not module load) so the region returned by
+    // widget-info is honoured without requiring a reload.
+    const socketUrl = getSocketUrl();
+
+    // If already connected or connecting to the same region, don't reconnect.
+    // A region change falls through and rebuilds the socket against the new URL.
+    if ((this.isConnected || this.connecting) && this.socketUrl === socketUrl) {
       return this;
     }
 
-    this.connecting = true;
-
+    // Region changed while a socket exists: drop only the transport. Channels and
+    // queued subscribe callbacks are kept so they replay on the new connection.
     if (this.socket) {
-      this.disconnect();
+      this._teardownSocket();
     }
 
+    this.connecting = true;
+    this.jwtToken = jwtToken;
+    this.socketUrl = socketUrl;
     this.socket = io(socketUrl, {
       auth: { token: jwtToken },
       transports: ['websocket', 'polling'],
@@ -79,7 +88,7 @@ class SocketManager {
 
     this.socket.io.on("reconnect", (attempt) => {
       console.log("Reconnected to WebSocket server", attempt);
-      
+
       // Execute reconnection callbacks
       this.reconnectionCallbacks.forEach(callback => {
         try {
@@ -319,18 +328,41 @@ class SocketManager {
   }
 
   /**
-   * Disconnect socket
+   * Close the underlying socket but keep channels and queued callbacks,
+   * so a rebuilt socket can restore them on its "connect" event.
+   * @private
    */
-  disconnect() {
+  _teardownSocket() {
     if (this.socket) {
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
-      this.isConnected = false;
-      this.connecting = false;
-      this.channels = [];
-      this.connectionCallbacks = [];
-      this.reconnectionCallbacks = [];
     }
+    this.isConnected = false;
+    this.connecting = false;
+    this.socketUrl = null;
+  }
+
+  /**
+   * Rebuild the socket against the current region URL, preserving channels
+   * and any subscribe/emit callbacks still waiting for a connection.
+   * No-op when nothing has connected yet: the first connect() will pick up the new URL.
+   */
+  reconnect() {
+    if (!this.socket || !this.jwtToken) return this;
+    this._teardownSocket();
+    return this.connect(this.jwtToken);
+  }
+
+  /**
+   * Disconnect socket and drop all state
+   */
+  disconnect() {
+    this._teardownSocket();
+    this.jwtToken = null;
+    this.channels = [];
+    this.connectionCallbacks = [];
+    this.reconnectionCallbacks = [];
   }
 
   /**
