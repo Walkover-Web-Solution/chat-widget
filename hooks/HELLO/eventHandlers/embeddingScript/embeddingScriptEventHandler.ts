@@ -12,7 +12,6 @@ import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility
 import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
 import { cleanObject, generateNewId, getLocalStorage, removeFromLocalStorage, setLocalStorage } from "@/utils/utilities";
-import { safeLocalStorage } from "@/utils/safeStorage";
 import isPlainObject from "lodash.isplainobject";
 import { useContext, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
@@ -330,19 +329,19 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         const widgetId = getLocalStorage('WidgetId');
         if (widgetId) {
             const lastUniqueIdKey = `${widgetId}_last_unique_id`;
-            const lastUniqueId = safeLocalStorage.getItem(lastUniqueIdKey);
+            const lastUniqueId = localStorage.getItem(lastUniqueIdKey);
 
             // Clear the last_unique_id so anon users won't be treated as known
-            safeLocalStorage.removeItem(lastUniqueIdKey);
+            localStorage.removeItem(lastUniqueIdKey);
 
             // Clear per-user client ID mappings
             if (lastUniqueId) {
-                safeLocalStorage.removeItem(`${widgetId}_${lastUniqueId}_k_clientId`);
+                localStorage.removeItem(`${widgetId}_${lastUniqueId}_k_clientId`);
             }
 
             // Clear widget-level client ID mappings
-            safeLocalStorage.removeItem(`${widgetId}_k_clientId`);
-            safeLocalStorage.removeItem(`${widgetId}_a_clientId`);
+            localStorage.removeItem(`${widgetId}_k_clientId`);
+            localStorage.removeItem(`${widgetId}_a_clientId`);
         }
 
         // Clear session client IDs

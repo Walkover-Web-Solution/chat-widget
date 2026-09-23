@@ -3,7 +3,6 @@ import { Calendar, ChevronDown, ChevronLeft, ChevronRight, CreditCard, ExternalL
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useColor } from '../Chatbot/hooks/useColor';
-import { safeLocalStorage } from '@/utils/safeStorage';
 
 /** Plain thumbnail for Apple bubbles: no download overlay, no lightbox, just a cover-fit image that hides itself on error. */
 function AppleImage({ src, alt = '', className = '' }: { src: string; alt?: string; className?: string }) {
@@ -45,7 +44,7 @@ function fetchLinkPreview(url: string): Promise<LinkPreview> {
   if (cached) return cached;
   const promise = (async (): Promise<LinkPreview> => {
     try {
-      const stored = safeLocalStorage.getItem(LINK_PREVIEW_STORAGE_PREFIX + url);
+      const stored = localStorage.getItem(LINK_PREVIEW_STORAGE_PREFIX + url);
       if (stored) return JSON.parse(stored);
     } catch { /* storage unavailable */ }
     try {
@@ -58,7 +57,7 @@ function fetchLinkPreview(url: string): Promise<LinkPreview> {
         image: json.data?.image?.url || undefined,
         logo: json.data?.logo?.url || undefined,
       };
-      try { safeLocalStorage.setItem(LINK_PREVIEW_STORAGE_PREFIX + url, JSON.stringify(preview)); } catch { /* ignore */ }
+      try { localStorage.setItem(LINK_PREVIEW_STORAGE_PREFIX + url, JSON.stringify(preview)); } catch { /* ignore */ }
       return preview;
     } catch {
       return null;

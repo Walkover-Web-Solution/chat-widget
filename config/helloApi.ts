@@ -2,7 +2,6 @@ import { errorToast } from "@/components/customToast";
 import { PAGE_SIZE } from "@/utils/enums";
 import axios from "@/utils/helloInterceptor";
 import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
-import { safeLocalStorage } from "@/utils/safeStorage";
 import { extractFullMessageText } from "@/utils/readMore";
 import { getHelloHostUrl, setRegionUrls } from "@/config/regionConfig";
 import socketManager from "@/hooks/socketManager";
@@ -101,7 +100,7 @@ export async function getAllChannels(): Promise<any> {
     }
     // Determine if we should send anon_client_uuid for merging
     const lastUniqueIdKey = `${widgetId}_last_unique_id`;
-    const lastUniqueId = safeLocalStorage.getItem(lastUniqueIdKey);
+    const lastUniqueId = localStorage.getItem(lastUniqueIdKey);
 
     let anonClientUuidToSend = null;
 
@@ -109,7 +108,7 @@ export async function getAllChannels(): Promise<any> {
       // LOGOUT CASE
       if (lastUniqueId) {
         const lastLoginClientIdKey = `${widgetId}_${lastUniqueId}_k_clientId`;
-        const lastLoginUuid = safeLocalStorage.getItem(lastLoginClientIdKey);
+        const lastLoginUuid = localStorage.getItem(lastLoginClientIdKey);
         anonClientUuidToSend = lastLoginUuid;
       }
     } else {
@@ -119,8 +118,8 @@ export async function getAllChannels(): Promise<any> {
         // No last_unique_id → first login → send logout user's k/a clientId to merge
         const logoutKClientIdKey = `${widgetId}_k_clientId`;
         const logoutAClientIdKey = `${widgetId}_a_clientId`;
-        const logoutKClientId = safeLocalStorage.getItem(logoutKClientIdKey);
-        const logoutAClientId = safeLocalStorage.getItem(logoutAClientIdKey);
+        const logoutKClientId = localStorage.getItem(logoutKClientIdKey);
+        const logoutAClientId = localStorage.getItem(logoutAClientIdKey);
         anonClientUuidToSend = logoutKClientId || logoutAClientId;
       }
     }
@@ -149,12 +148,12 @@ export async function getAllChannels(): Promise<any> {
         if (unique_id) {
           const widgetId = getLocalStorage('WidgetId');
           const lastUniqueIdKey = `${widgetId}_last_unique_id`;
-          const lastUniqueId = safeLocalStorage.getItem(lastUniqueIdKey);
+          const lastUniqueId = localStorage.getItem(lastUniqueIdKey);
           if (unique_id && unique_id !== lastUniqueId) {
-            safeLocalStorage.setItem(lastUniqueIdKey, unique_id);
+            localStorage.setItem(lastUniqueIdKey, unique_id);
           }
-          safeLocalStorage.setItem(`${widgetId}_k_clientId`, response.data.uuid);
-          safeLocalStorage.setItem(`${widgetId}_a_clientId`, response.data.uuid);
+          localStorage.setItem(`${widgetId}_k_clientId`, response.data.uuid);
+          localStorage.setItem(`${widgetId}_a_clientId`, response.data.uuid);
         }
         setLocalStorage('k_clientId', response.data.uuid);
       } else if (isAnon) {
