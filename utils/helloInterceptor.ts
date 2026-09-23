@@ -1,8 +1,4 @@
 import defaultAxios from "axios";
-import { getLocalStorage, setLocalStorage } from "./utilities";
-import { store } from "../store";
-import { setHelloKeysData } from "../store/hello/helloSlice";
-import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
 
 const instance = defaultAxios.create();
 const axios = instance;
