@@ -254,9 +254,11 @@ export const useOnSendHello = () => {
           if (typeof content === 'string') return content;
           return content?.text || '';
         };
+        // Apple interactive payloads have no `category`, so key off message_type too.
+        const isInteractiveReply = !!replyToMessage && (replyToMessage?.message_type === MESSAGE_TYPES.INTERACTIVE || !!replyToMessage?.messageJson?.category);
         const messageWithReply = typeof newMessage === 'object' ? {
           ...newMessage,
-          replied_msg_content: replyToMessage ? (replyToMessage?.messageJson?.category ? {
+          replied_msg_content: replyToMessage ? (isInteractiveReply ? {
             ...replyToMessage?.messageJson,
             text: replyToMessage?.content,
             attachment: replyToMessage?.urls || []
@@ -264,7 +266,7 @@ export const useOnSendHello = () => {
             text: getMessageContent(replyToMessage?.content),
             attachment: replyToMessage?.urls || []
           }) : (newMessage as any).replied_msg_content,
-          replied_msg_type: replyToMessage ? (replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : replyToMessage?.messageJson?.category ? MESSAGE_TYPES.INTERACTIVE : undefined) : (newMessage as any).replied_msg_type,
+          replied_msg_type: replyToMessage ? (replyToMessage?.urls?.length ? MESSAGE_TYPES.ATTACHMENT : isInteractiveReply ? MESSAGE_TYPES.INTERACTIVE : undefined) : (newMessage as any).replied_msg_type,
           replied_msg_sender_id: replyToMessage ? (replyToMessage.is_auto_response || !replyToMessage.from_name ? 'bot' : replyToMessage.sender_id || replyToMessage.from_name) : null,
           replied_from_name: replyToMessage ? replyToMessage.from_name : null,
         } : newMessage;
