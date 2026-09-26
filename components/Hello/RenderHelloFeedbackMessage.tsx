@@ -1,8 +1,10 @@
 import { submitFeedback } from '@/config/helloApi';
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
+import { updateHelloMessage } from '@/store/chat/chatSlice';
 import { $ReduxCoreType } from '@/types/reduxCore';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 
 function addDynamicValuesInText(text: string, dynamic_values: Record<string, string>): string {
   if (!text || !dynamic_values) return text;
@@ -12,18 +14,39 @@ function addDynamicValuesInText(text: string, dynamic_values: Record<string, str
   });
 }
 
+const RATING_OPTIONS = [
+  { value: "terrible", emoji: "😡", label: "Terrible" },
+  { value: "bad", emoji: "😕", label: "Bad" },
+  { value: "ok", emoji: "😐", label: "Okay" },
+  { value: "good", emoji: "🙂", label: "Good" },
+  { value: "amazing", emoji: "😄", label: "Amazing" },
+] as const;
+
+const EMOJI_BY_RATING: Record<string, string> = Object.fromEntries(
+  RATING_OPTIONS.map(o => [o.value, o.emoji])
+);
+
 function RenderHelloFeedbackMessage({ message, chatSessionId }: { message: any, chatSessionId: string }) {
-  const [feedbackText, setFeedbackText] = useState("");
-  const [selectedRating, setSelectedRating] = useState("");
+  const alreadySubmitted = Boolean(message?.rating || message?.feedback_msg);
+
+  const [feedbackText, setFeedbackText] = useState(message?.feedback_msg || "");
+  const [selectedRating, setSelectedRating] = useState(message?.rating || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [showRatingError, setShowRatingError] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const feedbackSubmitted = alreadySubmitted || justSubmitted;
+  const dispatch = useDispatch();
   const { widgetLogo, feedBackHeaderText } = useCustomSelector((state: $ReduxCoreType) => ({
     widgetLogo: state?.Hello?.[chatSessionId]?.widgetInfo?.logo?.path,
     feedBackHeaderText: addDynamicValuesInText(state.Hello?.[chatSessionId]?.widgetInfo?.feedback_text, message?.dynamic_values)
   }))
 
-  const handleSubmitFeedback = useCallback(async () => {
-    if (!selectedRating) return;
+  const handleSubmitFeedback = useCallback(async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!selectedRating) {
+      setShowRatingError(true);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -33,7 +56,20 @@ function RenderHelloFeedbackMessage({ message, chatSessionId }: { message: any, 
         token: message?.token || "",
         id: message?.id || 0
       });
-      setFeedbackSubmitted(true);
+      setJustSubmitted(true);
+      // Persist the submitted rating/comment back into the message store so it
+      // survives a channel switch or remount, not just this component instance.
+      if (message?.id && message?.channel) {
+        dispatch(updateHelloMessage({
+          subThreadId: message.channel,
+          message: {
+            ...message,
+            type: 'feedback',
+            rating: selectedRating,
+            feedback_msg: feedbackText,
+          },
+        }));
+      }
     } catch (error) {
       console.error("Failed to submit feedback:", error);
     } finally {
@@ -41,135 +77,117 @@ function RenderHelloFeedbackMessage({ message, chatSessionId }: { message: any, 
     }
   }, [feedbackText, selectedRating, message]);
 
-  const handleRatingSelect = useCallback((rating) => () => {
+  // Keep local draft state (rating/comment) in sync whenever the underlying
+  // message actually carries submitted data, e.g. after switching channels.
+  useEffect(() => {
+    if (message?.rating || message?.feedback_msg) {
+      setSelectedRating(message?.rating || "");
+      setFeedbackText(message?.feedback_msg || "");
+    }
+  }, [message?.rating, message?.feedback_msg]);
+
+
+  const handleRatingSelect = useCallback((rating: string) => () => {
     setSelectedRating(rating);
+    setShowRatingError(false);
   }, []);
 
-  const emojiMap = useMemo(() => ({
-    terrible: "😡",
-    bad: "😕",
-    ok: "😐",
-    good: "🙂",
-    amazing: "😄"
-  }), []);
-
-  const ratingOptions = useMemo(() =>
-    ["terrible", "bad", "ok", "good", "amazing"],
-    []);
+  if (feedbackSubmitted) {
+    const displayEmoji = EMOJI_BY_RATING[message?.rating || selectedRating] ?? "🙂";
+    const displayText = message?.feedback_msg || feedbackText;
+    return (
+      <div className="py-1 px-1" style={{ maxWidth: '360px' }}>
+        <div className="flex items-center gap-2.5">
+          <span className="text-2xl leading-none shrink-0">{displayEmoji}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-base-content">Thanks for your feedback!</p>
+            {displayText && (
+              <p className="text-xs text-base-content/60 mt-0.5 line-clamp-2">{displayText}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="py-4 px-2" style={{ maxWidth: '400px' }}>
+    <div className="py-1 px-1" style={{ maxWidth: '400px' }}>
       {widgetLogo && (
-        <div className="flex justify-center mb-3">
+        <div className="flex justify-center mb-2.5">
           <img
             src={widgetLogo}
             alt="Widget Logo"
-            className="max-w-full h-auto rounded-lg shadow-sm"
-            style={{ maxHeight: '80px' }}
+            className="max-w-full h-auto rounded-lg"
+            style={{ maxHeight: '56px' }}
           />
         </div>
       )}
-      {feedbackSubmitted ? (
-        <div className="text-center py-3">
-          <div className="mb-3">
-            <div className="w-12 h-12 mx-auto mb-2 bg-success/10 rounded-full flex items-center justify-center border border-success/20">
-              <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="font-medium text-lg mb-2 text-base-content">Thank you for your feedback!</h3>
-            <div className="mb-2">
-              <span className="text-3xl">{emojiMap[selectedRating as keyof typeof emojiMap]}</span>
-            </div>
-          </div>
-          {feedbackText && (
-            <div className="mt-3 p-3 rounded-lg border border-base-300 text-left">
-              <h4 className="text-sm font-medium mb-1 text-base-content">Your message:</h4>
-              <p className="text-sm text-base-content/80">{feedbackText}</p>
-            </div>
-          )}
-        </div>
+
+      {feedBackHeaderText ? (
+        <div
+          className="text-sm font-medium text-base-content mb-3 leading-snug"
+          dangerouslySetInnerHTML={{ __html: feedBackHeaderText }}
+        />
       ) : (
-        <div className="space-y-4">
-          {feedBackHeaderText && (
-            <div
-              className="text-center font-medium"
-              dangerouslySetInnerHTML={{ __html: feedBackHeaderText }}
-            />
-          )}
-
-
-          <div className="space-y-3">
-            <div className="text-center">
-              <div className="flex justify-center gap-2">
-                {ratingOptions.map(rating => (
-                  <div
-                    key={rating}
-                    className={`
-                      cursor-pointer transition-all duration-150 ease-in-out p-2 rounded-lg
-                      ${selectedRating === rating
-                        ? "bg-primary/10 border border-primary"
-                        : "hover:bg-base-200 border border-transparent"
-                      }
-                    `}
-                    onClick={(e) => { e.stopPropagation(); handleRatingSelect(rating)() }}
-                  >
-                    <span role="img" aria-label={rating} className="text-3xl block">
-                      {emojiMap[rating as keyof typeof emojiMap]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {selectedRating && (
-                <p className="text-xs text-primary font-medium mt-1 capitalize">
-                  {selectedRating}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <textarea
-                className="w-full p-3 rounded-lg border-2 border-base-300 bg-base-100 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors duration-200 resize-none"
-                rows={3}
-                placeholder="Enter you feedback here"
-                value={feedbackText}
-                onClick={(e) => { e.stopPropagation() }}
-                onChange={(e) => setFeedbackText(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col items-center gap-1">
-              {!selectedRating && (
-                <p className="text-xs text-base-content/60">
-                  Please select a rating to continue
-                </p>
-              )}
-              <button
-                className={`
-                  px-5 py-2 rounded-md font-medium transition-colors duration-150 min-w-[120px]
-                  ${!selectedRating
-                    ? "bg-base-300 text-base-content/50 cursor-not-allowed"
-                    : isSubmitting
-                      ? "bg-primary text-primary-content"
-                      : "bg-primary text-primary-content hover:bg-primary-focus"
-                  }
-                `}
-                disabled={isSubmitting || !selectedRating}
-                onClick={handleSubmitFeedback}
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    <span>Submitting...</span>
-                  </div>
-                ) : (
-                  "Submit Feedback"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <p className="text-sm font-medium text-base-content mb-3">How was your experience?</p>
       )}
+
+      <div className="flex items-center justify-between gap-1">
+        {RATING_OPTIONS.map(({ value, emoji, label }) => {
+          const active = selectedRating === value;
+          return (
+            <button
+              type="button"
+              key={value}
+              aria-label={label}
+              aria-pressed={active}
+              onClick={(e) => { e.stopPropagation(); handleRatingSelect(value)() }}
+              className={`
+                flex flex-col items-center gap-1 py-1.5 px-1 rounded-lg flex-1
+                transition-transform duration-150 ease-out
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+                ${active ? "bg-primary/10 scale-110" : "hover:bg-base-200 opacity-60 hover:opacity-100"}
+              `}
+            >
+              <span className="text-2xl leading-none">{emoji}</span>
+              <span className={`text-[10px] leading-none ${active ? "text-primary font-semibold" : "text-base-content/50"}`}>
+                {label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {showRatingError && (
+        <p className="text-xs text-error font-medium mt-1.5 text-center">
+          Please select a rating to continue
+        </p>
+      )}
+
+      <textarea
+        className="w-full mt-3 px-3 py-2 text-sm rounded-lg border border-base-300 bg-base-100 placeholder:text-base-content/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors duration-150 resize-none"
+        rows={2}
+        placeholder="Add a comment (optional)"
+        value={feedbackText}
+        onClick={(e) => { e.stopPropagation() }}
+        onChange={(e) => setFeedbackText(e.target.value)}
+      />
+
+      <button
+        type="button"
+        className="w-full mt-2.5 h-9 rounded-lg text-sm font-medium bg-primary text-primary-content hover:bg-primary-focus transition-colors duration-150 disabled:opacity-70 disabled:cursor-wait"
+        disabled={isSubmitting}
+        onClick={handleSubmitFeedback}
+      >
+        {isSubmitting ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-current border-t-transparent" />
+            Submitting...
+          </span>
+        ) : (
+          "Submit Feedback"
+        )}
+      </button>
     </div>
   )
 }
