@@ -12,12 +12,16 @@ import { errorToast } from '../customToast';
 
 interface CallButtonProps {
     chatSessionId: string,
+    currentChannelId?: string,
 }
 
-function CallButton({ chatSessionId }: CallButtonProps) {
-    const { isHelloUser, voice_call_widget } = useCustomSelector((state) => ({
+function CallButton({ chatSessionId, currentChannelId = "" }: CallButtonProps) {
+    const { isHelloUser, voice_call_widget, isPeerChannel } = useCustomSelector((state) => ({
         isHelloUser: state.draftData?.isHelloUser || false,
         voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
+        // Peer (widget-to-widget) channels have no calling support
+        isPeerChannel: !!state.Hello?.[chatSessionId]?.channelListData?.channels
+            ?.find((channel: any) => channel?.channel === currentChannelId)?.is_peer_channel,
     }));
     const sendMessageToHello = useOnSendHello();
     const { primaryBgColor } = useColor();
@@ -40,7 +44,7 @@ function CallButton({ chatSessionId }: CallButtonProps) {
         }
     };
 
-    if (!isHelloUser || !voice_call_widget) return null;
+    if (!isHelloUser || !voice_call_widget || isPeerChannel) return null;
 
     const isCallDisabled = callState !== "idle";
     return (
@@ -57,4 +61,4 @@ function CallButton({ chatSessionId }: CallButtonProps) {
     );
 }
 
-export default React.memo(addUrlDataHoc(CallButton, []));
+export default React.memo(addUrlDataHoc(CallButton, [ParamsEnums.currentChannelId]));

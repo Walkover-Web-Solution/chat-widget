@@ -3,7 +3,7 @@ import helloVoiceService from '@/components/Chatbot/hooks/HelloVoiceService';
 import { useReduxStateManagement } from '@/components/Chatbot/hooks/useReduxManagement';
 import { useTabVisibility } from '@/components/Chatbot/hooks/useTabVisibility';
 import { setHelloEventMessage, setTyping, updateHelloMessage } from '@/store/chat/chatSlice';
-import { changeChannelAssigned, moveChannelToTop, setChannelClosedStatus, setUnReadCount } from '@/store/hello/helloSlice';
+import { addChannel, changeChannelAssigned, moveChannelToTop, setChannelBlockedStatus, setChannelClosedStatus, setUnReadCount } from '@/store/hello/helloSlice';
 import { getLocalStorage, playMessageRecivedSound, setLocalStorage } from '@/utils/utilities';
 import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
@@ -47,8 +47,14 @@ export const useSocketEvents = ({
         }
         const { type } = message || {};
 
+        // Own message: has a chat_id and either no client_sender_id (legacy) or one that matches this client.
+        // In peer (widget-to-widget) channels the other peer's messages also carry a chat_id, so chat_id alone
+        // cannot be used to tell "mine" from "theirs".
+        const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
+        const isOwnMessage = !!message?.chat_id && (!message?.client_sender_id || message?.client_sender_id === clientId);
+
         // Handle unread count updates
-        if (message?.new_event && (type === 'chat' || type === 'feedback') && !message?.chat_id) {
+        if (message?.new_event && (type === 'chat' || type === 'feedback') && !isOwnMessage) {
             const channelId = message?.channel;
             dispatch(setUnReadCount({
                 channelId,
@@ -80,8 +86,8 @@ export const useSocketEvents = ({
                         }
                         return
                     }
-                    if (!chat_id) {
-                        // assistant or human agent message
+                    if (!isOwnMessage) {
+                        // assistant, human agent, or other peer's message
                         setLoading(false);
 
                         // Play notification sound when message is received
@@ -92,7 +98,7 @@ export const useSocketEvents = ({
                             subThreadId: channel,
                             data: false
                         }));
-                    } else if (chat_id && !isTabVisible) {
+                    } else if (!isTabVisible) {
                         addHelloMessage({ ...message, id: messageId }, channel);
                     } else if (chat_id && isTabVisible) {
                         // move channel to top on user message
@@ -123,6 +129,40 @@ export const useSocketEvents = ({
                 }
                 break;
             }
+            case 'block': {
+                // Peer (widget-to-widget) channel blocked/unblocked by the other side
+                const { channel, value } = message || {};
+                if (message?.new_event && channel) {
+                    dispatch(setChannelBlockedStatus({ channelId: channel, is_blocked: !!value }));
+                }
+                break;
+            }
+            case 'new-channel': {
+                // A new conversation was opened for this client (e.g. a peer / widget-to-widget
+                // channel started by the other side). Show it at the top of the channel list right away.
+                const { channel, chat_id, ticket_id, customer_name, last_message, cc_unread_count = 0, widget_unread_count = 0, created_at, current } = message || {};
+                if (message?.new_event && channel) {
+                    dispatch(addChannel({
+                        id: chat_id,
+                        channel,
+                        ticket_id,
+                        customer_name,
+                        last_message,
+                        cc_unread_count,
+                        widget_unread_count,
+                        unread_count: 0,
+                        is_closed: current === 'closed',
+                        created_at,
+                        team_id: null,
+                        assigned_to: null,
+                    } as any));
+                    // Receive messages on the new channel
+                    socketManager.subscribe([channel]).catch(() => undefined);
+                    // The event lacks peer / assignment details, so refresh the list to hydrate it
+                    fetchChannels();
+                }
+                break;
+            }
             case 'update': {
                 const { channel, client_id } = message || {};
                 if (message?.new_event) {
@@ -140,7 +180,7 @@ export const useSocketEvents = ({
                 }
                 break;
             }
-            default: 
+            default:
                 // Handle other types if needed
                 break;
         }
