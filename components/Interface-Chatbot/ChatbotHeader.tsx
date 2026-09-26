@@ -55,7 +55,7 @@ export function ChatbotHeaderPreview() {
 
 const SendEventOnComponentPress = ({ item, children }: { item: { type: string }, children: React.ReactNode }) => (
   <button
-    className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+    className="p-2 hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))] rounded-full transition-colors"
     onClick={() => emitEventToParent("HEADER_BUTTON_PRESS", item)}
   >
     {children}
@@ -457,7 +457,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return (
       <button
-        className="p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="p-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
         onClick={() => setToggleDrawer(!isToggledrawer)}
       >
         {isToggledrawer ? null : <AlignLeft size={22} />}
@@ -472,7 +472,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     return (
       <div className="tooltip tooltip-right" data-tip="Create new thread">
         <button
-          className="p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+          className="p-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
           onClick={handleCreateNewSubThread}
         >
           <SquarePen size={22} />
@@ -580,7 +580,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return fullScreen ? (
       <div
-        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
         onClick={() => toggleFullScreen(false)}
       >
         {/* <PictureInPicture2 size={22} color="var(--icon-color)" /> */}
@@ -588,7 +588,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
       </div>
     ) : (
       <div
-        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
         onClick={() => toggleFullScreen(true)}
       >
         {/* <Maximize size={22} color="var(--icon-color)" /> */}
@@ -603,7 +603,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
 
     return (
       <div
-        className="cursor-pointer p-2 py-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="cursor-pointer p-2 py-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
         onClick={handleCloseChatbot}
       >
         <X size={22} />
@@ -627,7 +627,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     if (!isHelloUser) return null;
     return (
       <div
-        className="cursor-pointer p-2 py-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="cursor-pointer p-2 py-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
         onClick={handleToggleMinimize}
       >
         {isChatbotMinimized ? <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} /> : <Minus size={22} />}
@@ -640,7 +640,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({ preview = false, chatSess
     if (!isChatbotMinimized) return null;
     return (
       <div
-        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-gray-200"
+        className="cursor-pointer p-2 rounded-full transition-colors text-current hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]"
         onClick={(e) => { e.stopPropagation(); handleToggleMinimize(); }}
       >
         <Maximize2 size={22} style={{ transform: 'rotate(90deg)' }} />

@@ -5,6 +5,7 @@ import { useColor } from '../Chatbot/hooks/useColor';
 import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
 import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
 import { MESSAGE_TYPES } from "../Interface-Chatbot/Messages/MessageType";
+import AppleInteractiveMessage, { detectAppleInteractiveType } from './AppleInteractiveMessage';
 
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
   const messageJson = message?.messageJson || {};
@@ -17,32 +18,79 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
   });
   const { foregroundColor, primaryBgColor } = useColor();
 
+  const cardClass = "rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100";
+
   const renderHeader = (header: any) => {
     if (header?.type === "text") {
       return <div className="font-semibold">{header?.text}</div>;
     } else if (header?.type === 'video') {
       return (
         <div className="mb-1 rounded-lg overflow-hidden shadow-sm">
-          <ImageWithFallback src={header?.video?.link} alt="header" />
+          <ImageWithFallback src={header?.video?.link} alt="header" canDownload={false} />
         </div>
       );
     } else if (header?.type === "image") {
       return (
         <div className="mb-1 rounded-lg overflow-hidden shadow-sm">
-          <ImageWithFallback src={header?.image?.link} alt="header" />
+          <ImageWithFallback src={header?.image?.link} alt="header" canDownload={false} />
         </div>
       );
     } else if (header?.type === "document") {
       return (
         <div className="mb-1 rounded-lg overflow-hidden shadow-sm">
-          <ImageWithFallback src={header?.document?.link} alt="header" />
+          <ImageWithFallback src={header?.document?.link} alt="header" canDownload={false} />
         </div>
       );
     }
     return null;
   };
 
+  const renderUrlButton = (button: any, key: number) => {
+    const title = button.reply?.title || button?.title;
+    const image = button?.assets?.image;
+    const video = button?.assets?.video;
+    const hasMedia = Boolean(video?.url || image?.url);
+    let domain = '';
+    try { domain = new URL(button?.url).hostname.replace(/^www\./, ''); } catch { domain = ''; }
+    return (
+      <div key={key} className={`flex flex-col w-full max-w-md ${hasMedia ? 'rounded-lg overflow-hidden border border-current/20' : ''}`}>
+        {video?.url ? (
+          <video
+            src={video.url}
+            poster={image?.url}
+            controls
+            preload="metadata"
+            playsInline
+            className="w-full max-h-48 bg-black object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : image?.url ? (
+          <ImageWithFallback src={image.url} alt={title || 'link preview'} canDownload={false} />
+        ) : null}
+        <a
+          href={button.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium w-full justify-start ${hasMedia ? '' : 'rounded-md'}`}
+          style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink size={16} strokeWidth={2} className="flex-shrink-0" />
+          <span className="flex flex-col min-w-0 items-start">
+            <span className="break-words">{title}</span>
+            {domain && <span className="text-xs opacity-75 truncate max-w-full">{domain}</span>}
+          </span>
+        </a>
+      </div>
+    );
+  };
+
   const renderInteractiveContent = () => {
+    // Apple Messages for Business payloads (list picker, time picker, quick reply, rich link, form, auth, Apple Pay)
+    if (detectAppleInteractiveType(messageJson)) {
+      return <AppleInteractiveMessage messageJson={messageJson} sendMessageToHello={sendMessageToHello} />;
+    }
+
     const type = messageJson.type || messageJson?.category || message.message_type;
     switch (type) {
       case 'button':
@@ -68,20 +116,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                 {(messageJson.action?.buttons || messageJson.actions?.buttons)?.map((button: any, index: number) => {
                   const title = button.reply?.title || button?.title;
                   if (button.type === 'url') {
-                    return (
-                      <a
-                        key={index}
-                        href={button.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium w-full max-w-md justify-start"
-                        style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink size={16} strokeWidth={2} />
-                        {title}
-                      </a>
-                    );
+                    return renderUrlButton(button, index);
                   }
                   return (
                     <button
@@ -144,20 +179,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             {(actions?.buttons)?.map((button: any, index: number) => {
               const title = button.reply?.title || button?.title;
               if (button.type === 'url') {
-                return (
-                  <a
-                    key={index}
-                    href={button.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium w-full max-w-md justify-start"
-                    style={{ backgroundColor: primaryBgColor, color: foregroundColor }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink size={16} strokeWidth={2} />
-                    {title}
-                  </a>
-                );
+                return renderUrlButton(button, index);
               }
               return (
                 <button
@@ -191,7 +213,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                 {(messageJson?.action?.sections || messageJson?.actions?.list?.sections)?.map((section: any, sectionIndex: number) => (
                   <div key={sectionIndex} className='mb-2'>
                     {section?.title && (
-                      <div className="pt-2 px-1 font-semibold text-base mb-1">
+                      <div className="pt-2 px-1 font-semibold mb-1">
                         {section?.title}
                       </div>
                     )}
@@ -199,14 +221,20 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
                       {section?.rows?.map((row: any, rowIndex: number) => {
                         const titleWordCount = row?.title?.trim()?.split(/\s+/)?.filter(Boolean)?.length || 0;
                         const descriptionWordCount = row?.description?.trim()?.split(/\s+/)?.filter(Boolean)?.length || 0;
+                        const rowImage = row?.image?.url || row?.image?.link || row?.imageUrl;
                         const isLongRow = titleWordCount > 3 || (row?.description && descriptionWordCount > 3);
                         return (
                           <li key={row?.id || rowIndex} className={`border border-current rounded-lg${isLongRow ? ' w-full' : ''}`}>
                             <a
-                              className="py-2"
+                              className="py-2 flex flex-row items-center gap-3"
                               onClick={() => sendMessageToHello?.(row?.title)}
                             >
-                              <div className="flex flex-col w-full items-start">
+                              {rowImage && (
+                                <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-black/5">
+                                  <ImageWithFallback src={rowImage} alt={row?.image?.description || row?.title || ''} thumbnail canDownload={false} />
+                                </div>
+                              )}
+                              <div className="flex flex-col w-full min-w-0 items-start">
                                 <div className="font-medium break-words w-full text-inherit">{row?.title}</div>
                                 {row?.description && (
                                   <InterfaceMarkdown className="text-xs text-gray-500 mt-1 w-full break-words">
@@ -244,22 +272,24 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             {messageJson.header && renderHeader(messageJson.header)}
 
             {product && (
-              <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all hover:shadow-md">
+              <div className={cardClass}>
                 {product.image_url && (
                   <div className="aspect-square relative overflow-hidden bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
                     <ImageWithFallback
                       src={product.image_url}
                       alt={product.name}
+                      thumbnail
+                      canDownload={false}
                     />
                   </div>
                 )}
                 <div className="p-3 space-y-1.5">
                   <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-bold text-sm leading-tight text-gray-900 dark:text-gray-100 line-clamp-1">{product.name}</h3>
+                    <h3 className="font-bold text-sm leading-tight line-clamp-1">{product.name}</h3>
                     <span className="shrink-0 font-bold text-sm">{product.price}</span>
                   </div>
                   {product.description && (
-                    <p className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-2">{product.description}</p>
+                    <p className="text-xs leading-relaxed opacity-70 line-clamp-2">{product.description}</p>
                   )}
                 </div>
               </div>
@@ -273,7 +303,7 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
               )}
 
               {messageJson.footer?.text && (
-                <InterfaceMarkdown className="text-[10px] opacity-70 italic">
+                <InterfaceMarkdown className="text-xs opacity-70 italic">
                   {messageJson.footer.text}
                 </InterfaceMarkdown>
               )}
@@ -292,6 +322,73 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
             )}
           </div>
         );
+
+      case 'product_list': {
+        const allProducts: any[] = (messageJson?.product_details || []).flatMap((d: any) => d?.product_items || []);
+        const byRetailerId = new Map(allProducts.map((item: any) => [item?.retailer_id, item]));
+        const sections: any[] = messageJson?.action?.sections || messageJson?.actions?.sections || [];
+        const ctaText = messageJson?.product_details?.[0]?.text;
+
+        return (
+          <div className="flex flex-col gap-2 max-w-[280px]">
+            {messageJson.header && renderHeader(messageJson.header)}
+
+            {messageJson.body?.text && (
+              <InterfaceMarkdown className="text-sm text-inherit leading-relaxed px-1">
+                {messageJson.body.text}
+              </InterfaceMarkdown>
+            )}
+
+            {sections.map((section: any, sIdx: number) => {
+              const products = (section?.product_items || [])
+                .map((ref: any) => byRetailerId.get(ref?.product_retailer_id || ref?.retailer_id))
+                .filter(Boolean);
+              if (!products.length) return null;
+              return (
+                <div key={sIdx} className="flex flex-col gap-2">
+                  {section?.title && <div className="font-semibold px-1">{section.title}</div>}
+                  <div className={`${cardClass} divide-y divide-gray-100 dark:divide-gray-700`}>
+                    {products.map((product: any, pIdx: number) => (
+                      <button
+                        key={product.retailer_id || pIdx}
+                        type="button"
+                        className="w-full flex items-center gap-3 p-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        onClick={(e) => { e.stopPropagation(); sendMessageToHello?.(product.name); }}
+                      >
+                        {product.image_url && (
+                          <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900">
+                            <ImageWithFallback src={product.image_url} alt={product.name} thumbnail canDownload={false} />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm truncate">{product.name}</div>
+                          {product.description && <p className="text-xs opacity-70 line-clamp-1">{product.description}</p>}
+                        </div>
+                        {product.price && <span className="shrink-0 font-semibold text-sm">{product.price}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {messageJson.footer?.text && (
+              <InterfaceMarkdown className="text-xs opacity-70 italic px-1">
+                {messageJson.footer.text}
+              </InterfaceMarkdown>
+            )}
+
+            {ctaText && (
+              <button
+                className="btn btn-sm btn-outline w-full rounded-lg normal-case font-semibold mt-1 h-9 min-h-[36px] border-current text-inherit"
+                onClick={(e) => { e.stopPropagation(); sendMessageToHello?.(ctaText); }}
+              >
+                {ctaText}
+              </button>
+            )}
+          </div>
+        );
+      }
 
       case 'location_request':
         const locRequest = messageJson.actions?.location_request || messageJson.action?.location_request;

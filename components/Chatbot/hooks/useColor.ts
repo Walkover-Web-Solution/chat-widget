@@ -17,8 +17,6 @@ export const useColor = () => {
     primaryHoverTintColor: withAlpha(primaryColor, mode === "dark" ? 0.12 : 0.08),
     headerHoverBg: mode === "dark"
       ? "rgba(255, 255, 255, 0.12)"
-      : isLight
-        ? "rgba(0, 0, 0, 0.08)"
-        : "rgba(255, 255, 255, 0.18)",
+      : "rgba(0, 0, 0, 0.12)",
   }
 }

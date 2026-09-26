@@ -8,7 +8,8 @@ interface ReplyMessage {
   from_name?: string;
   is_auto_response?: boolean;
   message_id?: string;
-  sender_id?: number
+  sender_id?: number | string;
+  message_type?: string;
   messageJson?: any
 }
 

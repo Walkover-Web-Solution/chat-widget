@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import RenderHelloAttachmentMessage from "../../Hello/RenderHelloAttachmentMessage";
 import RenderHelloFeedbackMessage from "../../Hello/RenderHelloFeedbackMessage";
 import RenderHelloInteractiveMessage from "../../Hello/RenderHelloInteractiveMessage";
+import { isSelfContainedAppleMessage } from "../../Hello/AppleInteractiveMessage";
 import { useReplyContext } from "../contexts/ReplyContext";
 import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
 import "./Message.css";
@@ -263,6 +264,9 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
         setReplyToMessage(message);
     }, [message, setReplyToMessage]);
 
+    // Apple interactive cards draw their own bubble; skip the generic padded card so they don't nest box-in-box.
+    const isAppleCard = message?.message_type === MESSAGE_TYPES.INTERACTIVE && isSelfContainedAppleMessage(message?.messageJson);
+
     return (
         <div
             className="w-full pb-3 animate-fade-in animate-slide-left group"
@@ -272,7 +276,7 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
             <div className="flex items-start gap-2 max-w-[90%]">
                 {/* <Avatar message={message} isBot={isBot} /> */}
                 <div className="w-fit break-words relative" onClick={() => setShowSenderTime(!showSenderTime)}>
-                    <div className="p-1 w-full break-words message-card-backround relative">
+                    <div className={`w-full break-words relative ${isAppleCard ? '' : 'p-1 message-card-backround'}`}>
                         <RepliedMessage message={message} />
                         <MessageContent message={message} isBot={isBot} />
 

@@ -22,6 +22,7 @@ import { ParamsEnums } from "@/utils/enums";
 import { useTheme } from "@mui/material";
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
 import { useColor } from "../Chatbot/hooks/useColor";
+import { getAppleInteractivePreviewText } from "../Hello/AppleInteractiveMessage";
 import { useOnSendHello } from "../Chatbot/hooks/useHelloIntegration";
 import { useScreenSize } from "../Chatbot/hooks/useScreenSize";
 import { MessageContext } from "./InterfaceChatbot";
@@ -320,7 +321,7 @@ const ChatbotDrawer = ({
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
                         text = "Attachment";
                       } else if (lastMessage?.message_type === 'interactive') {
-                        text = lastMessage.messageJson?.body?.text || "Interactive Message";
+                        text = lastMessage.messageJson?.body?.text || getAppleInteractivePreviewText(lastMessage.messageJson) || "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
                         text = lastMessage.messageJson.message_type;
                       } else {
@@ -336,7 +337,8 @@ const ChatbotDrawer = ({
                       } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
                         text = "Attachment";
                       } else if (channel?.last_message?.message?.message_type === 'interactive') {
-                        text = channel.last_message.message.content?.interactive?.body?.text || "Interactive Message";
+                        const interactiveContent = channel.last_message.message.content?.interactive || channel.last_message.message.content;
+                        text = interactiveContent?.body?.text || getAppleInteractivePreviewText(interactiveContent) || "Interactive Message";
                       } else if (channel?.last_message?.message?.message_type) {
                         text = channel.last_message.message.message_type;
                       } else {
@@ -593,7 +595,7 @@ const ChatbotDrawer = ({
   };
 
   const headerIconBtnClass =
-    'p-2 rounded-full transition-colors hover:bg-gray-300';
+    'p-2 rounded-full transition-colors hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]';
 
   return (
     <div className={`drawer ${isSmallScreen ? 'z-[99999]' : 'z-[999]'}`}>

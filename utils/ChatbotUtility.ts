@@ -5,8 +5,9 @@ export const SetSessionStorage = (key: string, value: string) => {
 };
 
 export const GetSessionStorageData = (key: string): string | null => {
-  if (typeof window === 'undefined') return null; // SSR guard
-
+  if (typeof window === "undefined") {
+    return null;
+  }
   try {
     return sessionStorage.getItem(key);
   } catch (error) {
