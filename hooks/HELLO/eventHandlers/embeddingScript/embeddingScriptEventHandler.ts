@@ -248,7 +248,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
     }
 
     function handleSendInitialMessage(event: MessageEvent) {
-        const initialMessage = event?.data?.data?.message;
+        const { message: initialMessage, autoSend = true } = event?.data?.data || {};
         if (!initialMessage) return;
 
         // If the conversation drawer is open, switch back to the active chat view
@@ -256,6 +256,14 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
 
         // Clear appInfo immediately so the UI drops any previously loaded conversation
         dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '', demoSessionId: '' }));
+
+        // Prefill only: open a fresh chat and put text in the input for the user to edit/send
+        if (!autoSend) {
+            dispatch(setDataInDraftReducer({ prefillInputMessage: initialMessage }));
+            return;
+        }
+
+        dispatch(setDataInDraftReducer({ prefillInputMessage: null }));
 
         if (!companyIdRef.current) {
             // widgetInfo (and hence company_id) hasn't loaded yet - queue it and
