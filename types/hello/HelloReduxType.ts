@@ -73,6 +73,18 @@ export interface Channel {
   assigned_type: string;
   last_message: LastMessage;
   total_message_count: number;
+  is_peer_channel?: boolean;
+  is_blocked?: boolean;
+  peer_unread_count?: number;
+  channel_peers?: ChannelPeer[];
+}
+
+export interface ChannelPeer {
+  peer_name: string;
+  peer_mail: string | null;
+  peer_number: string | null;
+  peer_uuid: string;
+  peer_contact_id: string;
 }
 
 export interface LastMessage {

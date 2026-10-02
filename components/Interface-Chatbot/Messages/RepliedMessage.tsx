@@ -5,6 +5,7 @@ import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import React from "react";
 import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
 import { MESSAGE_TYPES } from "./MessageType";
+import { getLocalStorage } from "@/utils/utilities";
 
 const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; message: any }) => {
     if (message?.replied_msg_type !== 'interactive' &&
@@ -15,7 +16,10 @@ const RepliedMessage = ({ chatSessionId, message }: { chatSessionId: string; mes
 
     const senderId = message?.replied_msg_sender_id;
     const fromName = message?.replied_from_name;
-    const senderName = fromName ? getSenderNameFromName(fromName) : (typeof senderId === 'string'
+    // Peer-to-peer channels: the quoted message is ours when its sender id matches this client's id.
+    const myClientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
+    const isMine = !!myClientId && !!senderId && String(senderId) === String(myClientId);
+    const senderName = isMine ? 'You' : fromName ? getSenderNameFromName(fromName) : (typeof senderId === 'string'
         ? getSenderNameFromId(senderId)
         : senderId ? "" : 'You');
 
