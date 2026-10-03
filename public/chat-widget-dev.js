@@ -1451,10 +1451,10 @@
         modifyCustomData: (data) => sendMessageToChatbot({ type: "UPDATE_USER_DATA_SEGMENTO", data }),
         addUserEvent: (data) => sendMessageToChatbot({ type: "ADD_USER_EVENT_SEGMENTO", data }),
         open: (id = "") => manager.openChatbot(id),
-        openWithMessage: (message = "", autoSend = true, alwaysNewChat = true) => {
+        openWithMessage: (message = "") => {
             manager.openChatbot();
             if (message) {
-                sendMessageToChatbot({ type: "SEND_INITIAL_MESSAGE", data: { message, autoSend, alwaysNewChat } });
+                sendMessageToChatbot({ type: "SEND_INITIAL_MESSAGE", data: { message } });
             }
         },
         close: () => manager.closeChatbot(),

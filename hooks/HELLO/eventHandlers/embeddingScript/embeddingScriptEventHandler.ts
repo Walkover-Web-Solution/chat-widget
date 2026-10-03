@@ -33,59 +33,26 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || ''
     }));
 
+    // Use a ref to keep track of the latest channel list without re-running the effect
     const channelListRef = useRef(channelList);
-    const companyIdRef = useRef(companyId);
-    const pendingGreetMessageRef = useRef<string | null>(null);
-    const pendingInitialMessageRef = useRef<{ message: string; autoSend: boolean; alwaysNewChat: boolean } | null>(null);
-    const onSendHelloRef = useRef(onSendHello);
-    const processInitialMessageRef = useRef<(message: string, autoSend: boolean, alwaysNewChat: boolean) => void>(() => {});
-
-    processInitialMessageRef.current = (message, autoSend, alwaysNewChat) => {
-        if (!alwaysNewChat) {
-            const channels = channelListRef.current;
-            if (!Array.isArray(channels)) {
-                pendingInitialMessageRef.current = { message, autoSend, alwaysNewChat };
-                return;
-            }
-            if (channels.some((ch) => ch?.id != null)) return;
-        }
-
-        dispatch(setToggleDrawer(false));
-        dispatch(setDataInAppInfoReducer({
-            subThreadId: '', currentTeamId: '', currentChannelId: '',
-            currentChatId: '', overrideChannelId: '', demoSessionId: '',
-        }));
-
-        if (!autoSend) {
-            dispatch(setDataInDraftReducer({ prefillInputMessage: message }));
-            return;
-        }
-
-        dispatch(setDataInDraftReducer({ prefillInputMessage: null }));
-        if (!companyIdRef.current) {
-            pendingGreetMessageRef.current = message;
-            return;
-        }
-        onSendHelloRef.current({
-            message,
-            newMessage: buildInitialNewMessage(message),
-            forceNewChat: true,
-        });
-    };
-
     useEffect(() => {
         channelListRef.current = channelList;
-        const pending = pendingInitialMessageRef.current;
-        if (!pending || !Array.isArray(channelList)) return;
-        pendingInitialMessageRef.current = null;
-        processInitialMessageRef.current(pending.message, pending.autoSend, pending.alwaysNewChat);
     }, [channelList]);
 
+    // company_id is only known once widgetInfo has loaded (async, happens after
+    // helloData/initializeHelloServices). Keep it in a ref + queue any greet
+    // message that arrives before that, so generateChannelId never runs with an
+    // empty companyId (which produced "ch-comp-.<uuid>" channel_hex values).
+    const companyIdRef = useRef(companyId);
+    const pendingGreetMessageRef = useRef<string | null>(null);
     useEffect(() => {
         companyIdRef.current = companyId;
         if (companyId && pendingGreetMessageRef.current) {
             const pendingMessage = pendingGreetMessageRef.current;
             pendingGreetMessageRef.current = null;
+            // Call the live onSendHello (not the ref) - it's already recreated
+            // with the fresh companyId in this same render, whereas onSendHelloRef
+            // only gets synced in a *later* effect below, so it would still be stale here
             onSendHello({ message: pendingMessage, newMessage: buildInitialNewMessage(pendingMessage), forceNewChat: true });
         }
     }, [companyId, onSendHello]);
@@ -95,6 +62,7 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         sendMessageToHelloRef.current = sendMessageToHello;
     }, [sendMessageToHello]);
 
+    const onSendHelloRef = useRef(onSendHello);
     useEffect(() => {
         onSendHelloRef.current = onSendHello;
     }, [onSendHello]);
@@ -280,9 +248,25 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
     }
 
     function handleSendInitialMessage(event: MessageEvent) {
-        const { message, autoSend = true, alwaysNewChat = true } = event?.data?.data || {};
-        if (!message) return;
-        processInitialMessageRef.current(message, autoSend, alwaysNewChat);
+        const initialMessage = event?.data?.data?.message;
+        if (!initialMessage) return;
+
+        // If the conversation drawer is open, switch back to the active chat view
+        dispatch(setToggleDrawer(false));
+
+        // Clear appInfo immediately so the UI drops any previously loaded conversation
+        dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: '', currentChannelId: '', currentChatId: '', overrideChannelId: '', demoSessionId: '' }));
+
+        if (!companyIdRef.current) {
+            // widgetInfo (and hence company_id) hasn't loaded yet - queue it and
+            // send once company_id is available (see the companyId effect above)
+            pendingGreetMessageRef.current = initialMessage;
+            return;
+        }
+
+        // forceNewChat makes onSendHello ignore any redux channel/chat ids
+        // and always create a brand new chat, instead of racing the reset dispatch above
+        onSendHelloRef.current({ message: initialMessage, newMessage: buildInitialNewMessage(initialMessage), forceNewChat: true });
     }
 
     function handleHelloRuntimeData(event: MessageEvent) {
