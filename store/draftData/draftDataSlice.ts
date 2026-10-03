@@ -16,6 +16,7 @@ const draftDataSlice = createSlice({
       variables: {} as Record<string, any>
     },
     isChatbotMinimized: false as boolean,
+    prefillInputMessage: null as string | null,
   } as $DraftDataReducerType,
   reducers: {
     /**
