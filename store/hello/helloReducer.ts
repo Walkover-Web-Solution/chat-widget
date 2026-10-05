@@ -1,7 +1,7 @@
 import actionType from "@/types/utility.js";
 import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
 import { SliceCaseReducers, ValidateSliceCaseReducers } from "@reduxjs/toolkit";
-import { $HelloReduxType, ChannelListData, HelloData } from "../../types/hello/HelloReduxType";
+import { $HelloReduxType, Channel, ChannelListData, HelloData } from "../../types/hello/HelloReduxType";
 
 export const initialState: $HelloReduxType = {};
 
@@ -184,6 +184,29 @@ export const reducers: ValidateSliceCaseReducers<
     }
   },
 
+  // Adds a channel to the top of the list (used for the `new-channel` socket event, e.g. a
+  // peer/widget-to-widget conversation opened by the other side). No-op if it already exists.
+  addChannel(state, action: actionType<any>) {
+    const chatSessionId = action.urlData?.chatSessionId
+    if (!chatSessionId) return;
+    const newChannel: Partial<Channel> & { channel: string } = action.payload;
+    if (!newChannel?.channel) return;
+
+    if (!state[chatSessionId]) state[chatSessionId] = {} as any;
+    if (!state[chatSessionId].channelListData) {
+      state[chatSessionId].channelListData = { channels: [] } as any;
+    }
+    const channels = state[chatSessionId].channelListData.channels || (state[chatSessionId].channelListData.channels = []);
+
+    const exists = channels.some((channel: any) => channel?.channel === newChannel.channel);
+    if (exists) return;
+
+    // Drop the placeholder (id === null) entry that represents "no conversation yet"
+    const realChannels = channels.filter((channel: any) => channel?.id != null);
+    realChannels.unshift(newChannel as Channel);
+    state[chatSessionId].channelListData.channels = realChannels;
+  },
+
   setChannelClosedStatus(state, action: actionType<{ channelId?: string, is_closed: boolean }>) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
@@ -205,6 +228,20 @@ export const reducers: ValidateSliceCaseReducers<
         const [closedChannel] = state[chatSessionId].channelListData.channels.splice(channelIndex, 1);
         state[chatSessionId].channelListData.channels.push(closedChannel);
       }
+    }
+  },
+
+  setChannelBlockedStatus(state, action: actionType<{ channelId?: string, is_blocked: boolean }>) {
+    const chatSessionId = action.urlData?.chatSessionId
+    if (chatSessionId) {
+      const { channelId = state[chatSessionId]?.currentChannelId, is_blocked } = action.payload;
+
+      const channel = state[chatSessionId]?.channelListData?.channels?.find(
+        (channel: any) => channel.channel === channelId
+      );
+      if (!channel) return;
+
+      channel.is_blocked = is_blocked;
     }
   },
 

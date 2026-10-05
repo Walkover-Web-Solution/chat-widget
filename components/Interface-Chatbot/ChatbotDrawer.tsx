@@ -388,7 +388,9 @@ const ChatbotDrawer = ({
                             color: isClosed ? (isActive ? primaryTextColor : 'var(--icon-color)') : (!isActive && isDarkMode ? foregroundColor : primaryTextColor),
                           }}
                         >
-                          {channel?.assigned_type === 'bot' ? <Bot size={18} /> : initials}
+                          {channel?.is_peer_channel
+                            ? <Users size={18} /> // peer (widget-to-widget) channels have 3 members, so show a group icon instead of initials
+                            : channel?.assigned_type === 'bot' ? <Bot size={18} /> : initials}
                         </div>
                         {unread > 0 && (
                           <span
