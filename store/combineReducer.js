@@ -13,16 +13,27 @@ const storage =
   typeof window !== "undefined"
     ? STORAGE_OPTIONS.session : createNoopStorage();
 
+const localStorage =
+  typeof window !== "undefined"
+    ? STORAGE_OPTIONS.local : createNoopStorage();
+
 const appInfoPersistConfig = {
   key: "appInfo",
   storage: storage,
   version: 1,
 };
 
+const chatPersistConfig = {
+  key: "Chat",
+  storage: localStorage,
+  version: 1,
+  whitelist: ["notifications"],
+};
+
 const rootReducer = combineReducers({
   Interface: InterfaceReducer,
   Hello: helloReducer,
-  Chat: chatReducer,
+  Chat: persistReducer(chatPersistConfig, chatReducer),
   draftData: draftDataReducer,
   appInfo: persistReducer(appInfoPersistConfig, appInfoReducer),
 });
