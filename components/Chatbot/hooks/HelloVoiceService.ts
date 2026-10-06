@@ -1,5 +1,6 @@
 // HelloVoiceService.ts
 import { errorToast } from "@/components/customToast";
+import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
 import { getLocalStorage } from "@/utils/utilities";
 import { EventEmitter } from "events";
 import WebRTC from "msg91-webrtc-call";
@@ -11,6 +12,8 @@ class HelloVoiceService {
     private eventEmitter: EventEmitter;
     private currentCall: any = null;
     private callState: string = "idle"; // idle, ringing, connected, ended
+    private callDirection: "incoming" | "outgoing" | null = null;
+    private callId: string | null = null;
     private isMuted: boolean = false;
 
     private constructor() {
@@ -32,41 +35,37 @@ class HelloVoiceService {
         if (!clientToken) return;
 
         this.webrtc = WebRTC(clientToken, WebRTC_environment);
-        this.webrtc.on("call", this.handleOutgoingCall);
+        this.webrtc.on("call", this.handleCall);
     }
 
-    private handleOutgoingCall = (call: any) => {
-        if (call.type === "incoming-call") return;
+    /** Incoming (Agent→Client) and client-started outgoing share the same accept/hang UI. */
+    private handleCall = (call: any) => {
+        const isIncoming = call.type === "incoming-call";
+        console.log('visibility changed', document.visibilityState, call?.type);
 
-        console.log('visibility changed', document.visibilityState)
-        // if (this.currentCall) {
-        //     console.log('existing call ended, hanging call')
-        //     this.endCall();
-        //     this.resetCall();
-        // }
-
-        if (document.visibilityState === "hidden") {
-            console.log('Not in focus end call ending call')
-            // call.on("answered", (data: any) => {
-            //     console.log('answered while hidden, hanging call')
-            //     call.hang();
-            //     this.resetCall();
-            // });
+        if (!isIncoming && document.visibilityState === "hidden") {
+            console.log('Not in focus end call ending call');
             return;
         }
-        // Only persist the call if this tab is currently active
         this.currentCall = call;
+        this.callDirection = isIncoming ? "incoming" : "outgoing";
+        this.callId = call.id || null;
         this.callState = "ringing";
-        this.eventEmitter.emit("callStateChanged", { state: this.callState });
+        if (isIncoming) {
+            // CallUI lives in the iframe — open parent chatbot so Accept is visible.
+            emitEventToParent("OPEN_CHATBOT");
+        }
+        this.eventEmitter.emit("callStateChanged", {
+            state: this.callState,
+            direction: this.callDirection,
+            callId: this.callId,
+            callType: isIncoming ? "incoming-call" : call.type,
+        });
 
         call.on("error", (error: any) => {
             console.log("call error", error);
             errorToast(error?.message || "Something went wrong");
-            this.callState = "idle";
-            this.isMuted = false;
-            this.eventEmitter.emit("callStateChanged", { state: this.callState });
-            this.eventEmitter.emit("muteStatusChanged", { muted: false });
-            this.currentCall = null;
+            this.resetCall();
         });
         // Set up event listeners for this call
         call.on("answered", (data: any) => {
@@ -121,8 +120,9 @@ class HelloVoiceService {
         }
 
         this.webrtc.call(callToken).then(() => {
+            this.callDirection = "outgoing";
             this.callState = "ringing";
-            this.eventEmitter.emit("callStateChanged", { state: this.callState });
+            this.eventEmitter.emit("callStateChanged", { state: this.callState, direction: this.callDirection });
         });
     }
 
@@ -141,14 +141,28 @@ class HelloVoiceService {
     }
 
     public answerCall(): void {
-        if (this.currentCall && this.callState === "ringing") {
+        if (this.currentCall && this.callState === "ringing" && this.callDirection === "incoming") {
             this.currentCall.accept();
+        }
+    }
+
+    public rejectCall(): void {
+        if (this.currentCall && this.callState === "ringing") {
+            if (typeof this.currentCall.reject === "function") {
+                this.currentCall.reject();
+            } else {
+                this.currentCall.hang();
+            }
         }
     }
 
     public endCall(): void {
         if (this.currentCall) {
-            this.currentCall.hang();
+            if (this.callState === "ringing" && this.callDirection === "incoming" && typeof this.currentCall.reject === "function") {
+                this.currentCall.reject();
+            } else {
+                this.currentCall.hang();
+            }
         }
     }
 
@@ -166,12 +180,20 @@ class HelloVoiceService {
         return this.callState;
     }
 
+    public getCallDirection(): "incoming" | "outgoing" | null {
+        return this.callDirection;
+    }
+
+    public getCallId(): string | null {
+        return this.callId;
+    }
+
     public getMuteStatus(): boolean {
         return this.isMuted;
     }
 
     public getMediaStream(): any {
-        return this.currentCall ? this.currentCall.getMedia() : null;
+        return this.currentCall ? (this.currentCall.getMediaStream?.() || this.currentCall.getMedia?.() || null) : null;
     }
 
     public addEventListener(event: string, callback: (...args: any[]) => void): void {
@@ -192,8 +214,10 @@ class HelloVoiceService {
 
     public resetCall(): void {
         this.callState = "idle";
+        this.callDirection = null;
+        this.callId = null;
         this.isMuted = false;
-        this.eventEmitter.emit("callStateChanged", { state: this.callState });
+        this.eventEmitter.emit("callStateChanged", { state: this.callState, direction: null, callId: null });
         this.eventEmitter.emit("muteStatusChanged", { muted: false });
         this.currentCall = null;
     }
