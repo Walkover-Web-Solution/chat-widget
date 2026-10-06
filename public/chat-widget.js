@@ -710,6 +710,11 @@
             const previewContainer = document.createElement('div');
             previewContainer.id = previewId;
             previewContainer.className = 'hello-launcher-msg-preview';
+            const rawContent = data.content || '';
+            const isFullHtmlDocument = /<!DOCTYPE\s+html|<html[\s>]/i.test(rawContent);
+            if (!isFullHtmlDocument) {
+                previewContainer.classList.add('hello-launcher-msg-preview-framed');
+            }
 
             // Close button
             const closeBtn = document.createElement('button');
@@ -761,29 +766,81 @@
             // Write HTML content into the iframe
             setTimeout(() => {
                 const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                if (iframeDoc) {
-                    iframeDoc.open();
-                    iframeDoc.write(`
-                        <html>
-                        <head><style>
-                            html, body { margin: 0; padding: 0; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2937; background: transparent; }
-                            body > * { margin: 0; }
-                            h1 { font-size: 16px; } h2 { font-size: 15px; } h3 { font-size: 14px; }
-                            img { max-width: 100%; height: auto; }
-                        </style></head>
-                        <body>${data.content || ''}</body>
-                        </html>
-                    `);
-                    iframeDoc.close();
+                if (!iframeDoc) return;
 
-                    // Auto-resize iframe to content height
-                    const resizeIframe = () => {
-                        const bodyHeight = iframeDoc.body?.scrollHeight || 0;
-                        iframe.style.height = Math.min(bodyHeight, 200) + 'px';
-                    };
-                    resizeIframe();
-                    setTimeout(resizeIframe, 100);
+                const previewResetCss = `
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        min-height: 0 !important;
+                        height: auto !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        background: transparent !important;
+                        overflow: hidden !important;
+                        display: block !important;
+                        font-family: system-ui, -apple-system, sans-serif;
+                    }
+                    body > * {
+                        max-width: 100% !important;
+                        box-sizing: border-box !important;
+                    }
+                    img { max-width: 100%; height: auto; }
+                `;
+
+                iframeDoc.open();
+                if (isFullHtmlDocument) {
+                    iframeDoc.write(rawContent);
+                } else {
+                    iframeDoc.write(`<!DOCTYPE html><html><head></head><body>${rawContent}</body></html>`);
                 }
+                iframeDoc.close();
+
+                const head = iframeDoc.head || iframeDoc.getElementsByTagName('head')[0];
+                if (head) {
+                    const style = iframeDoc.createElement('style');
+                    style.textContent = previewResetCss;
+                    head.appendChild(style);
+                }
+
+                const maxWidth = Math.min(360, window.innerWidth - 40);
+                iframe.style.width = maxWidth + 'px';
+                previewContainer.style.width = maxWidth + 'px';
+
+                const measureAndResize = () => {
+                    const body = iframeDoc.body;
+                    if (!body) return;
+                    body.style.setProperty('height', 'auto', 'important');
+                    body.style.setProperty('min-height', '0', 'important');
+
+                    const skipTags = { SCRIPT: 1, STYLE: 1, META: 1, TITLE: 1, LINK: 1, NOSCRIPT: 1, HEAD: 1 };
+                    let minLeft = Infinity, minTop = Infinity, maxRight = 0, maxBottom = 0;
+                    let found = false;
+                    for (let i = 0; i < body.children.length; i++) {
+                        const el = body.children[i];
+                        if (skipTags[el.tagName]) continue;
+                        const rect = el.getBoundingClientRect();
+                        if (!rect.width && !rect.height) continue;
+                        found = true;
+                        minLeft = Math.min(minLeft, rect.left);
+                        minTop = Math.min(minTop, rect.top);
+                        maxRight = Math.max(maxRight, rect.right);
+                        maxBottom = Math.max(maxBottom, rect.bottom);
+                    }
+
+                    let width = found ? Math.ceil(maxRight - Math.max(minLeft, 0)) : (body.scrollWidth || 0);
+                    let height = found ? Math.ceil(maxBottom - Math.max(minTop, 0)) : (body.scrollHeight || 0);
+                    width = Math.min(Math.max(width, 200), maxWidth);
+                    height = Math.min(Math.max(height, 40), 320);
+
+                    iframe.style.width = width + 'px';
+                    iframe.style.height = height + 'px';
+                    previewContainer.style.width = width + 'px';
+                };
+
+                measureAndResize();
+                setTimeout(measureAndResize, 50);
+                setTimeout(measureAndResize, 150);
             }, 0);
 
             // Animate in
@@ -1040,7 +1097,7 @@
             iframe.title = 'iframe';
             iframe.allowFullscreen = true;
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation');
-            iframe.allow = 'microphone *; camera *; midi *; encrypted-media *';
+            iframe.allow = 'microphone *; camera *; midi *; encrypted-media *; clipboard-write *; clipboard-read *';
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.setAttribute('width', '100%');

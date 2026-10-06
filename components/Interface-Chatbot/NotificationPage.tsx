@@ -1,7 +1,7 @@
 'use client';
 
 import { Bell, X } from "lucide-react";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
@@ -10,6 +10,157 @@ import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { generateNewId } from "@/utils/utilities";
 import { useColor } from "../Chatbot/hooks/useColor";
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
+
+const formatRelativeTime = (timestamp: number) => {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
+
+const RelativeTimeLabel = ({ timestamp }: { timestamp: number }) => {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const scheduleNext = () => {
+      const elapsed = Date.now() - timestamp;
+      const msUntilNextMinute = 60000 - (elapsed % 60000);
+      timeoutId = setTimeout(() => {
+        setTick((tick) => tick + 1);
+        scheduleNext();
+      }, Math.max(msUntilNextMinute, 1000) + 50);
+    };
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
+  }, [timestamp]);
+
+  return <>{formatRelativeTime(timestamp)}</>;
+};
+
+const SKIP_MEASURE_TAGS: Record<string, number> = { SCRIPT: 1, STYLE: 1, META: 1, TITLE: 1, LINK: 1, NOSCRIPT: 1, HEAD: 1 };
+
+const previewResetCss = `html,body{margin:0!important;padding:0!important;min-height:0!important;height:auto!important;width:100%!important;max-width:100%!important;background:transparent!important;background-color:transparent!important;color-scheme:light!important;overflow:hidden!important;display:block!important;align-items:unset!important;justify-content:unset!important}body>*{max-width:100%!important;box-sizing:border-box!important}img{max-width:100%;height:auto}`;
+
+const buildIframeSrcDoc = (html: string) => {
+  const hasHtmlTag = /<html[\s>]/i.test(html);
+  if (hasHtmlTag) {
+    if (/<\/head>/i.test(html)) {
+      return html.replace(/<\/head>/i, `<style>${previewResetCss}</style></head>`);
+    }
+    return html.replace(/<html([^>]*)>/i, `<html$1><head><style>${previewResetCss}</style></head>`);
+  }
+  return `<!DOCTYPE html><html><head><style>${previewResetCss}</style></head><body>${html}</body></html>`;
+};
+
+const neutralizePageLayout = (doc: Document) => {
+  [doc.documentElement, doc.body].forEach((el) => {
+    if (!el) return;
+    el.style.setProperty('margin', '0', 'important');
+    el.style.setProperty('padding', '0', 'important');
+    el.style.setProperty('min-height', '0', 'important');
+    el.style.setProperty('height', 'auto', 'important');
+    el.style.setProperty('width', '100%', 'important');
+    el.style.setProperty('background', 'transparent', 'important');
+    el.style.setProperty('background-color', 'transparent', 'important');
+    el.style.setProperty('color-scheme', 'light', 'important');
+    el.style.setProperty('overflow', 'hidden', 'important');
+    el.style.setProperty('display', 'block', 'important');
+  });
+};
+
+const measureContentSize = (frame: HTMLIFrameElement) => {
+  if (frame.clientWidth < 40) return { width: 0, height: 0 };
+  const doc = frame.contentDocument;
+  const body = doc?.body;
+  if (!doc || !body) return { width: 0, height: 0 };
+  neutralizePageLayout(doc);
+  let width = 0;
+  let height = 0;
+  for (let i = 0; i < body.children.length; i++) {
+    const el = body.children[i] as HTMLElement;
+    if (SKIP_MEASURE_TAGS[el.tagName]) continue;
+    const cs = doc.defaultView?.getComputedStyle(el);
+    const mt = parseFloat(cs?.marginTop || '0') || 0;
+    const mb = parseFloat(cs?.marginBottom || '0') || 0;
+    const ml = parseFloat(cs?.marginLeft || '0') || 0;
+    const mr = parseFloat(cs?.marginRight || '0') || 0;
+    width = Math.max(width, (el.offsetWidth || 0) + ml + mr);
+    height += Math.max(el.offsetHeight || 0, el.scrollHeight || 0) + mt + mb;
+  }
+  return { width: Math.ceil(width), height: Math.ceil(height) };
+};
+
+const NotificationHtmlIframe = ({ html, title }: { html: string; title: string }) => {
+  const frameRef = React.useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(180);
+  const [width, setWidth] = useState<number | string>('100%');
+  const srcDoc = buildIframeSrcDoc(html);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    let cancelled = false;
+    const timers: number[] = [];
+
+    const applySize = () => {
+      if (cancelled) return false;
+      const size = measureContentSize(frame);
+      if (size.height >= 40) {
+        setHeight(Math.min(size.height + 2, 400));
+        const maxW = frame.parentElement?.clientWidth || frame.clientWidth;
+        if (size.width >= 40 && maxW > 0) {
+          setWidth(Math.min(size.width + 2, maxW));
+        }
+        if (frame.contentDocument?.documentElement) frame.contentDocument.documentElement.scrollTop = 0;
+        if (frame.contentDocument?.body) frame.contentDocument.body.scrollTop = 0;
+        frame.contentWindow?.scrollTo(0, 0);
+        return true;
+      }
+      return false;
+    };
+
+    const schedule = () => {
+      applySize();
+      requestAnimationFrame(applySize);
+      [50, 120, 250, 500, 1000].forEach((ms) => {
+        timers.push(window.setTimeout(applySize, ms));
+      });
+    };
+
+    frame.addEventListener('load', schedule);
+    if (frame.contentDocument?.readyState === 'complete') {
+      schedule();
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      applySize();
+    });
+    resizeObserver.observe(frame);
+
+    return () => {
+      cancelled = true;
+      frame.removeEventListener('load', schedule);
+      resizeObserver.disconnect();
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [srcDoc]);
+
+  return (
+    <iframe
+      ref={frameRef}
+      srcDoc={srcDoc}
+      sandbox="allow-same-origin"
+      className="block border-none bg-transparent rounded-[14px] mx-auto"
+      style={{ height, width, maxWidth: '100%', minHeight: 80, background: 'transparent', colorScheme: 'light', borderRadius: 14 }}
+      title={title}
+    />
+  );
+};
 
 /**
  * NotificationPage — displays a list of push notifications (message_type: "Message")
@@ -70,24 +221,6 @@ const NotificationPage = () => {
     }));
   }, [dispatch, images, setImages]);
 
-  const formatTime = (timestamp: number) => {
-    const diff = Date.now() - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
-
-  const buildIframeSrcDoc = (html: string) => {
-    // If content already has full HTML structure, use as-is; otherwise wrap it.
-    const hasHtmlTag = /<html[\s>]/i.test(html);
-    if (hasHtmlTag) return html;
-    return `<!DOCTYPE html><html><head><style>body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:transparent;overflow:hidden}img{max-width:100%;height:auto}</style></head><body>${html}</body></html>`;
-  };
-
   return (
     <div className="flex flex-col h-full w-full bg-[var(--background)]">
       {/* Notification List */}
@@ -101,8 +234,6 @@ const NotificationPage = () => {
         ) : (
           <div className="flex flex-col">
             {notifications.map((notification, idx) => {
-              const timeLabel = formatTime(notification.timestamp);
-              const srcDoc = buildIframeSrcDoc(notification.content);
               const isLast = idx === notifications.length - 1;
 
               return (
@@ -125,7 +256,7 @@ const NotificationPage = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold" style={{ color: 'var(--foreground)' }}>
-                          {timeLabel}
+                          <RelativeTimeLabel timestamp={notification.timestamp} />
                         </span>
                         <div className="flex items-center gap-2">
                           <button
@@ -137,11 +268,15 @@ const NotificationPage = () => {
                           </button>
                         </div>
                       </div>
-                      <div className="mb-3 rounded-lg overflow-hidden border border-[var(--foreground)]/10 bg-white">
-                        <iframe
-                          srcDoc={srcDoc}
-                          sandbox="allow-same-origin"
-                          className="w-full block h-[160px] border-none"
+                      <div
+                        className="mb-3 overflow-hidden rounded-[14px] w-fit max-w-full mx-auto"
+                        style={{
+                          border: '1px solid color-mix(in srgb, var(--foreground) 16%, transparent)',
+                          boxShadow: '0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent)',
+                        }}
+                      >
+                        <NotificationHtmlIframe
+                          html={notification.content}
                           title={`notification-${notification.id}`}
                         />
                       </div>
