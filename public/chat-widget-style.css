@@ -496,16 +496,23 @@
   bottom: calc(100% + 12px);
   right: 0;
   width: 320px;
-  max-width: calc(100vw - 40px);
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  max-width: min(360px, calc(100vw - 40px));
+  background: transparent;
+  border: none;
   border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   z-index: 2147483646;
   opacity: 0;
   transform: translateY(8px) scale(0.96);
   transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
+  overflow: visible;
+}
+
+.hello-launcher-msg-preview-framed {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -554,7 +561,11 @@
 .hello-launcher-msg-preview-content {
   cursor: pointer;
   min-height: 40px;
-  max-height: 220px;
+  overflow: visible;
+}
+
+.hello-launcher-msg-preview-framed .hello-launcher-msg-preview-content {
+  max-height: 280px;
   overflow: hidden;
 }
 
