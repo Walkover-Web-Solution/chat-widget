@@ -6,6 +6,8 @@ import helloVoiceService from './HelloVoiceService';
 
 export const useCallUI = () => {
   const [callState, setCallState] = useState<"idle" | "ringing" | "connected" | "ended" | "rejoined">("idle");
+  const [callDirection, setCallDirection] = useState<"incoming" | "outgoing" | null>(null);
+  const [callId, setCallId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [mediaStream, setMediaStream] = useState<any>({ key: null, mediaStream: null });
   const [rejoinSummary, setRejoinSummary] = useState<any>(null);
@@ -14,11 +16,16 @@ export const useCallUI = () => {
   useEffect(() => {
     // Set initial state
     setCallState(helloVoiceService.getCallState() as "idle" | "ringing" | "connected" | "ended" | "rejoined");
+    setCallDirection(helloVoiceService.getCallDirection());
+    setCallId(helloVoiceService.getCallId());
     setIsMuted(helloVoiceService.getMuteStatus());
 
     // Set up event listeners
-    const handleCallStateChange = ({ state, mediaStream, data }: any) => {
+    const handleCallStateChange = ({ state, mediaStream, data, direction, callId: nextCallId }: any) => {
       setCallState(state);
+      if (direction !== undefined) setCallDirection(direction);
+      if (nextCallId !== undefined) setCallId(nextCallId);
+      if (data?.id) setCallId(data.id);
       if (mediaStream) {
         setMediaStream({ key: Date.now(), mediaStream: mediaStream });
       }
@@ -62,12 +69,19 @@ export const useCallUI = () => {
     helloVoiceService.toggleMute();
   };
 
+  const rejectCall = () => {
+    helloVoiceService.rejectCall();
+  };
+
   return {
     callState,
+    callDirection,
+    callId,
     isMuted,
     mediaStream,
     makeCall,
     answerCall,
+    rejectCall,
     endCall,
     toggleMute,
     rejoinSummary

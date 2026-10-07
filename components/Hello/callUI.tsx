@@ -8,9 +8,12 @@ import './CallUI.css';
 const CallUI: React.FC = () => {
     const {
         callState,
+        callDirection,
         isMuted,
         mediaStream: audio,
         endCall,
+        answerCall,
+        rejectCall,
         toggleMute,
         rejoinSummary
     } = useCallUI();
@@ -41,6 +44,34 @@ const CallUI: React.FC = () => {
                 return null;
 
             case 'ringing':
+                if (callDirection === 'incoming') {
+                    return (
+                        <div className="flex flex-row items-center w-full justify-between px-3">
+                            <h3 className="text-base">Incoming call</h3>
+                            <div className="flex items-center">
+                                <div className="call-animation">
+                                    <div className="ripple"></div>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={answerCall}
+                                    className="p-2 rounded-full button-hover text-white bg-green-500 transition-colors"
+                                    aria-label="Accept call"
+                                >
+                                    <Phone size={18} />
+                                </button>
+                                <button
+                                    onClick={rejectCall}
+                                    className="p-2 rounded-full button-hover text-white bg-red-500 transition-colors"
+                                    aria-label="Reject call"
+                                >
+                                    <Phone style={{ transform: 'rotate(135deg)' }} size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
                 return (
                     <div className="flex flex-row items-center w-full justify-between px-3">
                         <h3 className="text-base">Calling...</h3>
