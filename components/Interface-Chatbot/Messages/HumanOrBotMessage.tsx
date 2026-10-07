@@ -5,12 +5,13 @@ import { hasMoreContent } from "@/utils/readMore";
 import { linkify } from "@/utils/utilities";
 import { Reply } from "lucide-react";
 import Image from "next/image";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import RenderHelloAttachmentMessage from "../../Hello/RenderHelloAttachmentMessage";
 import RenderHelloFeedbackMessage from "../../Hello/RenderHelloFeedbackMessage";
 import RenderHelloInteractiveMessage from "../../Hello/RenderHelloInteractiveMessage";
 import { isSelfContainedAppleMessage } from "../../Hello/AppleInteractiveMessage";
 import { useReplyContext } from "../contexts/ReplyContext";
+import { MessageContext } from "../InterfaceChatbot";
 import InterfaceMarkdown from "../Interface-Markdown/InterfaceMarkdown";
 import "./Message.css";
 import MessageTime from "./MessageTime";
@@ -258,11 +259,13 @@ const HumanOrBotMessageCard = React.memo(({ message, isBot = false, isLastMessag
     const [showSenderTime, setShowSenderTime] = useState(isLastMessage);
     const [showReplyButton, setShowReplyButton] = useState(false);
     const { setReplyToMessage } = useReplyContext();
+    const { messageRef } = useContext(MessageContext);
 
     const handleReplyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         setReplyToMessage(message);
-    }, [message, setReplyToMessage]);
+        setTimeout(() => messageRef?.current?.focus(), 0);
+    }, [message, setReplyToMessage, messageRef]);
 
     // Apple interactive cards draw their own bubble; skip the generic padded card so they don't nest box-in-box.
     const isAppleCard = message?.message_type === MESSAGE_TYPES.INTERACTIVE && isSelfContainedAppleMessage(message?.messageJson);
