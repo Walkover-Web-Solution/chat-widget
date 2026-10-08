@@ -18,5 +18,6 @@ export interface $AppInfoReduxType {
         serviceChanged: string, //name of the service
         modelChanged: string, //name of the model
         demoSessionId?: string,
+        showNotificationView?: boolean,
     }
 }

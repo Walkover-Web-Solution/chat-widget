@@ -44,6 +44,14 @@ interface ChatState {
     options: any[];
     images: any[];
 
+    // Notifications
+    notifications: Array<{
+        id: string;
+        content: string;
+        timestamp: number;
+        read: boolean;
+    }>;
+
     // Additional properties that might be needed
     open?: boolean;
     isHelloUser?: boolean;
@@ -86,6 +94,9 @@ export const initialChatState: ChatState = {
     // Options & Media
     options: [],
     images: [],
+
+    // Notifications
+    notifications: [],
 };
 
 export const chatReducerV2 = {
@@ -320,9 +331,44 @@ export const chatReducerV2 = {
             bridgeName: state.bridgeName,
             helloId: state.helloId,
             bridgeVersionId: state.bridgeVersionId,
-            headerButtons: state.headerButtons
+            headerButtons: state.headerButtons,
+            notifications: state.notifications,
         };
 
         Object.assign(state, initialChatState, preservedValues);
-    }
+    },
+
+    moveThreadMessages: (state, action: PayloadAction<{ from: string; to: string }>) => {
+        const { from, to } = action.payload;
+        if (!from || !to || from === to) return;
+        state.messageIds[to] = [
+            ...(state.messageIds[from] || []),
+            ...(state.messageIds[to] || []),
+        ];
+        state.msgIdAndDataMap[to] = {
+            ...(state.msgIdAndDataMap[from] || {}),
+            ...(state.msgIdAndDataMap[to] || {}),
+        };
+        state.rawHelloMsgList[to] = [
+            ...(state.rawHelloMsgList[from] || []),
+            ...(state.rawHelloMsgList[to] || []),
+        ];
+        delete state.messageIds[from];
+        delete state.msgIdAndDataMap[from];
+        delete state.rawHelloMsgList[from];
+    },
+
+    // --- Push Notification Reducers ---
+    // Push notifications (message_type: "Message") from campaigns are stored here.
+    // They appear in the NotificationPage UI and contribute to the launcher badge count.
+    addNotification: (state, action: PayloadAction<{ id: string; content: string; timestamp: number }>) => {
+        state.notifications = [
+            { ...action.payload, read: false },
+            ...state.notifications
+        ];
+    },
+
+    removeNotification: (state, action: PayloadAction<string>) => {
+        state.notifications = state.notifications.filter(n => n.id !== action.payload);
+    },
 };

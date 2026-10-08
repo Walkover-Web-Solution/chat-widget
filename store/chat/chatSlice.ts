@@ -37,7 +37,10 @@ export const {
     setPaginateMessages,
     setHelloEventMessage,
     updateHelloMessage,
-    resetState
+    resetState,
+    addNotification,
+    removeNotification,
+    moveThreadMessages
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
