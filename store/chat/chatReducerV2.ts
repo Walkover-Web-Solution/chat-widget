@@ -371,4 +371,8 @@ export const chatReducerV2 = {
     removeNotification: (state, action: PayloadAction<string>) => {
         state.notifications = state.notifications.filter(n => n.id !== action.payload);
     },
+
+    setNotifications: (state, action: PayloadAction<Array<{ id: string; content: string; timestamp: number; read: boolean }>>) => {
+        state.notifications = Array.isArray(action.payload) ? action.payload : [];
+    },
 };
