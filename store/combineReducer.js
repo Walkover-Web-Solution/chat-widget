@@ -2,7 +2,7 @@
 import { combineReducers } from "redux";
 import { persistReducer } from "redux-persist";
 
-import { createNoopStorage, STORAGE_OPTIONS } from "@/utils/storageUtility";
+import { createNoopStorage, createWidgetScopedLocalStorage, STORAGE_OPTIONS } from "@/utils/storageUtility";
 import appInfoReducer from "./appInfo/appInfoSlice";
 import chatReducer from "./chat/chatSlice";
 import draftDataReducer from "./draftData/draftDataSlice";
@@ -15,7 +15,7 @@ const storage =
 
 const localStorage =
   typeof window !== "undefined"
-    ? STORAGE_OPTIONS.local : createNoopStorage();
+    ? createWidgetScopedLocalStorage() : createNoopStorage();
 
 const appInfoPersistConfig = {
   key: "appInfo",
