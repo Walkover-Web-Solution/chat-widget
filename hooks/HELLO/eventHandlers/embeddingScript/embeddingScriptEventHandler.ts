@@ -4,7 +4,7 @@ import { addDomainToHello, saveClientDetails } from "@/config/helloApi";
 import { CBManger } from "@/hooks/coBrowser/CBManger";
 import { EmbeddingScriptEventRegistryInstance } from "@/hooks/CORE/eventHandlers/embeddingScript/embeddingScriptEventHandler";
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
-import { removeNotification, setHelloEventMessage, setOpenHelloForm, setSubThreadId, setToggleDrawer } from "@/store/chat/chatSlice";
+import { removeNotification, setHelloEventMessage, setNotifications, setOpenHelloForm, setSubThreadId, setToggleDrawer } from "@/store/chat/chatSlice";
 import { setDataInDraftReducer, setVariablesForHelloBot } from "@/store/draftData/draftDataSlice";
 import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo } from "@/store/hello/helloSlice";
 import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
@@ -157,6 +157,17 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
         // Reset if widget token changed (clears OLD tabSessionId's state)
         if (isWidgetTokenChanged) {
             resetKeys();
+            // Load notifications for this widget only (`${widgetToken}_persist:Chat`)
+            let nextNotifications = [];
+            try {
+                const raw = localStorage.getItem(`${fullWidgetToken}_persist:Chat`);
+                const parsed = raw ? JSON.parse(raw) : null;
+                const list = typeof parsed?.notifications === 'string'
+                    ? JSON.parse(parsed.notifications)
+                    : parsed?.notifications;
+                if (Array.isArray(list)) nextNotifications = list;
+            } catch { /* ignore */ }
+            dispatch(setNotifications(nextNotifications));
         }
 
         // Store userData in localStorage

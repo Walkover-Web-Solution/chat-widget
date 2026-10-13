@@ -40,6 +40,7 @@ export const {
     resetState,
     addNotification,
     removeNotification,
+    setNotifications,
     moveThreadMessages
 } = chatSlice.actions;
 
