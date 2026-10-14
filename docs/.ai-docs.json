@@ -1,0 +1,15 @@
+{
+  "skill": "ai-docs",
+  "skill_version": "0.1.0",
+  "created": "2026-10-14",
+  "last_run": { "mode": "init", "commit": "b9ab6d6", "date": "2026-10-14" },
+  "superseded": [
+    "docs/ARCHITECTURE.md",
+    "docs/AI_INSTRUCTIONS.md",
+    "docs/MODULE_CHAT_WIDGET.md",
+    "docs/MODULE_CHAT_WIDGET_CALLING.md",
+    "docs/MODULE_CHAT_WIDGET_DEMO_CHATBOT.md",
+    "docs/MODULE_CHAT_WIDGET_REPLY.md",
+    "REPLY_FEATURE.md"
+  ]
+}
