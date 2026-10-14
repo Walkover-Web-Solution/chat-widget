@@ -1,4 +1,5 @@
 import { emitEventToParent } from "./emitEventsToParent/emitEventsToParent";
+import { safeLocalStorage, safeSessionStorage } from "./safeStorage";
 
 /**
  * Session keys that must survive an iframe document reload.
@@ -15,13 +16,13 @@ const localBackupKey = (key: string) => `__session_backup_${key}`;
 
 export const SetSessionStorage = (key: string, value: string) => {
   try {
-    sessionStorage.setItem(key, value);
+    safeSessionStorage.setItem(key, value);
   } catch (error) {
     console.error(`Error setting session storage data for key "${key}":`, { error });
   }
   if (SESSION_KEYS_BACKED_BY_LOCAL.has(key)) {
     try {
-      localStorage.setItem(localBackupKey(key), value);
+      safeLocalStorage.setItem(localBackupKey(key), value);
     } catch { /* ignore */ }
   }
 };
@@ -31,13 +32,12 @@ export const GetSessionStorageData = (key: string): string | null => {
     return null;
   }
   try {
-    const value = sessionStorage.getItem(key);
+    const value = safeSessionStorage.getItem(key);
     if (value !== null) return value;
     if (SESSION_KEYS_BACKED_BY_LOCAL.has(key)) {
-      const backup = localStorage.getItem(localBackupKey(key));
+      const backup = safeLocalStorage.getItem(localBackupKey(key));
       if (backup !== null) {
-        // Restore so later reads in this document hit sessionStorage directly.
-        sessionStorage.setItem(key, backup);
+        safeSessionStorage.setItem(key, backup);
         return backup;
       }
     }
