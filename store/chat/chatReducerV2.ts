@@ -331,10 +331,31 @@ export const chatReducerV2 = {
             bridgeName: state.bridgeName,
             helloId: state.helloId,
             bridgeVersionId: state.bridgeVersionId,
-            headerButtons: state.headerButtons
+            headerButtons: state.headerButtons,
+            notifications: state.notifications,
         };
 
         Object.assign(state, initialChatState, preservedValues);
+    },
+
+    moveThreadMessages: (state, action: PayloadAction<{ from: string; to: string }>) => {
+        const { from, to } = action.payload;
+        if (!from || !to || from === to) return;
+        state.messageIds[to] = [
+            ...(state.messageIds[from] || []),
+            ...(state.messageIds[to] || []),
+        ];
+        state.msgIdAndDataMap[to] = {
+            ...(state.msgIdAndDataMap[from] || {}),
+            ...(state.msgIdAndDataMap[to] || {}),
+        };
+        state.rawHelloMsgList[to] = [
+            ...(state.rawHelloMsgList[from] || []),
+            ...(state.rawHelloMsgList[to] || []),
+        ];
+        delete state.messageIds[from];
+        delete state.msgIdAndDataMap[from];
+        delete state.rawHelloMsgList[from];
     },
 
     // --- Push Notification Reducers ---
@@ -349,5 +370,9 @@ export const chatReducerV2 = {
 
     removeNotification: (state, action: PayloadAction<string>) => {
         state.notifications = state.notifications.filter(n => n.id !== action.payload);
+    },
+
+    setNotifications: (state, action: PayloadAction<Array<{ id: string; content: string; timestamp: number; read: boolean }>>) => {
+        state.notifications = Array.isArray(action.payload) ? action.payload : [];
     },
 };
