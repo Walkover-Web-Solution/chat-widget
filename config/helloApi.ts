@@ -2,6 +2,7 @@ import { errorToast } from "@/components/customToast";
 import { PAGE_SIZE } from "@/utils/enums";
 import axios from "@/utils/helloInterceptor";
 import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
+import { GetSessionStorageData } from "@/utils/ChatbotUtility";
 import { extractFullMessageText } from "@/utils/readMore";
 import { getHelloHostUrl, setRegionUrls } from "@/config/regionConfig";
 import socketManager from "@/hooks/socketManager";
@@ -14,7 +15,7 @@ const HELLO_HOST_URL = () => getHelloHostUrl();
 // Widget merge: returns { flow_origin, integration } only when both are configured.
 export function getMergeParams(): { flow_origin: string; integration: string } | {} {
   try {
-    const { flow_origin, integration } = JSON.parse(sessionStorage.getItem('helloConfig') || '{}');
+    const { flow_origin, integration } = JSON.parse(GetSessionStorageData('helloConfig') || '{}');
     return flow_origin && integration ? { flow_origin, integration } : {};
   } catch { return {}; }
 }
