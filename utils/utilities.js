@@ -6,7 +6,7 @@ import linkifyHtml from "linkify-html";
 import { customAlphabet } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
 import { GetSessionStorageData } from "./ChatbotUtility";
-import { localStore } from "./appStorage";
+import { safeLocalStorage } from "./safeStorage";
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale)
 
@@ -162,7 +162,7 @@ export const setLocalStorage = (key, value = '') => {
   if (widgetToken) {
     updatedKey = `${widgetToken}_${key}`
   }
-  localStore.setItem(updatedKey, value);
+  safeLocalStorage.setItem(updatedKey, value);
   if (key === 'WidgetId' || key === 'k_clientId' || key === 'a_clientId') {
     if (key === 'k_clientId') window.parent.postMessage({ type: 'setDataInLocal', data: { key: 'hello-widget-uuid', payload: value } }, '*');
     if (key === 'a_clientId') window.parent.postMessage({ type: 'setDataInLocal', data: { key: 'hello-widget-anonymoud-uuid', payload: value } }, '*');
@@ -184,7 +184,7 @@ export const getLocalStorage = (key) => {
   if (widgetToken) {
     updatedKey = `${widgetToken}_${key}`
   }
-  return key ? localStore.getItem(updatedKey) : null;
+  return key ? safeLocalStorage.getItem(updatedKey) : null;
 }
 
 export const removeFromLocalStorage = (key) => {
@@ -193,7 +193,7 @@ export const removeFromLocalStorage = (key) => {
   if (widgetToken) {
     updatedKey = `${widgetToken}_${key}`
   }
-  localStore.removeItem(updatedKey);
+  safeLocalStorage.removeItem(updatedKey);
 }
 
 

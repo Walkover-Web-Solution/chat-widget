@@ -1,5 +1,5 @@
 import { GetSessionStorageData } from "@/utils/ChatbotUtility";
-import { localStore, sessionStore } from "./appStorage";
+import { safeLocalStorage, safeSessionStorage } from "./safeStorage";
 
 type Storage = {
   getItem: (key: string) => Promise<string | null>;
@@ -13,14 +13,18 @@ export const createNoopStorage = (): Storage => ({
   removeItem: (_key: string) => Promise.resolve(),
 });
 
-const toPersistStorage = (store: typeof localStore): Storage => ({
-  getItem: (key) => Promise.resolve(store.getItem(key)),
-  setItem: (key, value) => {
-    store.setItem(key, value);
+// redux-persist adapter over safeStorage: real storage first, in-memory fallback
+// when the browser blocks it (e.g. cross-origin iframe in WhatsApp's iOS webview).
+const createSafeWebStorage = (
+  backend: typeof safeLocalStorage | typeof safeSessionStorage
+): Storage => ({
+  getItem: (key: string) => Promise.resolve(backend.getItem(key)),
+  setItem: (key: string, value: any) => {
+    backend.setItem(key, value);
     return Promise.resolve(value);
   },
-  removeItem: (key) => {
-    store.removeItem(key);
+  removeItem: (key: string) => {
+    backend.removeItem(key);
     return Promise.resolve();
   },
 });
@@ -28,7 +32,7 @@ const toPersistStorage = (store: typeof localStore): Storage => ({
 /** Same prefix pattern as setLocalStorage / getLocalStorage. */
 export const createWidgetScopedLocalStorage = (): Storage => {
   if (typeof window === "undefined") return createNoopStorage();
-  const base = toPersistStorage(localStore);
+  const base = createSafeWebStorage(safeLocalStorage);
   const scopeKey = (key: string) => {
     const widgetToken = GetSessionStorageData("widgetToken");
     return widgetToken ? `${widgetToken}_${key}` : key;
@@ -49,8 +53,8 @@ const createStorage = () => {
     return { local: createNoopStorage(), session: createNoopStorage() };
   }
   return {
-    local: toPersistStorage(localStore),
-    session: toPersistStorage(sessionStore),
+    local: createSafeWebStorage(safeLocalStorage),
+    session: createSafeWebStorage(safeSessionStorage),
   };
 };
 
