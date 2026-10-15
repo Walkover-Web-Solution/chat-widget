@@ -349,6 +349,11 @@
                         this.handlePushNotification(data)
                     }
                     break;
+                case 'LAUNCHER_MESSAGE_PREVIEW':
+                    if (!this.helloProps?.isMobileSDK) {
+                        this.showLauncherMessagePreview(data)
+                    }
+                    break;
                 case 'ENABLE_DOMAIN_TRACKING':
                     this.enableDomainTracking();
                     break;
@@ -369,7 +374,7 @@
                     }
                     break;
                 case 'RELOAD_PARENT':
-                    // window.location.reload()
+                    window.location.reload()
                     break;
                 default:
                     break;
@@ -684,6 +689,184 @@
             }
         }
 
+        showLauncherMessagePreview(data) {
+            const chatBotIcon = document.getElementById(this.elements.chatbotIconContainer);
+            if (!chatBotIcon) return;
+
+            // Don't show if chatbot is open
+            const iframeContainer = document.getElementById(this.elements.chatbotIframeContainer);
+            if (iframeContainer && iframeContainer.style.display === 'block') return;
+
+            // Remove existing preview if any
+            this.hideLauncherMessagePreview();
+
+            const previewId = `${this.prefix}launcher-msg-preview`;
+
+            // Create preview container
+            const previewContainer = document.createElement('div');
+            previewContainer.id = previewId;
+            previewContainer.className = 'hello-launcher-msg-preview';
+            const rawContent = data.content || '';
+            const isFullHtmlDocument = /<!DOCTYPE\s+html|<html[\s>]/i.test(rawContent);
+            if (!isFullHtmlDocument) {
+                previewContainer.classList.add('hello-launcher-msg-preview-framed');
+            }
+
+            // Close button
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'hello-launcher-msg-preview-close';
+            closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+            closeBtn.setAttribute('aria-label', 'Close preview');
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.hideLauncherMessagePreview();
+            });
+
+            // Content area with iframe for HTML rendering
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'hello-launcher-msg-preview-content';
+
+            const iframe = document.createElement('iframe');
+            iframe.className = 'hello-launcher-msg-preview-iframe';
+            iframe.setAttribute('sandbox', 'allow-same-origin');
+            iframe.setAttribute('scrolling', 'no');
+            iframe.style.width = '100%';
+            iframe.style.border = 'none';
+            iframe.style.background = 'transparent';
+            iframe.style.overflow = 'hidden';
+            iframe.style.display = 'block';
+
+            contentWrapper.appendChild(iframe);
+            previewContainer.appendChild(closeBtn);
+            previewContainer.appendChild(contentWrapper);
+
+            // Click on content opens chatbot with notification
+            contentWrapper.addEventListener('click', () => {
+                this.hideLauncherMessagePreview();
+                this.openChatbot();
+                // Send notification data to iframe to open new chat
+                const iframeComponent = document.getElementById(this.elements.chatbotIframeComponent);
+                if (iframeComponent?.contentWindow) {
+                    setTimeout(() => {
+                        iframeComponent.contentWindow.postMessage({
+                            type: 'OPEN_WITH_NOTIFICATION',
+                            data: { content: data.content || '', notificationId: data.notificationId || '' }
+                        }, '*');
+                    }, 500);
+                }
+            });
+
+            // Insert before the icon inside the launcher container
+            chatBotIcon.prepend(previewContainer);
+
+            // Write HTML content into the iframe
+            setTimeout(() => {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (!iframeDoc) return;
+
+                const previewResetCss = `
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        min-height: 0 !important;
+                        height: auto !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        background: transparent !important;
+                        overflow: hidden !important;
+                        display: block !important;
+                        font-family: system-ui, -apple-system, sans-serif;
+                    }
+                    body > * {
+                        max-width: 100% !important;
+                        box-sizing: border-box !important;
+                    }
+                    img { max-width: 100%; height: auto; }
+                `;
+
+                iframeDoc.open();
+                if (isFullHtmlDocument) {
+                    iframeDoc.write(rawContent);
+                } else {
+                    iframeDoc.write(`<!DOCTYPE html><html><head></head><body>${rawContent}</body></html>`);
+                }
+                iframeDoc.close();
+
+                const head = iframeDoc.head || iframeDoc.getElementsByTagName('head')[0];
+                if (head) {
+                    const style = iframeDoc.createElement('style');
+                    style.textContent = previewResetCss;
+                    head.appendChild(style);
+                }
+
+                const maxWidth = Math.min(360, window.innerWidth - 40);
+                iframe.style.width = maxWidth + 'px';
+                previewContainer.style.width = maxWidth + 'px';
+
+                const measureAndResize = () => {
+                    const body = iframeDoc.body;
+                    if (!body) return;
+                    body.style.setProperty('height', 'auto', 'important');
+                    body.style.setProperty('min-height', '0', 'important');
+
+                    const skipTags = { SCRIPT: 1, STYLE: 1, META: 1, TITLE: 1, LINK: 1, NOSCRIPT: 1, HEAD: 1 };
+                    let minLeft = Infinity, minTop = Infinity, maxRight = 0, maxBottom = 0;
+                    let found = false;
+                    for (let i = 0; i < body.children.length; i++) {
+                        const el = body.children[i];
+                        if (skipTags[el.tagName]) continue;
+                        const rect = el.getBoundingClientRect();
+                        if (!rect.width && !rect.height) continue;
+                        found = true;
+                        minLeft = Math.min(minLeft, rect.left);
+                        minTop = Math.min(minTop, rect.top);
+                        maxRight = Math.max(maxRight, rect.right);
+                        maxBottom = Math.max(maxBottom, rect.bottom);
+                    }
+
+                    let width = found ? Math.ceil(maxRight - Math.max(minLeft, 0)) : (body.scrollWidth || 0);
+                    let height = found ? Math.ceil(maxBottom - Math.max(minTop, 0)) : (body.scrollHeight || 0);
+                    width = Math.min(Math.max(width, 200), maxWidth);
+                    height = Math.min(Math.max(height, 40), 320);
+
+                    iframe.style.width = width + 'px';
+                    iframe.style.height = height + 'px';
+                    previewContainer.style.width = width + 'px';
+                };
+
+                measureAndResize();
+                setTimeout(measureAndResize, 50);
+                setTimeout(measureAndResize, 150);
+            }, 0);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                previewContainer.classList.add('hello-launcher-msg-preview-visible');
+            });
+
+            // Auto-dismiss based on TTL (default 10s for preview)
+            const dismissTimeout = Math.min((data.ttl || 10) * 1000, 30000);
+            this._launcherPreviewTimer = setTimeout(() => {
+                this.hideLauncherMessagePreview();
+            }, dismissTimeout);
+        }
+
+        hideLauncherMessagePreview() {
+            if (this._launcherPreviewTimer) {
+                clearTimeout(this._launcherPreviewTimer);
+                this._launcherPreviewTimer = null;
+            }
+            const previewId = `${this.prefix}launcher-msg-preview`;
+            const existing = document.getElementById(previewId);
+            if (existing) {
+                existing.classList.remove('hello-launcher-msg-preview-visible');
+                existing.classList.add('hello-launcher-msg-preview-hide');
+                setTimeout(() => {
+                    existing.remove();
+                }, 300);
+            }
+        }
+
         enableDomainTracking() {
             if (this.state.domainTrackingStarted) return
             this.state.domainTrackingStarted = true
@@ -785,6 +968,8 @@
             if (this.state?.chatbotSize !== 'NORMAL') {
                 this.toggleFullscreen(false);
             }
+            // Hide launcher message preview when chatbot opens
+            this.hideLauncherMessagePreview();
             const interfaceEmbed = document.getElementById(this.elements.chatbotIconContainer);
             const iframeContainer = document.getElementById(this.elements.chatbotIframeContainer);
             const openMessage = { type: 'open', data: {} };
@@ -907,7 +1092,7 @@
             iframe.title = 'iframe';
             iframe.allowFullscreen = true;
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation');
-            iframe.allow = 'microphone *; camera *; midi *; encrypted-media *';
+            iframe.allow = 'microphone *; camera *; midi *; encrypted-media *; clipboard-write *; clipboard-read *';
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.setAttribute('width', '100%');

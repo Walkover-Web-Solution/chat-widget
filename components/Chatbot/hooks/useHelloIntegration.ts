@@ -5,7 +5,7 @@ import { MESSAGE_TYPES } from '@/components/Interface-Chatbot/Messages/MessageTy
 import { getAllChannels, getHelloChatHistoryApi, sendMessageToHelloApi } from '@/config/helloApi';
 import socketManager from '@/hooks/socketManager';
 import { setDataInAppInfoReducer } from '@/store/appInfo/appInfoSlice';
-import { setData, setHelloEventMessage, setImages, setInitialMessages, setOpenHelloForm, setPaginateMessages } from '@/store/chat/chatSlice';
+import { setData, setHelloEventMessage, setImages, setInitialMessages, setOpenHelloForm, setPaginateMessages, moveThreadMessages } from '@/store/chat/chatSlice';
 import { setChannelListData, setHelloClientInfo, setHelloKeysData } from '@/store/hello/helloSlice';
 import { useAppDispatch } from '@/store/useTypedHooks';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
@@ -214,7 +214,7 @@ export const useOnSendHello = () => {
     tabSessionId
   });
 
-  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId, rawHelloMsgList } = useCustomSelector((state) => {
+  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId, rawHelloMsgList, currentSubThreadId } = useCustomSelector((state) => {
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
     return ({
@@ -228,7 +228,8 @@ export const useOnSendHello = () => {
       companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
       demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false,
       demoSessionId: state.appInfo?.[tabSessionId]?.demoSessionId,
-      rawHelloMsgList: state.Chat.rawHelloMsgList
+      rawHelloMsgList: state.Chat.rawHelloMsgList,
+      currentSubThreadId: state.appInfo?.[tabSessionId]?.subThreadId,
     })
   });
 
@@ -245,6 +246,9 @@ export const useOnSendHello = () => {
       let workingChannelId = channelIdToUse;
       if (!chatIdToUse && !channelIdToUse) {
         workingChannelId = generateChannelId(companyId);
+        if (currentSubThreadId?.startsWith('notification-') && currentSubThreadId !== workingChannelId) {
+          globalDispatch(moveThreadMessages({ from: currentSubThreadId, to: workingChannelId }));
+        }
         dispatch(setDataInAppInfoReducer({
           subThreadId: workingChannelId
         }));
@@ -285,7 +289,7 @@ export const useOnSendHello = () => {
         customer_name: null,
         customer_number: null,
         customer_mail: null,
-        team_id: teamIdToUse,
+        team_id: teamIdToUse || null,
         new: true,
         channel_hex: workingChannelId || undefined
       } : undefined;
@@ -366,6 +370,9 @@ export const useOnSendHello = () => {
           overrideChannelId: "",
           ...sessionIdUpdate
         }));
+        if (workingChannelId && data?.['channel'] && workingChannelId !== data?.['channel']) {
+          globalDispatch(moveThreadMessages({ from: workingChannelId, to: data?.['channel'] }));
+        }
         // no need to append user message again this time
         // addHelloMessage(newMessage, data?.['channel']);
         if (!demo_widget) {
@@ -427,7 +434,8 @@ export const useOnSendHello = () => {
     replyToMessage,
     overrideChannelId,
     demoSessionId,
-    rawHelloMsgList
+    rawHelloMsgList,
+    currentSubThreadId
   ]);
 };
 

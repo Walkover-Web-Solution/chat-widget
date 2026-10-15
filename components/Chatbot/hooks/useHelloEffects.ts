@@ -23,17 +23,6 @@ import { useReduxStateManagement } from './useReduxManagement';
 import { useScreenSize } from './useScreenSize';
 import { useTabVisibility } from './useTabVisibility';
 
-interface HelloMessage {
-    role: string;
-    message_id?: string;
-    from_name?: string;
-    content: string;
-    id?: string;
-    chat_id?: string;
-    urls?: string[];
-    channel?: string;
-}
-
 interface UseHelloIntegrationProps {
     messageRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
     chatSessionId: string;
@@ -51,7 +40,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     const { currentChannelId, isHelloUser } = useReduxStateManagement({ chatSessionId, tabSessionId });
 
-    const { companyId, botId, reduxChatSessionId, totalNoOfUnreadMsgs, isToggledrawer, isChatbotOpen, isChatbotMinimized, unReadCountInCurrentChannel, callToken, demo_widget, helloVariables } = useCustomSelector((state) => ({
+    const { companyId, botId, reduxChatSessionId, totalNoOfUnreadMsgs, isToggledrawer, isChatbotOpen, isChatbotMinimized, unReadCountInCurrentChannel, callToken, demo_widget, helloVariables, unreadNotificationCount } = useCustomSelector((state) => ({
         companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
         botId: state.Hello?.[chatSessionId]?.widgetInfo?.bot_id || '',
         reduxChatSessionId: state.draftData?.chatSessionId,
@@ -72,6 +61,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
         callToken: state.appInfo?.[tabSessionId]?.callToken || '',
         demo_widget: state.Hello?.[chatSessionId]?.widgetInfo?.demo_widget || false,
         helloVariables: state.draftData?.hello?.variables || {},
+        unreadNotificationCount: (state.Chat?.notifications || []).filter((notification: any) => !notification.read).length,
     }));
 
     const dispatch = useDispatch();
@@ -97,9 +87,10 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     useEffect(() => {
         if (!demo_widget) {
-            emitEventToParent('SET_BADGE_COUNT', { badgeCount: totalNoOfUnreadMsgs > 99 ? '99+' : totalNoOfUnreadMsgs, channelId: '*' })
+            const combined = (totalNoOfUnreadMsgs || 0) + (unreadNotificationCount || 0);
+            emitEventToParent('SET_BADGE_COUNT', { badgeCount: combined > 99 ? '99+' : combined, channelId: '*' })
         }
-    }, [totalNoOfUnreadMsgs, demo_widget])
+    }, [totalNoOfUnreadMsgs, unreadNotificationCount, demo_widget])
 
     useSocketEvents({ messageRef, fetchChannels, chatSessionId, setLoading, tabSessionId });
     useNotificationSocketEventHandler({ chatSessionId })
@@ -171,7 +162,6 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
     useEffect(() => {
         clearReply();
     }, [currentChannelId]);
-
 
     const initializeHelloServices = async (widgetToken: string = '') => {
         // Prevent duplicate initialization
@@ -318,9 +308,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
                 }
             }
 
-            if (true) {
-                emitEventToParent("ENABLE_DOMAIN_TRACKING")
-            }
+            emitEventToParent("ENABLE_DOMAIN_TRACKING")
 
         } catch (error) {
             console.error("Error initializing Hello services:", error);
