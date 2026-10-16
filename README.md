@@ -2,13 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Documentation Reading Order (Required)
 
-AI tools and contributors must read the following documents
-in order before making any code changes:
+AI tools and contributors must read these before making any code changes:
 
-1. docs/ARCHITECTURE.md — system boundaries and data flow
-2. docs/AI_INSTRUCTIONS.md — mandatory AI and contributor rules
-3. docs/MODULE_CHAT_WIDGET.md — chat widget module overview
-4. Feature-level documentation under docs/ (e.g. MODULE_CHAT_WIDGET_*.md)
+1. [AGENTS.md](AGENTS.md): commands, rules, and which doc to read for each area
+2. [docs/README.md](docs/README.md): index of every doc
+3. [docs/architecture.md](docs/architecture.md), then the module or flow doc for the area you're changing
 
 ## Getting Started
 
@@ -49,9 +47,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Documentation
 
-The following documents provide a high-level and detailed understanding of the product, its architecture, and major modules.
-
-- **Architecture Overview**: `docs/ARCHITECTURE.md`
-- **AI / Contributor Instructions**: `docs/AI_INSTRUCTIONS.md`
-- **Module Documentation**:
-  - Chat Widget: `docs/MODULE_CHAT_WIDGET.md`
+See [docs/README.md](docs/README.md).
