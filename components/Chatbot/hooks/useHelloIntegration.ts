@@ -159,7 +159,8 @@ export const useFetchChannels = () => {
         } else {
           dispatch(setHelloKeysData({ showWidgetForm: true }))
         }
-        dispatch(setHelloClientInfo({ clientInfo: { Name: customerName, Email: data?.customer_mail, Phonenumber: data?.customer_number } }));
+        // drop undefineds so a partial list response doesn't wipe form/script values
+        dispatch(setHelloClientInfo({ clientInfo: JSON.parse(JSON.stringify({ Name: customerName, Email: data?.customer_mail, Phonenumber: data?.customer_number })) }));
         return data;
       })
       .catch(error => {
@@ -214,7 +215,7 @@ export const useOnSendHello = () => {
     tabSessionId
   });
 
-  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId, rawHelloMsgList, currentSubThreadId } = useCustomSelector((state) => {
+  const { assigned_type, showWidgetForm, images, helloVariables, companyId, demo_widget, demoSessionId, rawHelloMsgList, currentSubThreadId, clientInfo } = useCustomSelector((state) => {
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
     return ({
@@ -230,6 +231,7 @@ export const useOnSendHello = () => {
       demoSessionId: state.appInfo?.[tabSessionId]?.demoSessionId,
       rawHelloMsgList: state.Chat.rawHelloMsgList,
       currentSubThreadId: state.appInfo?.[tabSessionId]?.subThreadId,
+      clientInfo: state.Hello?.[chatSessionId]?.clientInfo,
     })
   });
 
@@ -281,14 +283,15 @@ export const useOnSendHello = () => {
         uuid,
         unique_id,
         country: null,
-        pseudo_name: null,
+        // clientInfo is kept current by list API, the form and the script
+        pseudo_name: clientInfo?.Name ? false : null,
         presence_channel,
         country_iso2: null,
         chatInputSubmitted: false,
         is_blocked: null,
-        customer_name: null,
-        customer_number: null,
-        customer_mail: null,
+        customer_name: clientInfo?.Name || null,
+        customer_number: clientInfo?.Phonenumber || null,
+        customer_mail: clientInfo?.Email || null,
         team_id: teamIdToUse || null,
         new: true,
         channel_hex: workingChannelId || undefined
