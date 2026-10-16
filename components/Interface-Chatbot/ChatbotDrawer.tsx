@@ -1,6 +1,7 @@
 'use client';
 
 import { AlignLeft, Bot, Bell, ChevronDown, ChevronRight, ChevronUp, MessageSquareText, Phone, Send, Users, X } from "lucide-react";
+import { getMergeParams } from '@/config/helloApi';
 import { useContext, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -81,9 +82,9 @@ const ChatbotDrawer = ({
     hideCloseButton,
     voice_call_widget,
     show_msg91,
-    isChatbotMinimized,
     isFullScreen,
-    agentTeams
+    agentTeams,
+    isMergedWidget
   } = useCustomSelector((state) => {
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
     const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
@@ -96,8 +97,8 @@ const ChatbotDrawer = ({
       tagline: state.Hello?.[chatSessionId]?.widgetInfo?.tagline || '',
       hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : state.appInfo?.[tabSessionId]?.hideCloseButton || false,
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
+      isMergedWidget: 'flow_origin' in getMergeParams(),
       show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
-      isChatbotMinimized: state.draftData?.isChatbotMinimized || false,
       isFullScreen: (fullScreen === true || fullScreen === 'true') ?? false,
       agentTeams: state.Hello?.[chatSessionId]?.agent_teams || {}
     };
@@ -503,7 +504,7 @@ const ChatbotDrawer = ({
           )}
 
           {/* Teams Section */}
-          {(teamsList || []).length > 0 && (
+          {!isMergedWidget && (teamsList || []).length > 0 && (
             <div className={`teams-section ${notifications.length > 0 && hasChannels ? '' : 'mt-3'}`}>
               <div className="teams-header pb-2 flex items-center">
                 <h3 className="px-4 text-[11px] font-semibold tracking-wider opacity-60 uppercase">Talk to our teams</h3>
@@ -579,7 +580,7 @@ const ChatbotDrawer = ({
       )}
 
       {/* Voice Call Section */}
-      {(voice_call_widget || (teamsList || []).length === 0) && (
+      {!isMergedWidget && (voice_call_widget || (teamsList || []).length === 0) && (
         <div className={`marketing-banner bg-[var(--drawer-color)] px-4 pt-3 pb-3 ${(teamsList || []).length === 0 && (filteredChannels || []).length === 0
           ? ''
           : 'mt-auto border-t border-[var(--foreground)]/10'
@@ -630,6 +631,7 @@ const ChatbotDrawer = ({
     currentTeamId,
     callState,
     voice_call_widget,
+    isMergedWidget,
     primaryTextColor,
     primaryBgColor,
     handleChangeChannel,
