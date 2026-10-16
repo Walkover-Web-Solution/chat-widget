@@ -41,6 +41,7 @@ export interface HelloData {
   }
   fullScreen?: boolean | 'true' | 'false',
   viewMode: 'chatbot' | 'ticket'
+  prefillMessage?: string
 }
 
 export interface ChannelListData {

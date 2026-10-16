@@ -5,6 +5,7 @@ import { uploadImage } from "@/config/api";
 import { uploadAttachmentToHello } from "@/config/helloApi";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
 import { useTypingStatus } from "@/hooks/socketEventEmitter";
+import { setDataInDraftReducer } from "@/store/draftData/draftDataSlice";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { ParamsEnums } from "@/utils/enums";
 import { isColorLight } from "@/utils/themeUtility";
@@ -12,7 +13,8 @@ import { TextField, useTheme } from "@mui/material";
 import debounce from "lodash.debounce";
 import { ChevronDown, Paperclip, Send, Smile, X } from "lucide-react";
 import Image from "next/image";
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useChatActions, useSendMessage } from "../Chatbot/hooks/useChatActions";
 import { useSendMessageToHello } from "../Chatbot/hooks/useHelloIntegration";
 import CallButton from "./CallButton";
@@ -38,6 +40,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   const [inputValue, setInputValue] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const theme = useTheme();
+  const dispatch = useDispatch();
   const isLight = isColorLight(theme.palette.primary.main);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emitTypingStatus = useTypingStatus({ chatSessionId, tabSessionId });
@@ -45,7 +48,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   // Reply context
   const { replyToMessage, clearReply } = useReplyContext();
 
-  const { isHelloUser, mode, inbox_id, show_send_button, assigned_type, ticketMode, isChannelBlocked } = useCustomSelector((state) => ({
+  const { isHelloUser, mode, inbox_id, show_send_button, assigned_type, ticketMode, isChannelBlocked, prefillInputMessage } = useCustomSelector((state) => ({
     isHelloUser: state.draftData?.isHelloUser || false,
     // Peer (widget-to-widget) channel blocked by the other side: sending is disabled
     isChannelBlocked: !!state.Hello?.[chatSessionId]?.channelListData?.channels?.find((channel: any) => channel?.channel === currentChannelId)?.is_blocked,
@@ -57,6 +60,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
       return foundType === undefined ? 'bot' : foundType;
     })(),
     ticketMode: state.Hello?.[chatSessionId]?.helloConfig?.viewMode === 'ticket',
+    prefillInputMessage: state.draftData?.prefillInputMessage || null,
   }));
 
   const { messageRef } = useContext(MessageContext);
@@ -93,6 +97,9 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
   const handleSendMessage = useCallback((messageObj: { message?: string } = {}) => {
     if (isChannelBlocked) return;
     setInputValue('');
+    if (prefillInputMessage) {
+      dispatch(setDataInDraftReducer({ prefillInputMessage: null }));
+    }
     if (isHelloUser) {
       sendMessageToHello?.();
       emitTypingStatus("not-typing");
@@ -101,7 +108,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
     }
     // Clear reply after sending message
     clearReply();
-  }, [isHelloUser, sendMessage, sendMessageToHello, clearReply, isChannelBlocked]);
+  }, [isHelloUser, sendMessage, sendMessageToHello, clearReply, isChannelBlocked, emitTypingStatus, prefillInputMessage, dispatch]);
 
   const handleMessage = useCallback((event: MessageEvent) => {
     if (event?.data?.type === "open") {
@@ -115,6 +122,15 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
       window.removeEventListener("message", handleMessage);
     };
   }, [handleMessage]);
+
+  useLayoutEffect(() => {
+    if (!prefillInputMessage) return;
+    setInputValue(prefillInputMessage);
+    if (messageRef?.current) {
+      messageRef.current.value = prefillInputMessage;
+      messageRef.current.focus();
+    }
+  }, [prefillInputMessage, messageRef]);
 
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -189,6 +205,9 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
       messageRef.current.value = value;
     }
     setInputValue(value);
+    if (prefillInputMessage) {
+      dispatch(setDataInDraftReducer({ prefillInputMessage: null }));
+    }
 
     if (isHelloUser) {
       if (value.trim()) {
@@ -199,7 +218,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
         debouncedStopTyping.cancel();
       }
     }
-  }, [messageRef, isHelloUser, emitTypingStatus, debouncedStopTyping]);
+  }, [messageRef, isHelloUser, emitTypingStatus, debouncedStopTyping, prefillInputMessage, dispatch]);
 
   useEffect(() => {
     return () => {
@@ -388,6 +407,7 @@ const ChatbotTextField: React.FC<ChatbotTextFieldProps> = ({ className, chatSess
           <TextField
             key={subThreadId || currentTeamId}
             inputRef={messageRef}
+            value={inputValue}
             onChange={handleInputChange}
             multiline
             fullWidth
