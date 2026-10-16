@@ -22,6 +22,7 @@ import StarterQuestions from '../Interface-Chatbot/Messages/StarterQuestions';
 import { ChatBotGif } from '@/assests/assestsIndex';
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
 import { setToggleDrawer } from '@/store/chat/chatSlice';
+import { setDataInDraftReducer } from '@/store/draftData/draftDataSlice';
 import { useAppDispatch } from '@/store/useTypedHooks';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { useChatEffects } from './hooks/useChatEffects';
@@ -40,28 +41,44 @@ interface ChatbotProps {
   tabSessionId: string
 }
 
-// Memoized components
-const EmptyChatView = React.memo(() => (
-  <div className="flex-1 flex flex-col items-center justify-center w-full max-w-5xl mx-auto mt-[-84px] p-5">
-    <div className="flex flex-col items-center w-full">
-      <Image
-        src={ChatBotGif}
-        alt="Chatbot"
-        className="block"
-        width={100}
-        height={100}
-        priority
-      />
-      <h2 className="text-xl font-bold">
-        What can I help with?
-      </h2>
+const EmptyChatView = React.memo(() => {
+  const dispatch = useAppDispatch();
+  // openWithMessage > config.prefillMessage > ''
+  const { eventPrefill, configPrefill } = useCustomSelector((state) => {
+    const chatSessionId = state.draftData?.chatSessionId || '';
+    return {
+      eventPrefill: state.draftData?.prefillInputMessage || '',
+      configPrefill: state.Hello?.[chatSessionId]?.helloConfig?.prefillMessage || '',
+    };
+  });
+
+  useEffect(() => {
+    const message = eventPrefill || configPrefill;
+    if (message) dispatch(setDataInDraftReducer({ prefillInputMessage: message }));
+  }, [configPrefill]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-5xl mx-auto mt-[-84px] p-5">
+      <div className="flex flex-col items-center w-full">
+        <Image
+          src={ChatBotGif}
+          alt="Chatbot"
+          className="block"
+          width={100}
+          height={100}
+          priority
+        />
+        <h2 className="text-xl font-bold">
+          What can I help with?
+        </h2>
+      </div>
+      <div className="max-w-5xl w-full mt-8">
+        <ChatbotTextField />
+      </div>
+      <StarterQuestions />
     </div>
-    <div className="max-w-5xl w-full mt-8">
-      <ChatbotTextField />
-    </div>
-    <StarterQuestions />
-  </div>
-));
+  );
+});
 
 const ActiveChatView = React.memo(({ isSmallScreen }: { isSmallScreen: boolean }) => (
   <div className="flex flex-col flex-1 overflow-hidden">
