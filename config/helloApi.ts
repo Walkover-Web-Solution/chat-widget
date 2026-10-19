@@ -2,7 +2,6 @@ import { errorToast } from "@/components/customToast";
 import { PAGE_SIZE } from "@/utils/enums";
 import axios from "@/utils/helloInterceptor";
 import { getLocalStorage, setLocalStorage } from "@/utils/utilities";
-import { GetSessionStorageData } from "@/utils/ChatbotUtility";
 import { safeLocalStorage } from "@/utils/safeStorage";
 import { extractFullMessageText } from "@/utils/readMore";
 
@@ -10,14 +9,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const env = urlParams.get('env');
 const HELLO_HOST_URL = env !== 'stage' ? process.env.NEXT_PUBLIC_MSG91_HOST_URL : 'https://stageapi.phone91.com';
 const PUSH_NOTIFICATION_URL = process.env.NEXT_PUBLIC_PUSH_NOTIFICATION_URL;
-
-// Widget merge: returns { flow_origin, integration } only when both are configured.
-export function getMergeParams(): { flow_origin: string; integration: string } | {} {
-  try {
-    const { flow_origin, integration } = JSON.parse(GetSessionStorageData('helloConfig') || '{}');
-    return flow_origin && integration ? { flow_origin, integration } : {};
-  } catch { return {}; }
-}
 
 export const getAuthorization = () => {
   const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
