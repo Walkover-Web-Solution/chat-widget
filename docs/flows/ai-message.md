@@ -7,7 +7,7 @@ verified_on: 2026-10-14
 
 A user sends text (and optional uploaded images/PDFs) to a GTWY AI agent. The widget adds two optimistic messages, POSTs to the Python GTWY API, and gets the answer back asynchronously over **rtlayer**, replacing the "Talking with AI" placeholder in place. The answer renders as markdown or, for JSON with `components`, as MUI widgets.
 
-Applies only when `draftData.isHelloUser` is false. Hello mode goes through `useSendMessageToHello` instead ([hello](../integrations/hello.md#sending-a-message)). Module details: [ai-chat](../modules/ai-chat.md) (slice shape, rtlayer branch table), [chat-ui](../modules/chat-ui.md) (rendering), [interface-renderer](../modules/interface-renderer.md) (JSON UI). Endpoint list: [api](../api.md).
+Applies only when `draftData.isHelloUser` is false. Hello mode goes through `useSendMessageToHello` instead ([hello](../integrations/hello.md#sending-a-message)). Module details: [chat-ui](../modules/chat-ui.md) (rendering), [interface-renderer](../modules/interface-renderer.md) (JSON UI). Endpoint list: [api](../api.md).
 
 ## Sequence
 
@@ -81,7 +81,7 @@ sequenceDiagram
    ```ts
    (chatSessionId + (threadId || userId) + (subThreadId || userId)).replace(/ /g, "_")
    ```
-   re-attached when any of those change; the effect cleanup also clears the timer. The backend must publish to the same string ([ai-chat](../modules/ai-chat.md#receiving-the-answer-rtlayer)).
+   re-attached when any of those change; the effect cleanup also clears the timer. The backend must publish to the same string.
 7. **Handle events** — `handleMessageRTLayer(message: string)` → `JSON.parse`, then the first matching case:
 
    | Event (parsed) | Dispatch | Ends wait? |

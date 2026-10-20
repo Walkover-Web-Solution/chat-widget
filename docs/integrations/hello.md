@@ -24,7 +24,7 @@ MSG91 Hello is the human-agent backend: the widget registers a client (anonymous
 | `hooks/socketEventHandler.ts` | `useSocketEvents`: handles `NewPublish` and `Typing` socket events. |
 | `hooks/socketEventEmitter.ts` | `useTypingStatus`: emits `typing` / `not-typing`. |
 | `store/hello/helloReducer.ts`, `store/hello/helloSlice.ts` | The `Hello` slice, keyed by `chatSessionId`. |
-| `store/hello/helloSaga.ts`, `store/hello/helloGeneratorFunctions.ts` | `getHelloDetailsSaga` — despite the name this is the **GTWY** bridge subscribe (`getHelloDetailsApi` in `config/api.ts`), not MSG91 Hello. See [ai-chat](../modules/ai-chat.md). |
+| `store/hello/helloSaga.ts`, `store/hello/helloGeneratorFunctions.ts` | `getHelloDetailsSaga` — despite the name this is the **GTWY** bridge subscribe (`getHelloDetailsApi` in `config/api.ts`), not MSG91 Hello. |
 | `types/hello/HelloReduxType.ts` | `$HelloReduxType`, `HelloData` (host config), `ChannelListData`, `Channel`. |
 | `components/Chatbot/hooks/HelloVoiceService.ts` | WebRTC singleton (`helloVoiceService`) wrapping `msg91-webrtc-call`. |
 | `components/Chatbot/hooks/useCallUI.ts` | React bridge to `helloVoiceService` events. |
@@ -272,4 +272,4 @@ Every body also carries `user_data: getUserData()` (localStorage `userData` minu
 - New message renderer: wire it in `components/Interface-Chatbot/Messages/HumanOrBotMessage.tsx` (see [chat-ui](../modules/chat-ui.md)); send replies through `useSendMessageToHello`, never `sendMessageToHelloApi` directly, so new-channel and pre-subscribe logic run.
 - Call changes stay inside `helloVoiceService` / `useCallUI`; do not add a second call-state source.
 
-Related: [embed-scripts](../modules/embed-scripts.md), [chat-ui](../modules/chat-ui.md), [ai-chat](../modules/ai-chat.md), [hello-human-chat](../flows/hello-human-chat.md), [api](../api.md), [environment](../environment.md).
+Related: [embed-scripts](../modules/embed-scripts.md), [chat-ui](../modules/chat-ui.md), [ai-message](../flows/ai-message.md), [hello-human-chat](../flows/hello-human-chat.md), [api](../api.md), [environment](../environment.md).

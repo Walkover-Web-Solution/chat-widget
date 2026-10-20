@@ -23,11 +23,9 @@ Start with [../AGENTS.md](../AGENTS.md), then read the doc for the area you're c
 |---|---|
 | [modules/embed-scripts.md](modules/embed-scripts.md) | `public/` loader scripts, the iframe, the postMessage handlers, the three env copies |
 | [modules/app-shell.md](modules/app-shell.md) | Routes, providers, the store setup (persist, cross-tab sync, `urlData` middleware), region config, build |
-| [modules/ai-chat.md](modules/ai-chat.md) | GTWY AI bot: sending, rtlayer replies, the `Chat` slice, threads, history |
 | [integrations/hello.md](integrations/hello.md) | MSG91 Hello: identity, channels, `/v2/send/`, socket.io, feedback, interactive messages, calling, demo widget |
 | [modules/chat-ui.md](modules/chat-ui.md) | The component tree, AI vs Hello mode, message rendering, reply, drawer, header |
 | [modules/interface-renderer.md](modules/interface-renderer.md) | JSON UI (`{components: [...]}`) in AI replies, `componentMap`, actions, `/chatbotpreview` |
-| [modules/rag-and-notifications.md](modules/rag-and-notifications.md) | The RAG knowledge-base embed, the notification socket and FCM, co-browsing |
 
 ## Flows
 
@@ -66,12 +64,11 @@ Open questions the code can't answer. Answer them in the doc that asks, then del
   All in [modules/embed-scripts.md](modules/embed-scripts.md).
 - **Storage:** whether fully blocked storage is supported, and why #472 was reverted ([flows/widget-boot.md](flows/widget-boot.md), [modules/app-shell.md](modules/app-shell.md)).
 - **AI chat:**
-  - rtlayer vs socket.io, and whether the rtlayer keys are meant to be public ([modules/ai-chat.md](modules/ai-chat.md))
+  - rtlayer vs socket.io, and whether the rtlayer keys are meant to be public ([flows/ai-message.md](flows/ai-message.md))
   - the JSON UI schema and the `flow.sokt.io` table pagination ([modules/interface-renderer.md](modules/interface-renderer.md))
 - **UI:**
   - whether the AI/Human tab should switch modes, and whether reply should work for AI chats ([modules/chat-ui.md](modules/chat-ui.md))
   - who embeds `/chatbotpreview` ([ui/routes.md](ui/routes.md))
   - deleting the dead components ([ui/components.md](ui/components.md))
 - **Other:**
-  - which pages embed `rag-prod.js` ([modules/rag-and-notifications.md](modules/rag-and-notifications.md))
   - why the minimize button was reverted ([recipes.md](recipes.md))

@@ -15,7 +15,7 @@ verified_on: 2026-10-14
 | `chatSessionId` | The widget instance key. For GTWY it is `chatbot_id`; for Hello it is the widget token, plus `_<unique_id>` when one is given. Slices are keyed by it. | `store/index.js` |
 | `tabSessionId` | Composite `<chatSessionId>_<tab>`, the key into `appInfo`. In `draftData` the same name holds only the raw per-tab timestamp. | `hoc/addUrlDataHoc.tsx` |
 | `urlData` | The `{chatSessionId, tabSessionId, ...appInfo}` that middleware attaches to every action. | `store/index.js:customMiddleware` |
-| thread / sub-thread | GTWY: the host chooses a thread (`threadId`); sub-threads are the chats inside it. For Hello, `subThreadId` holds the channel id. | [modules/ai-chat.md](modules/ai-chat.md) |
+| thread / sub-thread | GTWY: the host chooses a thread (`threadId`); sub-threads are the chats inside it. For Hello, `subThreadId` holds the channel id. | [flows/ai-message.md](flows/ai-message.md) |
 | `widgetToken` | The Hello widget id. It is stored as localStorage `WidgetId` and prefixes every widget-scoped localStorage key. | `config/helloApi.ts` |
 | `a_clientId` / `k_clientId` | The anonymous and known Hello client uuids. The Hello `authorization` header is `WidgetId:clientId`. | `config/helloApi.ts` |
 | channel | A Hello conversation (ticket). The channel string is also the socket room. `id` is the numeric chat id. | [integrations/hello.md](integrations/hello.md) |

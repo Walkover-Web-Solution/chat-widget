@@ -5,7 +5,7 @@ verified_on: 2026-10-14
 ---
 # Recipes
 
-Step-by-step for the changes this repo sees most often. Each recipe was learned from real commits and checked against the current code. Background lives in the module docs: [embed-scripts](modules/embed-scripts.md), [chat-ui](modules/chat-ui.md), [ai-chat](modules/ai-chat.md), [hello](integrations/hello.md).
+Step-by-step for the changes this repo sees most often. Each recipe was learned from real commits and checked against the current code. Background lives in the module docs: [embed-scripts](modules/embed-scripts.md), [chat-ui](modules/chat-ui.md), [hello](integrations/hello.md).
 
 ## Ship a change (two PRs: test, then production)
 

@@ -28,7 +28,7 @@ Host websites load one plain-JS file from `public/`. It draws a launcher button 
 | `hooks/HELLO/eventHandlers/localStorage/localStorageEventsHandler.ts` | Syncs `k_clientId` / `a_clientId` writes into the Hello Redux slice. |
 | `utils/emitEventsToParent/emitEventsToParent.tsx` | `emitEventToParent(type, data)` — the typed iframe → host sender. `ParentEventType` lists the allowed types. |
 
-Both hook registries are mounted once in `components/Chatbot-Wrapper/ChatbotWrapper.tsx` (`ChatbotWithHooks`), which also posts `interfaceLoaded` to the host on mount. Related docs: [widget boot flow](../flows/widget-boot.md), [app shell](app-shell.md), [Hello integration](../integrations/hello.md), [AI chat](ai-chat.md), full host API and message table in [api.md](../api.md).
+Both hook registries are mounted once in `components/Chatbot-Wrapper/ChatbotWrapper.tsx` (`ChatbotWithHooks`), which also posts `interfaceLoaded` to the host on mount. Related docs: [widget boot flow](../flows/widget-boot.md), [app shell](app-shell.md), [Hello integration](../integrations/hello.md), [AI message flow](../flows/ai-message.md), full host API and message table in [api.md](../api.md).
 
 ## How it works
 

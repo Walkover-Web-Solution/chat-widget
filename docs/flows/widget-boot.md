@@ -7,7 +7,7 @@ verified_on: 2026-10-14
 
 A host page loads one embed script; the script builds a launcher and an iframe at `<origin>/chatbot?interfaceDetails=…`; the Next app inside boots, posts `interfaceLoaded`, and the host answers with its config (`helloData` for MSG91 Hello, `interfaceData` for GTWY). The iframe then starts the backend session: Hello client + socket, or GTWY threads + history + rtlayer.
 
-This doc is the hop list. Details live in: [embed-scripts](../modules/embed-scripts.md) (host API, message tables, env variants), [app-shell](../modules/app-shell.md) (routes, store, session keys), [hello](../integrations/hello.md) (Hello boot steps and endpoints), [ai-chat](../modules/ai-chat.md) (GTWY threads/history). Full endpoint and postMessage tables: [api](../api.md).
+This doc is the hop list. Details live in: [embed-scripts](../modules/embed-scripts.md) (host API, message tables, env variants), [app-shell](../modules/app-shell.md) (routes, store, session keys), [hello](../integrations/hello.md) (Hello boot steps and endpoints), [ai-message](ai-message.md) (GTWY send/receive). Full endpoint and postMessage tables: [api](../api.md).
 
 ## Sequence
 
@@ -105,7 +105,7 @@ G4. **`interfaceData` handler** — `hooks/GTWY/eventHandlers/embeddingScript/em
      modelChanged?, serviceChanged? }
    ```
    `threadId` → `appInfo.threadId` (and `subThreadId: ''` when it differs from the current one); `bridgeName` + `variables` → `appInfo.bridgeName` and `addDefaultContext`; `version_id` → `appInfo.versionId`; UI keys → `Interface` slice; `eventsToSubscribe` filtered by `ALLOWED_EVENTS_TO_SUBSCRIBE`.
-G5. **Chat state** — `components/Chatbot/hooks/useReduxEffects.ts` mirrors ids into `Chat` (bridge defaults to `root`). `components/Chatbot/hooks/useChatEffects.ts`: `getHelloDetailsStart({ slugName, versionId })` (saga → `getHelloDetailsApi`), `useFetchAllThreads` when `threadId && bridgeName` (→ `setThreads`, whose `appInfo` extra-reducer picks `subThreadId`), and `useGetInitialChatHistory` on any id change. See [ai-chat](../modules/ai-chat.md#threads-and-sub-threads).
+G5. **Chat state** — `components/Chatbot/hooks/useReduxEffects.ts` mirrors ids into `Chat` (bridge defaults to `root`). `components/Chatbot/hooks/useChatEffects.ts`: `getHelloDetailsStart({ slugName, versionId })` (saga → `getHelloDetailsApi`), `useFetchAllThreads` when `threadId && bridgeName` (→ `setThreads`, whose `appInfo` extra-reducer picks `subThreadId`), and `useGetInitialChatHistory` on any id change.
 G6. **Realtime** — `components/Chatbot/hooks/useRtlayerEventManager.tsx` opens the rtlayer client (non-Hello only) and listens on `chatSessionId + (threadId || userId) + (subThreadId || userId)`. `useHelloEffects` also runs for GTWY but `initializeHelloServices` returns at the `WidgetId` guard.
 
 ### `?env=stage`
@@ -159,7 +159,7 @@ Storage written during boot (iframe origin unless noted):
 - Bad or missing `interfaceDetails` → defaults; `/chatbot` spins forever (step 6).
 - `/routing-region/` fails → env defaults; boot continues. `/widget-info/` returns `null` → `initializeHelloChat_failed`, no JWT, no socket. Every other Hello call: toast + `null`/`[]` ([hello](../integrations/hello.md#when-it-fails)).
 - Any exception inside `initializeHelloServices` is caught and logged; later steps are skipped.
-- GTWY history/thread calls: see [ai-chat](../modules/ai-chat.md). A 401 from any GTWY call runs `localStorage.clear()` and navigates the iframe to `/?error=session expired` (`utils/interceptor.ts`).
+- GTWY history/thread calls: `config/api.ts`. A 401 from any GTWY call runs `localStorage.clear()` and navigates the iframe to `/?error=session expired` (`utils/interceptor.ts`).
 
 ### Storage blocked
 

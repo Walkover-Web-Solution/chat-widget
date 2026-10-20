@@ -68,14 +68,14 @@ flowchart LR
 
 | System | Used for | Client code | Doc |
 |---|---|---|---|
-| GTWY Node API (`NEXT_PUBLIC_API_BASE_URL`) | History, threads, bridge config, RAG docs | `config/api.ts`, `config/ragApi.ts` | [modules/ai-chat.md](modules/ai-chat.md) |
-| GTWY Python API (`NEXT_PUBLIC_PYTHON_API_BASE_URL`) | Sending AI messages | `config/api.ts` | [modules/ai-chat.md](modules/ai-chat.md) |
-| rtlayer (`rtlayer-client`) | AI replies in real time | `components/Chatbot/hooks/useRtlayerEventManager.tsx` | [modules/ai-chat.md](modules/ai-chat.md) |
+| GTWY Node API (`NEXT_PUBLIC_API_BASE_URL`) | History, threads, bridge config, RAG docs | `config/api.ts`, `config/ragApi.ts` | [flows/ai-message.md](flows/ai-message.md) |
+| GTWY Python API (`NEXT_PUBLIC_PYTHON_API_BASE_URL`) | Sending AI messages | `config/api.ts` | [flows/ai-message.md](flows/ai-message.md) |
+| rtlayer (`rtlayer-client`) | AI replies in real time | `components/Chatbot/hooks/useRtlayerEventManager.tsx` | [flows/ai-message.md](flows/ai-message.md) |
 | MSG91 Hello REST (region host) | Clients, channels, send, feedback, calls | `config/helloApi.ts`, `config/regionConfig.ts` | [integrations/hello.md](integrations/hello.md) |
 | Hello socket.io (region host) | Inbound chat events, typing | `hooks/socketManager.js` | [integrations/hello.md](integrations/hello.md) |
-| Notification socket.io + FCM | Push and launcher notifications | `hooks/notifications/` | [modules/rag-and-notifications.md](modules/rag-and-notifications.md) |
+| Notification socket.io + FCM | Push and launcher notifications | `hooks/notifications/` | – |
 | msg91-webrtc-call | Voice calls | `components/Chatbot/hooks/HelloVoiceService.ts` | [integrations/hello.md](integrations/hello.md) |
-| cobrowse.io | Co-browsing | `hooks/coBrowser/CBManger.ts`, `public/chat-widget.js` | [modules/rag-and-notifications.md](modules/rag-and-notifications.md) |
+| cobrowse.io | Co-browsing | `hooks/coBrowser/CBManger.ts`, `public/chat-widget.js` | – |
 | Cloudflare Pages | Hosting (`@cloudflare/next-on-pages`) | `package.json` `build:pages` | [environment.md](environment.md) |
 
 ## Environments

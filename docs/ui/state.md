@@ -9,7 +9,7 @@ The widget keeps state in five places: a Redux Toolkit store (persisted with red
 
 ## Server state
 
-There is no React Query/SWR cache. API clients are plain axios functions in `config/api.ts` (GTWY), `config/helloApi.ts` (Hello) and `config/ragApi.ts` (RAG). They are called from hooks in `components/Chatbot/hooks/` (`useChatActions.ts`, `useHelloIntegration.ts`, `useHelloEffects.ts`, `useChatEffects.ts`) and from one saga, then the hook dispatches the result into a slice. Realtime data (rtlayer for GTWY, socket.io for Hello) also lands in the slices. Endpoint lists: [api](../api.md); flows: [ai-chat](../modules/ai-chat.md), [hello](../integrations/hello.md).
+There is no React Query/SWR cache. API clients are plain axios functions in `config/api.ts` (GTWY), `config/helloApi.ts` (Hello) and `config/ragApi.ts` (RAG). They are called from hooks in `components/Chatbot/hooks/` (`useChatActions.ts`, `useHelloIntegration.ts`, `useHelloEffects.ts`, `useChatEffects.ts`) and from one saga, then the hook dispatches the result into a slice. Realtime data (rtlayer for GTWY, socket.io for Hello) also lands in the slices. Endpoint lists: [api](../api.md); flows: [ai-message](../flows/ai-message.md), [hello](../integrations/hello.md).
 
 Saga: `store/rootSaga.ts` forks `store/interface/interfaceSaga.ts` (empty) and `store/hello/helloSaga.ts`, which runs `takeLatest("Hello/getHelloDetailsStart", getHelloDetailsSaga)`. Despite the name, `store/hello/helloGeneratorFunctions.ts:getHelloDetailsSaga` calls the GTWY bridge subscribe API and writes `HelloAgentAuth` to localStorage. Nothing else uses sagas; new async work goes in hooks.
 
@@ -25,7 +25,7 @@ Saga: `store/rootSaga.ts` forks `store/interface/interfaceSaga.ts` (empty) and `
 | `draftData` | `store/draftData/draftDataSlice.ts` | flat | `chatSessionId`, `tabSessionId`, `widgetToken`, `chatbotId`, `isHelloUser`, `hello.variables`, `isChatbotMinimized`, `prefillInputMessage` | no | no |
 | `appInfo` | `store/appInfo/` | `` `${chatSessionId}_${tabSessionId}` `` | `threadId`, `subThreadId`, `bridgeName`, `versionId`, `userId`, `config`, `currentChannelId`, `currentChatId`, `currentTeamId`, `showNotificationView`, `callToken`, `hideCloseButton`, `hideFullScreenButton` | sessionStorage `persist:appInfo` | no |
 
-Full shapes: `Interface` in [interface-renderer](../modules/interface-renderer.md), `Hello` in [hello](../integrations/hello.md#redux-shape), `Chat` in [ai-chat](../modules/ai-chat.md), `appInfo` entry in [app-shell](../modules/app-shell.md#session-keys-chatsessionid-tabsessionid-urldata). Types: `types/reduxCore.ts` (`$ReduxCoreType` has no `Chat` key), `types/appInfo/appInfoReduxType.ts`, `types/hello/HelloReduxType.ts`, `types/interface/InterfaceReduxType.ts`.
+Full shapes: `Interface` in [interface-renderer](../modules/interface-renderer.md), `Hello` in [hello](../integrations/hello.md#redux-shape), `Chat` in [ai-message](../flows/ai-message.md), `appInfo` entry in [app-shell](../modules/app-shell.md#session-keys-chatsessionid-tabsessionid-urldata). Types: `types/reduxCore.ts` (`$ReduxCoreType` has no `Chat` key), `types/appInfo/appInfoReduxType.ts`, `types/hello/HelloReduxType.ts`, `types/interface/InterfaceReduxType.ts`.
 
 Persistence configs (all `version: 1`, no `migrate`):
 

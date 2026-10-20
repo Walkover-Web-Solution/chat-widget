@@ -57,7 +57,7 @@ app/chatbot/[chatbotId]/page.tsx
 - **`addUrlDataHoc`** (`hoc/addUrlDataHoc.tsx`) wraps almost every component here. It injects `chatSessionId` (from `state.draftData.chatSessionId`) and `tabSessionId` = `` `${chatSessionId}_${draftData.tabSessionId}` ``, plus any `ParamsEnums` keys listed in its second argument, read from `state.appInfo[tabSessionId]` by `components/Chatbot/hooks/useTabData.ts`. That is why `<Chatbot />` and `<ChatbotHeader />` are rendered without props.
 - **Redux** through `useCustomSelector` (`utils/deepCheckSelector.ts`). Slices read here: `Chat` (messages, loading, drawer, options, images, notifications, starter questions), `Hello[chatSessionId]` (widgetInfo, channelListData, helloConfig, greeting, mode, agent_teams), `Interface[chatSessionId]` (chat title/icon, model switching, thread lists, header buttons, subscribed events), `appInfo[tabSessionId]` (current thread/channel/team, notification view), `draftData` (isHelloUser, prefill, minimized). Shapes live in [state](../ui/state.md).
 - **React contexts**: `ChatContext` (session ids, read by `useChatActions`/`useHelloIntegration`), `MessageContext` (input ref, so the drawer and effects can focus the input or read its value), `ReplyContext`, and `ChatbotContext` from `components/context.tsx` (`chatbotConfig`: title, subtitle, width, `allowBridgeSwitch`, `bridges`).
-- **Action hooks** (owned by [ai-chat](ai-chat.md) and [hello](../integrations/hello.md)): `useChatActions`, `useSendMessage`, `useGetMoreChats`, `useMessageFeedback` from `components/Chatbot/hooks/useChatActions.ts`; `useSendMessageToHello`, `useOnSendHello`, `useGetMoreHelloChats` from `components/Chatbot/hooks/useHelloIntegration.ts`.
+- **Action hooks** (owned by the AI chat hooks and [hello](../integrations/hello.md)): `useChatActions`, `useSendMessage`, `useGetMoreChats`, `useMessageFeedback` from `components/Chatbot/hooks/useChatActions.ts`; `useSendMessageToHello`, `useOnSendHello`, `useGetMoreHelloChats` from `components/Chatbot/hooks/useHelloIntegration.ts`.
 - **Two copies of the current thread.** Components write `appInfo[tabSessionId].subThreadId` (via `setDataInAppInfoReducer`). `components/Chatbot/hooks/useReduxEffects.ts` copies it into `state.Chat.subThreadId`, which `MessageList`, `ReadMoreText` and the feedback buttons read. Write the appInfo one; never set `Chat.subThreadId` directly.
 
 ### GTWY mode, Hello mode, mixed
@@ -147,7 +147,7 @@ Message shape the cards read (subset; Hello fields set by the converter):
 
 ### Notifications
 
-`state.Chat.notifications` is filled by the notification socket ([rag-and-notifications](rag-and-notifications.md)). When there are any, the drawer shows a "Notifications" row that sets `appInfo.showNotificationView`. `NotificationPage` renders each notification's HTML in an `iframe sandbox="allow-same-origin"` (no scripts) and auto-sizes it. "Chat with us" creates `subThreadId: notification-<id>`, clears channel/team, and injects a `pushNotification` bot message with `setHelloEventMessage`.
+`state.Chat.notifications` is filled by the notification socket (`hooks/notifications/`). When there are any, the drawer shows a "Notifications" row that sets `appInfo.showNotificationView`. `NotificationPage` renders each notification's HTML in an `iframe sandbox="allow-same-origin"` (no scripts) and auto-sizes it. "Chat with us" creates `subThreadId: notification-<id>`, clears channel/team, and injects a `pushNotification` bot message with `setHelloEventMessage`.
 
 ### Theming
 

@@ -149,7 +149,7 @@ sequenceDiagram
 | 13 | microphone permission prompt; host `OPEN_CHATBOT` on incoming call; `appInfo.callToken`; localStorage `HelloClientToken` (boot) |
 
 > [!WARNING]
-> Chat messages never trigger the host's launcher preview bubble. `LAUNCHER_MESSAGE_PREVIEW` is sent only for push notifications ([rag-and-notifications](../modules/rag-and-notifications.md)). The host gets only `SET_BADGE_COUNT` for chat.
+> Chat messages never trigger the host's launcher preview bubble. `LAUNCHER_MESSAGE_PREVIEW` is sent only for push notifications (`hooks/notifications/`). The host gets only `SET_BADGE_COUNT` for chat.
 
 > [!WARNING]
 > `setTyping` writes `Chat.isTyping[channel]`, but no component reads it: the agent typing indicator is not rendered. Wire it into `MessageList` before relying on it.

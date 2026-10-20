@@ -7,7 +7,7 @@ verified_on: 2026-10-14
 
 Renders a GTWY AI reply whose content is a JSON object with a `components` array as MUI widgets (buttons, cards, tables, text fields …) inside the assistant bubble. The only caller is `components/Interface-Chatbot/Messages/AssistantMessage.tsx`, which mounts `components/Grid/Grid.tsx` (imported there as `InterfaceGrid`). This doc also covers the Redux `Interface` slice (per-chatbot UI config, thread lists, host variables), the message normalizer `utils/dataConvertWrappers/makeGenericDataFormatUtility.tsx`, the `/chatbotpreview` demo page, and a few unrelated files that live under these globs.
 
-"Interface" means two things in this repo: the JSON UI described here, and the GTWY chatbot configuration stored in `Interface[chatSessionId]`. See the terms table in [ai-chat](./ai-chat.md).
+"Interface" means two things in this repo: the JSON UI described here, and the GTWY chatbot configuration stored in `Interface[chatSessionId]`.
 
 | File | Role |
 |---|---|
@@ -29,7 +29,7 @@ Renders a GTWY AI reply whose content is a JSON object with a `components` array
 ## How it works
 
 ### Where the JSON comes from
-1. The GTWY bot reply arrives over rtlayer (or from history) and is stored in the `Chat` slice; see [ai-chat](./ai-chat.md).
+1. The GTWY bot reply arrives over rtlayer (or from history) and is stored in the `Chat` slice; see [ai-message](../flows/ai-message.md).
 2. `AssistantMessage.tsx` runs `isJSONString` on `message.chatbot_message || message.content` (or `message.error` for error cards) and `JSON.parse`s it.
 3. If the parsed object has `isMarkdown` or `response`, it renders markdown. Otherwise, if it has `components`, it renders:
    ```tsx
@@ -69,7 +69,7 @@ Renders a GTWY AI reply whose content is a JSON object with a `components` array
 
 ### Actions (what a click does)
 `InterfaceButton` and `InterfaceCard` call `utils/ChatbotUtility.ts:perFormAction(action, sendMessage, props)`, which switches on `action.actionType`:
-- `"reply"` → `useSendMessage` sends the button's label as a normal user message to the bot (same HTTP path as typing it; see [ai-chat](./ai-chat.md)).
+- `"reply"` → `useSendMessage` sends the button's label as a normal user message to the bot (same HTTP path as typing it; see [ai-message](../flows/ai-message.md)).
 - `"sendDataToFrontEnd"` → `emitEventToParent('FRONT_END_ACTION', action.variables || action.variable || action.data || action.dataToSend || {})`, a `window.parent.postMessage({ type, data }, "*")` to the host page. The host receives it through the embed script.
   Protocol: [api.md](../api.md) <!-- verify:ignore -->
 - anything else → nothing.
@@ -117,7 +117,7 @@ Interface[chatSessionId] = {
 }
 ```
 
-`interfaceContext[bridgeName].variables` is sent as `interfaceContextData` with every message by `useSendMessage`. `setThreads` is owned functionally by [ai-chat](./ai-chat.md) (thread list semantics, the synthetic first sub-thread).
+`interfaceContext[bridgeName].variables` is sent as `interfaceContextData` with every message by `useSendMessage`. `setThreads` is owned by the `Chat` slice (thread list semantics, the synthetic first sub-thread).
 
 ### `makeGenericDataFormatUtility`
 Exports `convertChatHistoryToGenericFormat(history, isHello)`, `convertEventMessageToGenericFormat(message, isHello)` and two trivial payload builders (`createSendMessageGtwyPayload`, `createSendMessageHelloPayload`). Called by `store/chat/chatReducerV2.ts` (and the dead `components/Chatbot/hooks/chatReducer.ts`).

@@ -23,11 +23,10 @@ There are no tests and no CI. Check changes by hand through a local loader scrip
 - Anything → [docs/architecture.md](docs/architecture.md), then [docs/conventions.md](docs/conventions.md)
 - Loader scripts, `window.*` API, postMessage → [docs/modules/embed-scripts.md](docs/modules/embed-scripts.md) and [docs/api.md](docs/api.md)
 - Boot, URL params, store setup → [docs/modules/app-shell.md](docs/modules/app-shell.md), [docs/flows/widget-boot.md](docs/flows/widget-boot.md)
-- AI bot messages → [docs/modules/ai-chat.md](docs/modules/ai-chat.md), [docs/flows/ai-message.md](docs/flows/ai-message.md)
+- AI bot messages → [docs/flows/ai-message.md](docs/flows/ai-message.md)
 - Hello (human chat, channels, calls) → [docs/integrations/hello.md](docs/integrations/hello.md), [docs/flows/hello-human-chat.md](docs/flows/hello-human-chat.md)
 - Chat UI components → [docs/modules/chat-ui.md](docs/modules/chat-ui.md)
 - JSON UI in AI replies → [docs/modules/interface-renderer.md](docs/modules/interface-renderer.md)
-- RAG embed, notifications, co-browse → [docs/modules/rag-and-notifications.md](docs/modules/rag-and-notifications.md)
 - State, routes, components, styling → [docs/ui/](docs/README.md#ui)
 - A common change → [docs/recipes.md](docs/recipes.md)
 

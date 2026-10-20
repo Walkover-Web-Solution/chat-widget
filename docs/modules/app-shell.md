@@ -39,7 +39,7 @@ The Next.js 15 App Router shell that the host-page iframe loads: routes, the pro
 | `utils/themeUtility.js` | `isColorLight`, `getGradientBackground`, `withAlpha` (canvas-based color parsing, browser only). |
 | `utils/readMore.ts` | Contract for server-truncated messages (`SHOW_MORE_FIELD = "show_more"`). |
 | `utils/preSubscribedChannels.ts` | Module-level set: `markPreSubscribed` / `consumePreSubscribed` to skip one history fetch after early socket subscribe. |
-| `utils/dataConvertWrappers/makeGenericDataFormatUtility.tsx` | Converts GTWY/Hello history and socket events to one message format; builds send payloads. Documented in [ai-chat](ai-chat.md) and [hello](../integrations/hello.md). |
+| `utils/dataConvertWrappers/makeGenericDataFormatUtility.tsx` | Converts GTWY/Hello history and socket events to one message format; builds send payloads. Documented in [hello](../integrations/hello.md). |
 | `utils/appUtility.js`, `utils/router-utility.tsx` | `CustomSuspense`, `supportsLookbehind`; `lazyWithPreload` (unused). |
 | `next.config.ts` | `reactStrictMode: false`, any-host remote images, ESLint and TypeScript errors ignored during build. |
 | `tailwind.config.ts` | Dark mode by `class` or `[data-theme="dark"]`; `primaryTheme` color from `--primary-rgb`; daisyui light/dark/cupcake. |
@@ -54,7 +54,7 @@ The Next.js 15 App Router shell that the host-page iframe loads: routes, the pro
 | `/chatbot` | edge | What the iframe loads: `public/chat-widget*.js` (Hello) and `public/chatbot*.js` (GTWY) set `iframe.src = <origin>/chatbot?interfaceDetails=<urlencoded JSON>`. See [embed-scripts](embed-scripts.md). |
 | `/chatbot/[chatbotId]` | edge | The actual widget. GTWY lands on `/chatbot/<chatbot_id>`; Hello lands on `/chatbot/hello` (literal segment `hello`). |
 | `/chatbotpreview` | edge | Static UI preview that takes `themeColor` by postMessage. See [interface-renderer](interface-renderer.md). |
-| `/rag` | default | Knowledge-base embed page. See [rag-and-notifications](rag-and-notifications.md). |
+| `/rag` | default | Knowledge-base embed page. |
 
 Full route table: [ui/routes](../ui/routes.md). Boot sequence end to end: [widget-boot](../flows/widget-boot.md).
 
@@ -124,7 +124,7 @@ Slices (`store/combineReducer.js`) and where each persists:
 - `crossTabSyncConfig.predicate` skips redux-persist actions, every `appInfo/*`, `draftData/*` and `Chat/*` action, and unread-count increments. Synced actions keep the sender's `urlData`, so `customMiddleware` does not overwrite it (it logs `SYNCING CROSS TAB REDUX STORE`).
 - On the server (`typeof window === "undefined"`) every storage is `createNoopStorage()` and state-sync is left out.
 
-Details of the slices: [ui/state](../ui/state.md), [ai-chat](ai-chat.md), [hello](../integrations/hello.md).
+Details of the slices: [ui/state](../ui/state.md), [hello](../integrations/hello.md).
 
 ### React context and non-Redux state
 
