@@ -10,6 +10,14 @@ const env = urlParams.get('env');
 const HELLO_HOST_URL = env !== 'stage' ? process.env.NEXT_PUBLIC_MSG91_HOST_URL : 'https://stageapi.phone91.com';
 const PUSH_NOTIFICATION_URL = process.env.NEXT_PUBLIC_PUSH_NOTIFICATION_URL;
 
+// Widget merge: returns { flow_origin, integration } only when both are configured.
+export function getMergeParams(): { flow_origin: string; integration: string } | {} {
+  try {
+    const { flow_origin, integration } = JSON.parse(sessionStorage.getItem('helloConfig') || '{}');
+    return flow_origin && integration ? { flow_origin, integration } : {};
+  } catch { return {}; }
+}
+
 export const getAuthorization = () => {
   const clientId = getLocalStorage('k_clientId') || getLocalStorage('a_clientId');
   const widgetId = getLocalStorage('WidgetId');
@@ -130,7 +138,8 @@ export async function getAllChannels(): Promise<any> {
         number,
         unique_id,
         user_data: getUserData(),
-        ...(anonClientUuidToSend ? { anon_client_uuid: anonClientUuidToSend } : {})
+        ...(anonClientUuidToSend ? { anon_client_uuid: anonClientUuidToSend } : {}),
+        ...getMergeParams(),
         // is_anon: isAnon,
         // ...(isAnon ? { anonymous_client_uuid: aClientId, uuid: aClientId } : {})
       },
@@ -372,7 +381,7 @@ export async function sendMessageToHelloApi({ message = "", attachments = [], ch
           text: message,
           attachment: attachments,
         },
-        ...((!chat_id || demo_widget) ? { channelDetail } : {}),
+        ...((!chat_id || demo_widget) ? { channelDetail: { ...channelDetail, ...getMergeParams() } } : {}),
         chat_id: chat_id ? chat_id : null,
         ...(replied_on ? { replied_on } : {}),
         session_id: null,

@@ -1,3 +1,4 @@
+import { getMergeParams } from '@/config/helloApi';
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
 import { ParamsEnums } from '@/utils/enums';
@@ -16,8 +17,10 @@ interface CallButtonProps {
 }
 
 function CallButton({ chatSessionId, currentChannelId = "" }: CallButtonProps) {
-    const { isHelloUser, voice_call_widget, isPeerChannel } = useCustomSelector((state) => ({
+    const { isHelloUser, voice_call_widget, isPeerChannel, isMergedWidget } = useCustomSelector((state) => ({
         isHelloUser: state.draftData?.isHelloUser || false,
+        // Widget merge (flow_origin + integration): no calling
+        isMergedWidget: 'flow_origin' in getMergeParams(),
         voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
         // Peer (widget-to-widget) channels have no calling support
         isPeerChannel: !!state.Hello?.[chatSessionId]?.channelListData?.channels
@@ -44,7 +47,7 @@ function CallButton({ chatSessionId, currentChannelId = "" }: CallButtonProps) {
         }
     };
 
-    if (!isHelloUser || !voice_call_widget || isPeerChannel) return null;
+    if (!isHelloUser || !voice_call_widget || isPeerChannel || isMergedWidget) return null;
 
     const isCallDisabled = callState !== "idle";
     return (
