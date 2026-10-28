@@ -1,29 +1,5 @@
 import { getLocalStorage } from "@/utils/utilities";
 
-// Agent filter_device_id is Python's bytes repr of the 12-byte id.
-function toCobrowseDeviceId(uuid: string): string {
-  if (!/^[0-9a-fA-F]{24}$/.test(uuid)) {
-    return uuid;
-  }
-  const bytes: number[] = [];
-  for (let i = 0; i < uuid.length; i += 2) {
-    bytes.push(parseInt(uuid.substr(i, 2), 16));
-  }
-  const quote = bytes.includes(0x27) && !bytes.includes(0x22) ? '"' : "'";
-  let body = "";
-  for (const b of bytes) {
-    if (b === 0x5c) body += "\\\\";
-    else if (b === 0x09) body += "\\t";
-    else if (b === 0x0a) body += "\\n";
-    else if (b === 0x0d) body += "\\r";
-    else if (b === 0x27 && quote === "'") body += "\\'";
-    else if (b === 0x22 && quote === '"') body += '\\"';
-    else if (b >= 0x20 && b <= 0x7e) body += String.fromCharCode(b);
-    else body += "\\x" + b.toString(16).padStart(2, "0");
-  }
-  return "b" + quote + body + quote;
-}
-
 // Define the CobrowseIO interface for TypeScript
 interface CobrowseIO {
   customData: Record<string, any>;
@@ -63,7 +39,7 @@ class CobrowseManager {
     if (this.scriptInjected && uuid !== this.device_id) {
       console.log("[CoBrowse IFRAME] Script already injected, updating device ID from", this.device_id, "to", uuid);
       window.CobrowseIO.customData = {
-        device_id: toCobrowseDeviceId(uuid)
+        device_id: uuid
       };
       this.device_id = uuid;
       return;
@@ -85,9 +61,6 @@ class CobrowseManager {
         console.log("[CoBrowse IFRAME] Configuring with trusted origin:", origin);
         
         window.CobrowseIO.trustedOrigins = [origin];
-        // Cross-document child of the host page. Do not pass allowIFrameStart
-        // here: that flag is only for the license-bearing start in chat-widget.js,
-        // which is the document that registers the device.
         window.CobrowseIO.start();
         console.log("[CoBrowse IFRAME] CoBrowse service started successfully");
       } catch (error) {
