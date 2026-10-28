@@ -16,6 +16,32 @@
     const scriptOrigin = scriptUrl.origin;
     const isLegacySubdomain = (s) => s === 'blacksea' || s === 'ctest' || s === '3001';
 
+    // Agent filter_device_id is Python's bytes repr of the 12-byte id.
+    // Cobrowse matches that string exactly, so store the same text.
+    function toCobrowseDeviceId(uuid) {
+        if (typeof uuid !== 'string' || !/^[0-9a-fA-F]{24}$/.test(uuid)) {
+            return uuid;
+        }
+        const bytes = [];
+        for (let i = 0; i < uuid.length; i += 2) {
+            bytes.push(parseInt(uuid.substr(i, 2), 16));
+        }
+        const quote = bytes.includes(0x27) && !bytes.includes(0x22) ? '"' : "'";
+        let body = '';
+        for (let i = 0; i < bytes.length; i++) {
+            const b = bytes[i];
+            if (b === 0x5c) body += '\\\\';
+            else if (b === 0x09) body += '\\t';
+            else if (b === 0x0a) body += '\\n';
+            else if (b === 0x0d) body += '\\r';
+            else if (b === 0x27 && quote === "'") body += "\\'";
+            else if (b === 0x22 && quote === '"') body += '\\"';
+            else if (b >= 0x20 && b <= 0x7e) body += String.fromCharCode(b);
+            else body += '\\x' + b.toString(16).padStart(2, '0');
+        }
+        return 'b' + quote + body + quote;
+    }
+
     let block_chatbot = false;
 
     class CobrowseManager {
@@ -37,7 +63,7 @@
                 // Update device ID if CobrowseIO is already available
                 if (window.CobrowseIO) {
                     window.CobrowseIO.customData = {
-                        device_id: uuid
+                        device_id: toCobrowseDeviceId(uuid)
                     };
                 }
                 return;
@@ -57,18 +83,22 @@
 
                     // Now manually configure CobrowseIO
                     window.CobrowseIO.customData = {
-                        device_id: uuid
+                        device_id: toCobrowseDeviceId(uuid)
                     };
 
                     window.CobrowseIO.license = "FZBGaF9-Od0GEQ"; // Replace with your actual license key
                     window.CobrowseIO.trustedOrigins = [
                         window?.origin,
+                        scriptOrigin,
                         "http://localhost:3001/chatbot"
                     ]
 
-                    // Start CobrowseIO
+                    // Start CobrowseIO. allowIFrameStart is required when this
+                    // page itself is inside an iframe (for example w3schools).
+                    // Without it the SDK resolves start() but never registers a device.
                     window.CobrowseIO.client().then(function () {
-                        window.CobrowseIO.start();
+                        return window.CobrowseIO.start({ allowIFrameStart: true });
+                    }).then(function () {
                         console.log("[CoBrowse PARENT] CoBrowse service started successfully, Notifying iframe to add CoBrowse script");
                         sendMessageToChatbot({ type: "ADD_COBROWSE_SCRIPT", data: { origin: window?.origin } });
                     }).catch(function (err) {
@@ -91,7 +121,7 @@
             if (this.device_id !== uuid && this.scriptInjected) {
                 this.device_id = uuid
                 window.CobrowseIO.customData = {
-                    device_id: uuid
+                    device_id: toCobrowseDeviceId(uuid)
                 }
                 return
             }
@@ -135,9 +165,9 @@
                 buttonName: ''
             };
             this.urls = {
-                chatbotUrl: `http://localhost:${this.subdomain}/chatbot`,
-                styleSheet: `http://localhost:${this.subdomain}/chat-widget-style.css`,
-                urlMonitor: `http://localhost:${this.subdomain}/urlMonitor.js`
+                chatbotUrl: `${scriptOrigin}/chatbot`,
+                styleSheet: `${scriptOrigin}/chat-widget-style.css`,
+                urlMonitor: `${scriptOrigin}/urlMonitor.js`
             };
             this.icons = {
                 white: this.makeImageUrl('b1357e23-2fc6-4dc3-855a-7a213b1fa100'),
