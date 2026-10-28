@@ -89,7 +89,6 @@
                     window.CobrowseIO.license = "FZBGaF9-Od0GEQ"; // Replace with your actual license key
                     window.CobrowseIO.trustedOrigins = [
                         window?.origin,
-                        scriptOrigin,
                         "http://localhost:3001/chatbot"
                     ]
 

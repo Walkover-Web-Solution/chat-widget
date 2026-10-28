@@ -89,7 +89,6 @@
                     window.CobrowseIO.license = "FZBGaF9-Od0GEQ"; // Replace with your actual license key
                     window.CobrowseIO.trustedOrigins = [
                         window?.origin,
-                        scriptOrigin,
                         "http://localhost:3001/chatbot"
                     ]
 
@@ -165,9 +164,9 @@
                 buttonName: ''
             };
             this.urls = {
-                chatbotUrl: `${scriptOrigin}/chatbot`,
-                styleSheet: `${scriptOrigin}/chat-widget-style.css`,
-                urlMonitor: `${scriptOrigin}/urlMonitor.js`
+                chatbotUrl: `http://localhost:${this.subdomain}/chatbot`,
+                styleSheet: `http://localhost:${this.subdomain}/chat-widget-style.css`,
+                urlMonitor: `http://localhost:${this.subdomain}/urlMonitor.js`
             };
             this.icons = {
                 white: this.makeImageUrl('b1357e23-2fc6-4dc3-855a-7a213b1fa100'),
