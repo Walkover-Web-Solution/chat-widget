@@ -67,8 +67,10 @@
                     ]
 
                     // Start CobrowseIO
+
                     window.CobrowseIO.client().then(function () {
-                        window.CobrowseIO.start();
+                        return window.CobrowseIO.start({ allowIFrameStart: true });
+                    }).then(function () {
                         console.log("[CoBrowse PARENT] CoBrowse service started successfully, Notifying iframe to add CoBrowse script");
                         sendMessageToChatbot({ type: "ADD_COBROWSE_SCRIPT", data: { origin: window?.origin } });
                     }).catch(function (err) {
