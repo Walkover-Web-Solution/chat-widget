@@ -81,6 +81,7 @@ All ticketing, assignment logic, AI responses, and persistence are handled by a 
 - The frontend is deployed as a web application and served to client websites via an embeddable script.
 - Backend API and WebSocket endpoints are configured via environment variables.
 - Separate production and test environments exist, with environment-specific endpoints and minor code differences where required.
+- Optional A/B experiment recording is client-only (`utils/middlewareExperiments.ts`). A page assigns a variant locally and may append an exposure or conversion. The page does not wait on that request, and no experiment is defined in this repository. See `docs/MODULE_CHAT_WIDGET_EXPERIMENTS.md`.
 
 ## Architectural Boundaries
 
