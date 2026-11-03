@@ -5,22 +5,6 @@ export default interface actionType<T> {
 }
 
 export interface UrlDataType {
-  orgId: string;
-  projectId: string;
-  stepId: string;
-  slugName: string;
-  scriptId: string;
-  tabName: "draft" | "published";
-  pluginId: string;
-  actionId: string;
-  sectionKey: string;
-  sectionId: string;
-  inviteId: string;
-  clientId: string;
-  sectionIdOrScriptId: string;
-  versionIdOrStepId: string;
-  versionId: string;
   chatSessionId: string
-  bridgeName: string
-  threadId: string
+  tabSessionId: string
 }

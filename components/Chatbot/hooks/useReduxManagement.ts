@@ -17,16 +17,12 @@ export const useReduxStateManagement = ({
 
   // Get Redux state
   const {
-    interfaceContextData,
-    isHelloUser,
     uuid,
     unique_id,
     presence_channel,
     team_id,
     chat_id,
     channelId,
-    mode,
-    selectedAiServiceAndModal,
     unique_id_hello,
     widgetToken,
     currentChatId,
@@ -35,8 +31,6 @@ export const useReduxStateManagement = ({
     isDefaultNavigateToChatScreen,
     overrideChannelId
   } = useCustomSelector((state) => ({
-    interfaceContextData: state.Interface?.[chatSessionId]?.interfaceContext?.variables,
-    isHelloUser: state.draftData?.isHelloUser || false,
     uuid: state.Hello?.[chatSessionId]?.channelListData?.uuid,
     unique_id: state.Hello?.[chatSessionId]?.channelListData?.unique_id,
     presence_channel: state.Hello?.[chatSessionId]?.channelListData?.presence_channel,
@@ -44,8 +38,6 @@ export const useReduxStateManagement = ({
     isDefaultNavigateToChatScreen: isDefaultNavigateToChatScreenFn(state, chatSessionId),
     chat_id: state.Hello?.[chatSessionId]?.Channel?.id,
     channelId: state.Hello?.[chatSessionId]?.Channel?.channel || null,
-    mode: state.Hello?.[chatSessionId]?.mode || [],
-    selectedAiServiceAndModal: state.Interface?.[chatSessionId]?.selectedAiServiceAndModal || null,
     unique_id_hello: state?.Hello?.[chatSessionId]?.helloConfig?.unique_id,
     widgetToken: state?.Hello?.[chatSessionId]?.helloConfig?.widgetToken,
     currentChatId: state?.appInfo?.[tabSessionId]?.currentChatId,
@@ -55,8 +47,6 @@ export const useReduxStateManagement = ({
   }));
 
   return {
-    interfaceContextData,
-    isHelloUser,
     uuid,
     unique_id,
     presence_channel,
@@ -64,8 +54,6 @@ export const useReduxStateManagement = ({
     isDefaultNavigateToChatScreen,
     chat_id,
     channelId,
-    mode,
-    selectedAiServiceAndModal,
     unique_id_hello,
     widgetToken,
     currentChatId,

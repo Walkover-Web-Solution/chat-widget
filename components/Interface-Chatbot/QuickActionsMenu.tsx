@@ -5,7 +5,6 @@ import {
   Maximize2,
   Minimize2,
   Minus,
-  Plus,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useColor } from "../Chatbot/hooks/useColor";
@@ -20,11 +19,9 @@ export interface QuickActionsMenuProps {
 
   showMinimize?: boolean;
   showFullScreen?: boolean;
-  showNewConversation?: boolean;
 
   onMinimize?: () => void;
   onToggleFullScreen?: () => void;
-  onNewConversation?: () => void;
 
   /** Extra class for the trigger button. */
   triggerClassName?: string;
@@ -49,10 +46,8 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   fullScreen = false,
   showMinimize = false,
   showFullScreen = false,
-  showNewConversation = false,
   onMinimize,
   onToggleFullScreen,
-  onNewConversation,
   triggerClassName = "cursor-pointer p-2 rounded-full transition-colors hover:bg-[var(--header-hover-bg,rgba(0,0,0,0.12))]",
   menuClassName = "absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-[var(--drawer-color)] ring-1 ring-black/5 dark:ring-[var(--icon-color)]/20 focus:outline-none z-50 py-1",
   triggerIconSize = 22,
@@ -141,24 +136,14 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
       });
     }
 
-    if (showNewConversation) {
-      items.push({
-        label: "New conversation",
-        icon: <Plus size={18} />,
-        onClick: () => onNewConversation?.(),
-      });
-    }
-
     return items;
   }, [
     showMinimize,
     showFullScreen,
-    showNewConversation,
     isChatbotMinimized,
     fullScreen,
     onMinimize,
     onToggleFullScreen,
-    onNewConversation,
   ]);
 
   // No actions

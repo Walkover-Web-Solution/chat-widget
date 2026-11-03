@@ -7,7 +7,6 @@ import appInfoReducer from "./appInfo/appInfoSlice";
 import chatReducer from "./chat/chatSlice";
 import draftDataReducer from "./draftData/draftDataSlice";
 import helloReducer from "./hello/helloSlice";
-import InterfaceReducer from "./interface/interfaceSlice";
 
 const storage =
   typeof window !== "undefined"
@@ -31,7 +30,6 @@ const chatPersistConfig = {
 };
 
 const rootReducer = combineReducers({
-  Interface: InterfaceReducer,
   Hello: helloReducer,
   Chat: persistReducer(chatPersistConfig, chatReducer),
   draftData: draftDataReducer,

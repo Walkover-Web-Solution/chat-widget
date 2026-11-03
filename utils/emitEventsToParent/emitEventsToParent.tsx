@@ -3,10 +3,6 @@
  */
 export type ParentEventType =
   | 'PUSH_NOTIFICATION'
-  | 'FRONT_END_ACTION'
-  | 'HEADER_BUTTON_PRESS'
-  | 'MESSAGE_CLICK'
-  | 'BRIDGE_SWITCH'
   | 'CLOSE_CHATBOT'
   | 'uuid'
   | 'ENABLE_DOMAIN_TRACKING'

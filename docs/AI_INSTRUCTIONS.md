@@ -29,7 +29,6 @@ AI and contributors **must align with this stack** and reuse existing dependenci
   - Tailwind CSS (utility styling where applicable)
 - **State Management:**
   - Redux Toolkit
-  - Redux Saga (side effects)
   - Redux Persist (session continuity)
 - **Real-Time Communication:**
   - `socket.io-client` (via centralized socket manager)
@@ -67,7 +66,7 @@ AI and contributors must assume that the listed dependencies are **intentional a
 
 ## State Management Rules
 
-- Client-side state is managed using **Redux Toolkit** with **Redux Saga** for side effects.
+- Client-side state is managed using **Redux Toolkit**.
 - Redux is used to manage **UI state and session-level data** such as:
   - conversation messages
   - channel history
@@ -82,7 +81,7 @@ AI and contributors must assume that the listed dependencies are **intentional a
 - **Do NOT** persist business logic or decision-making in Redux.
 - **Do NOT** assume Redux state is durable or authoritative.
 
-- **DO** reuse existing Redux slices, sagas, and patterns.
+- **DO** reuse existing Redux slices and patterns.
 - **DO** extend existing state shape when required instead of creating parallel state stores.
 - **DO** rely on backend responses to reconcile or update client-side state.
 

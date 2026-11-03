@@ -7,7 +7,6 @@ import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
 import { removeNotification, setHelloEventMessage, setNotifications, setOpenHelloForm, setSubThreadId, setToggleDrawer } from "@/store/chat/chatSlice";
 import { setDataInDraftReducer, setVariablesForHelloBot } from "@/store/draftData/draftDataSlice";
 import { setHelloClientInfo, setHelloConfig, setHelloKeysData, setWidgetInfo } from "@/store/hello/helloSlice";
-import { setDataInInterfaceRedux } from "@/store/interface/interfaceSlice";
 import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility";
 import { useCustomSelector } from "@/utils/deepCheckSelector";
 import { emitEventToParent } from "@/utils/emitEventsToParent/emitEventsToParent";
@@ -17,11 +16,6 @@ import isPlainObject from "lodash.isplainobject";
 import { useContext, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 
-
-const helloToChatbotPropsMap: Record<string, string> = {
-    // show_close_button: 'hideCloseButton',
-    hideFullScreenButton: 'hideFullScreenButton'
-}
 
 const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventRegistryInstance, chatSessionId: string) => {
     const sendMessageToHello = useSendMessageToHello({});
@@ -151,7 +145,6 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
             name,
             sdkConfig,
             variables,
-            ...restProps
         } = event.data.data;
 
         const fullWidgetToken = unique_id ? `${widgetToken}_${unique_id}` : widgetToken;
@@ -212,21 +205,11 @@ const useHandleHelloEmbeddingScriptEvents = (eventHandler: EmbeddingScriptEventR
             name,
         }));
 
-        // Map extra interface props
-        Object.entries(restProps || {}).forEach(([key, value]) => {
-            const mappedKey = helloToChatbotPropsMap[key];
-            if (!mappedKey) return;
-
-            const finalValue = mappedKey === 'hideCloseButton' ? !value : value;
-            dispatch(setDataInInterfaceRedux({ [mappedKey]: finalValue }));
-        });
-
         // Persist widget token and redux draft data
         setLocalStorage('WidgetId', widgetToken);
         dispatch(setDataInDraftReducer({
             chatSessionId: fullWidgetToken,
             widgetToken: fullWidgetToken,
-            isHelloUser: true,
         }));
 
         // After updating chatSessionId (which changes the tabSessionId key used by appInfo),

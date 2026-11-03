@@ -1,21 +1,17 @@
 'use client';
-import { ChatbotContext } from "@/components/context";
 import { setDataInDraftReducer } from "@/store/draftData/draftDataSlice";
 import { GetSessionStorageData, SetSessionStorage } from "@/utils/ChatbotUtility";
-import { EmbedVerificationStatus } from "@/utils/enums";
-import { useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 export const runtime = "edge";
 
 export default function InterfaceEmbed() {
-    const { chatbot_id, userId, token, isHelloUser, environment = null } = useContext(ChatbotContext);
     const router = useRouter();
-    const [verifiedState, setVerifiedState] = useState(EmbedVerificationStatus.VERIFYING);
+    const search = useSearchParams();
     const dispatch = useDispatch();
 
     useEffect(() => {
-
         let tabSessionId = GetSessionStorageData('tab_session_id');
 
         if (!tabSessionId) {
@@ -25,41 +21,13 @@ export default function InterfaceEmbed() {
 
         dispatch(setDataInDraftReducer({ tabSessionId }))
 
+        const environment = search.get("env") === 'stage' ? 'stage' : null;
+        router.replace(environment ? `/chatbot/hello?env=${environment}` : `/chatbot/hello`);
     }, [])
-
-    useEffect(() => {
-        if (token) {
-            SetSessionStorage("interfaceToken", token);
-            SetSessionStorage("interfaceUserId", userId);
-            setVerifiedState(EmbedVerificationStatus.VERIFIED);
-            dispatch(setDataInDraftReducer({ isHelloUser: false }))
-        } else if (isHelloUser) {
-            setVerifiedState(EmbedVerificationStatus.VERIFIED);
-        }
-    }, [token, userId, isHelloUser]);
-
-    useEffect(() => {
-        if (verifiedState === EmbedVerificationStatus.VERIFIED && chatbot_id) {
-            dispatch(setDataInDraftReducer({ chatbotId: chatbot_id, chatSessionId: chatbot_id }))
-            router.replace(`/chatbot/${chatbot_id}`);
-        }
-        if (isHelloUser && verifiedState === EmbedVerificationStatus.VERIFIED) {
-            if (environment) {
-                router.replace(`/chatbot/hello?env=${environment}`);
-            } else {
-                router.replace(`/chatbot/hello`);
-            }
-        }
-    }, [verifiedState, chatbot_id, router, isHelloUser]);
 
     return (
         <div className="h-screen w-full flex items-center justify-center">
-            {verifiedState === EmbedVerificationStatus.VERIFYING && (
-                <span className="loading loading-ring loading-lg"></span>
-            )}
-            {verifiedState === EmbedVerificationStatus.NOT_VERIFIED && (
-                <div>Something went wrong</div>
-            )}
+            <span className="loading loading-ring loading-lg"></span>
         </div>
     );
 }
