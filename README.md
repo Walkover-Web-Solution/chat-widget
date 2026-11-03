@@ -51,6 +51,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 The following documents provide a high-level and detailed understanding of the product, its architecture, and major modules.
 
+- **Product Vision (draft, pending owner review)**: `docs/VISION.md`, with unresolved points in `docs/OPEN_QUESTIONS.md`
 - **Architecture Overview**: `docs/ARCHITECTURE.md`
 - **AI / Contributor Instructions**: `docs/AI_INSTRUCTIONS.md`
 - **Module Documentation**:
