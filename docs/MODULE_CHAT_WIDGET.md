@@ -24,6 +24,9 @@ Each feature has its own dedicated documentation file.
 - **Demo Chatbot**  
   See: `MODULE_CHAT_WIDGET_DEMO_CHATBOT.md`
 
+- **Experiment Recording**  
+  See: `MODULE_CHAT_WIDGET_EXPERIMENTS.md`
+
 
 ## Adding New Features
 

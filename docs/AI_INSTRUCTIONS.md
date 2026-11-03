@@ -120,6 +120,7 @@ AI and contributors must assume that the listed dependencies are **intentional a
 - **Do NOT** hardcode API URLs, socket URLs, or environment-specific values in the code.
 - **Do NOT** infer environment based on hostname or runtime heuristics.
 - **Do NOT** introduce new environment variables unless absolutely necessary.
+- **Do NOT** hardcode experiment recording values. `utils/middlewareExperiments.ts` reads `NEXT_PUBLIC_MW_EVENTS_URL` and `NEXT_PUBLIC_MW_KEY` (the public names of `MW_EVENTS_URL` and `MW_KEY`). When either is unset, nothing is sent.
 
 - **DO** rely on existing environment variables for configuration.
 - **DO** follow existing patterns for accessing environment values.
