@@ -38,7 +38,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
     const { isTabVisible } = useTabVisibility();
     const { clearReply } = useReplyContext();
 
-    const { currentChannelId, isHelloUser } = useReduxStateManagement({ chatSessionId, tabSessionId });
+    const { currentChannelId } = useReduxStateManagement({ chatSessionId, tabSessionId });
 
     const { companyId, botId, reduxChatSessionId, totalNoOfUnreadMsgs, isToggledrawer, isChatbotOpen, isChatbotMinimized, unReadCountInCurrentChannel, callToken, demo_widget, helloVariables, unreadNotificationCount } = useCustomSelector((state) => ({
         companyId: state.Hello?.[chatSessionId]?.widgetInfo?.company_id || '',
@@ -70,19 +70,19 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
     useNotificationSocket({ chatSessionId });
 
     useEffect(() => {
-        if (isHelloUser && currentChannelId && !demo_widget) {
+        if (currentChannelId && !demo_widget) {
             // Already subscribed before the first send, so this fetch adds nothing — and
             // can subtract: setInitialMessages replaces the thread, erasing a socket reply.
             if (consumePreSubscribed(currentChannelId)) return;
             fetchHelloPreviousHistory()
         }
-    }, [currentChannelId, isHelloUser, demo_widget])
+    }, [currentChannelId, demo_widget])
 
     useEffect(() => {
-        if (isHelloUser && demo_widget && helloVariables?.bot_id && helloVariables?.bot_type) {
+        if (demo_widget && helloVariables?.bot_id && helloVariables?.bot_type) {
             dispatch(setDataInAppInfoReducer({ subThreadId: '', currentTeamId: "", currentChannelId: "", currentChatId: "", demoSessionId: "" }));
         }
-    }, [isHelloUser, demo_widget, helloVariables?.bot_id, helloVariables?.bot_type])
+    }, [demo_widget, helloVariables?.bot_id, helloVariables?.bot_type])
 
     useEffect(() => {
         if (!demo_widget) {
@@ -96,11 +96,11 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     // Socket reconnection effect to fetch history
     const handleReconnection = useCallback(() => {
-        if (isHelloUser && currentChannelId) {
+        if (currentChannelId) {
             console.log("Socket reconnected, fetching history for channel:", currentChannelId);
             fetchHelloPreviousHistory();
         }
-    }, [isHelloUser, currentChannelId]);
+    }, [currentChannelId]);
 
     useEffect(() => {
         // Register the reconnection callback
@@ -114,7 +114,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
 
     // Listen for call-completed events to fetch history
     useEffect(() => {
-        if (isHelloUser && currentChannelId && !demo_widget) {
+        if (currentChannelId && !demo_widget) {
             const handleCallCompleted = () => {
                 fetchHelloPreviousHistory();
             }
@@ -125,7 +125,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
                 helloVoiceService.removeEventListener('call-completed', handleCallCompleted);
             }
         }
-    }, [isHelloUser, currentChannelId, fetchHelloPreviousHistory, demo_widget])
+    }, [currentChannelId, fetchHelloPreviousHistory, demo_widget])
 
     useEffect(() => {
         if (reduxChatSessionId) {
@@ -141,7 +141,6 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
                 unReadCountInCurrentChannel > 0 &&
                 (isSmallScreen ? !isToggledrawer : true) &&
                 isChatbotOpen &&
-                isHelloUser &&
                 isTabVisible &&
                 !isChatbotMinimized
             ) {
@@ -156,7 +155,7 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
         return () => {
             debouncedReset.cancel();
         };
-    }, [currentChannelId, isToggledrawer, unReadCountInCurrentChannel, isChatbotOpen, isHelloUser, isTabVisible, isChatbotMinimized]);
+    }, [currentChannelId, isToggledrawer, unReadCountInCurrentChannel, isChatbotOpen, isTabVisible, isChatbotMinimized]);
 
     useEffect(() => {
         clearReply();
@@ -176,12 +175,12 @@ export const useHelloEffects = ({ chatSessionId, messageRef, tabSessionId }: Use
             // let is_domain_enable = false
             let { mail, number, unique_id } = JSON.parse(getLocalStorage('userData') || '{}');
 
-            let needsAnonymousRegistration = !a_clientId && !k_clientId && !unique_id && widgetToken && isHelloUser && !mail && !number;
+            let needsAnonymousRegistration = !a_clientId && !k_clientId && !unique_id && widgetToken && !mail && !number;
 
             let widgetData = null;
             let jwtData = null;
             let botType = '';
-            if (isHelloUser && widgetToken) {
+            if (widgetToken) {
                 // Step 0: resolve the region every call below is pinned to.
                 await getRoutingRegion();
 

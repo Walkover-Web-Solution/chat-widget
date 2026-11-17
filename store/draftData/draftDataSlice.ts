@@ -10,8 +10,6 @@ const draftDataSlice = createSlice({
     chatSessionId: "" as string,
     tabSessionId: "" as string,
     widgetToken: "" as string,
-    chatbotId: "" as string,
-    isHelloUser: false as boolean,
     hello: {
       variables: {} as Record<string, any>
     },
@@ -35,7 +33,6 @@ const draftDataSlice = createSlice({
         chatSessionId: "",
         tabSessionId: "",
         widgetToken: "",
-        chatbotId: "",
         isChatbotMinimized: false
       }
     },

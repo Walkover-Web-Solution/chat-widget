@@ -9,35 +9,6 @@ export const reducers: ValidateSliceCaseReducers<
   $HelloReduxType,
   SliceCaseReducers<$HelloReduxType>
 > = {
-  getHelloDetailsStart(state, action) {
-    const chatSessionId = action.urlData?.chatSessionId
-    if (chatSessionId) {
-      return {
-        ...state, [chatSessionId]: {
-          ...state[chatSessionId],
-          isLoading: true
-        }
-      };
-    }
-  },
-  getHelloDetailsSuccess(state, action: actionType<any>) {
-    const chatSessionId = action?.urlData?.chatSessionId;
-    if (!chatSessionId) return;
-
-    const { widgetInfo, ChannelList, Jwt, anonymousClientId, mode, vision } = action.payload;
-
-    state[chatSessionId] = {
-      ...state[chatSessionId],
-      widgetInfo,
-      anonymousClientId,
-      socketJwt: { jwt: Jwt },
-      channelListData: ChannelList,
-      isLoading: false,
-      Channel: ChannelList?.channels?.[0],
-      mode,
-      vision: vision || false
-    };
-  },
   setChannel(state, action) {
     const chatSessionId = action.urlData?.chatSessionId
     if (chatSessionId) {
