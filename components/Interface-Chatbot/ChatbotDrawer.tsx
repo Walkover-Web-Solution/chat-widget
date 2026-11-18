@@ -16,10 +16,8 @@ import { useReduxStateManagement } from "../Chatbot/hooks/useReduxManagement";
 
 // Redux Actions
 import { setDataInAppInfoReducer } from "@/store/appInfo/appInfoSlice";
-import { setThreads } from "@/store/interface/interfaceSlice";
 
 // Utils and Types
-import { ParamsEnums } from "@/utils/enums";
 import { useTheme } from "@mui/material";
 import { useChatActions } from "../Chatbot/hooks/useChatActions";
 import { useColor } from "../Chatbot/hooks/useColor";
@@ -29,24 +27,14 @@ import { useScreenSize } from "../Chatbot/hooks/useScreenSize";
 import { stripHtmlToText } from "@/utils/utilities";
 import { MessageContext } from "./InterfaceChatbot";
 
-const createRandomId = () => Math.random().toString(36).substring(2, 15);
-
 interface ChatbotDrawerProps {
-  preview?: boolean;
   chatSessionId: string
   tabSessionId: string
-  subThreadId?: string;
-  bridgeName: string;
-  threadId: string
 }
 
 const ChatbotDrawer = ({
-  preview = false,
   chatSessionId,
   tabSessionId,
-  subThreadId,
-  bridgeName,
-  threadId
 }: ChatbotDrawerProps) => {
   const dispatch = useDispatch();
   const { primaryTextColor, primaryBgColor, foregroundColor, primaryGradientBg, primaryTintColor, headerHoverBg } = useColor();
@@ -55,7 +43,7 @@ const ChatbotDrawer = ({
   const { messageRef } = useContext(MessageContext);
   const { isSmallScreen } = useScreenSize();
 
-  const { setNewMessage, setOptions, setImages, setLoading, setToggleDrawer } = useChatActions();
+  const { setImages, setLoading, setToggleDrawer } = useChatActions();
 
   const { images, allMessages, allMessagesData, isToggledrawer, notifications } = useCustomSelector((state) => ({
     images: state.Chat.images || [],
@@ -73,10 +61,8 @@ const ChatbotDrawer = ({
 
   // Consolidated Redux state selection
   const {
-    subThreadList,
     teamsList,
     channelList,
-    isHelloUser,
     Name,
     tagline,
     hideCloseButton,
@@ -89,13 +75,11 @@ const ChatbotDrawer = ({
     const show_close_button = state.Hello?.[chatSessionId]?.helloConfig?.show_close_button
     const fullScreen = state.Hello?.[chatSessionId]?.helloConfig?.fullScreen
     return {
-      subThreadList: state.Interface?.[chatSessionId]?.interfaceContext?.[bridgeName]?.threadList?.[threadId] || [],
       teamsList: state.Hello?.[chatSessionId]?.widgetInfo?.teams || [],
       channelList: state.Hello?.[chatSessionId]?.channelListData?.channels || [],
-      isHelloUser: state.draftData?.isHelloUser || false,
       Name: state?.Hello?.[chatSessionId]?.clientInfo?.Name || (state.Hello?.[chatSessionId]?.channelListData?.pseudo_name === false ? state.Hello?.[chatSessionId]?.channelListData?.customer_name : '') || '',
       tagline: state.Hello?.[chatSessionId]?.widgetInfo?.tagline || '',
-      hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : state.appInfo?.[tabSessionId]?.hideCloseButton || false,
+      hideCloseButton: typeof show_close_button === 'boolean' ? !show_close_button : false,
       voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
       isMergedWidget: 'flow_origin' in getMergeParams(),
       show_msg91: state.Hello?.[chatSessionId]?.widgetInfo?.show_msg91 || false,
@@ -138,42 +122,6 @@ const ChatbotDrawer = ({
   }, [chatSessionId])
 
   // Handlers
-  const handleCreateNewSubThread = async () => {
-    if (preview) return;
-    if (subThreadList?.[0]?.newChat) {
-      return;
-    }
-    const newThreadData = {
-      sub_thread_id: createRandomId(),
-      thread_id: threadId,
-      display_name: "New Chat",
-      newChat: "true"
-    }
-    if (!subThreadList?.[0]?.newChat) {
-      dispatch(
-        setThreads({
-          newThreadData,
-          bridgeName: bridgeName,
-          threadId: threadId,
-        })
-      );
-      setOptions([]);
-
-    }
-  };
-
-  const handleChangeSubThread = (sub_thread_id: string) => {
-    setLoading(false);
-    dispatch(setDataInAppInfoReducer({ subThreadId: sub_thread_id, showNotificationView: false }));
-    setNewMessage(true);
-    setOptions([]);
-    focusTextField();
-
-    if (isSmallScreen) {
-      setToggleDrawer(false);
-    }
-  };
-
   const focusTextField = () => {
     if (messageRef.current) {
       messageRef.current?.focus();
@@ -255,30 +203,6 @@ const ChatbotDrawer = ({
     dispatch(setDataInAppInfoReducer({ showNotificationView: true }));
     if (isSmallScreen) setToggleDrawer(false);
   }, [dispatch, isSmallScreen, setToggleDrawer]);
-
-  // Memoized components
-  const DrawerList = useMemo(() => (
-    <div className="menu p-0 w-full h-full bg-[var(--drawer-color)] text-base-content">
-      {(subThreadList || []).length === 0 ? (
-        <div className="flex justify-center items-center mt-5">
-          <span>No Conversations</span>
-        </div>
-      ) : (
-        <ul>
-          {subThreadList.map((thread: any, index: number) => (
-            <li key={`${thread?._id}-${index}`}>
-              <a
-                className={`${thread?.sub_thread_id === subThreadId ? 'active' : ''}`}
-                onClick={() => handleChangeSubThread(thread?.sub_thread_id)}
-              >
-                {thread?.display_name || thread?.sub_thread_id}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  ), [subThreadList, subThreadId, handleChangeSubThread]);
 
   const hasChannels = useMemo(() => (channelList || []).length > 0 && channelList.some((thread: any) => thread?.id), [channelList]);
 
@@ -671,7 +595,7 @@ const ChatbotDrawer = ({
           onClick={() => closeToggleDrawer(false)}
         />
       )}
-      <div className={`drawer-side ${isHelloUser && isSmallScreen ? '' : 'max-w-[286px]'} transition-transform duration-100`}>
+      <div className={`drawer-side ${isSmallScreen ? '' : 'max-w-[286px]'} transition-transform duration-100`}>
         <div className="w-full h-full relative flex flex-col bg-[var(--drawer-color)]">
           {/* Header with padding */}
           <div className="px-4 py-4" style={{ background: primaryGradientBg, ['--header-hover-bg' as any]: headerHoverBg }}>
@@ -711,37 +635,24 @@ const ChatbotDrawer = ({
 
           {/* Content area with overflow handling - the scrollbar will appear at the edge */}
           <div className="flex-1 overflow-y-auto flex flex-col" >
-            {!isHelloUser ? DrawerList : TeamsList}
+            {TeamsList}
           </div >
 
           {/* Footer with branding - always stays at bottom */}
-          {
-            (isHelloUser && show_msg91) || !isHelloUser ? (
-              <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
-                <div className="text-xs opacity-50 flex items-baseline gap-1" style={{ color: 'var(--foreground)' }}>
-                  {isHelloUser && show_msg91 ? (
-                    <>
-                      Powered by
-                      <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
-                        <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
-                      </a>
-                    </>
-                  ) : (
-                    <>
-                      Powered by
-                      <a href="https://gtwy.ai" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity">
-                        <span className="font-bold">GTWY</span>
-                      </a>
-                    </>
-                  )}
-                </div>
+          {show_msg91 && (
+            <div className="px-4 pt-2 pb-2 flex items-center justify-center mt-auto">
+              <div className="text-xs opacity-50 flex items-baseline gap-1" style={{ color: 'var(--foreground)' }}>
+                Powered by
+                <a href="https://msg91.com" target="_blank" rel="noopener noreferrer" className="flex hover:opacity-80 transition-opacity ml-1">
+                  <img src="/msg91-logo.svg" alt="MSG91" className="h-4" />
+                </a>
               </div>
-            ) : null
-          }
+            </div>
+          )}
         </div >
       </div >
     </div >
   );
 };
 
-export default addUrlDataHoc(ChatbotDrawer, [ParamsEnums.subThreadId, ParamsEnums.bridgeName, ParamsEnums.threadId]);
+export default addUrlDataHoc(ChatbotDrawer);

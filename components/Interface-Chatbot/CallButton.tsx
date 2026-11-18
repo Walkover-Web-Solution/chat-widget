@@ -17,8 +17,7 @@ interface CallButtonProps {
 }
 
 function CallButton({ chatSessionId, currentChannelId = "" }: CallButtonProps) {
-    const { isHelloUser, voice_call_widget, isPeerChannel, isMergedWidget } = useCustomSelector((state) => ({
-        isHelloUser: state.draftData?.isHelloUser || false,
+    const { voice_call_widget, isPeerChannel, isMergedWidget } = useCustomSelector((state) => ({
         // Widget merge (flow_origin + integration): no calling
         isMergedWidget: 'flow_origin' in getMergeParams(),
         voice_call_widget: state.Hello?.[chatSessionId]?.widgetInfo?.voice_call_widget || false,
@@ -47,7 +46,7 @@ function CallButton({ chatSessionId, currentChannelId = "" }: CallButtonProps) {
         }
     };
 
-    if (!isHelloUser || !voice_call_widget || isPeerChannel || isMergedWidget) return null;
+    if (!voice_call_widget || isPeerChannel || isMergedWidget) return null;
 
     const isCallDisabled = callState !== "idle";
     return (
