@@ -4,6 +4,9 @@ verified_at: 5a4b60e
 verified_on: 2026-11-03
 ---
 
+> Product/decision doc, not verified against the code. For how the code works today, see AGENTS.md and docs/README.md.
+
+
 # Product Vision & Strategic Direction
 
 > **Status: draft, pending owner review.** This file decides which requests are worked. It was recovered from the repository's own docs and code; nothing here is approved until an owner signs off.

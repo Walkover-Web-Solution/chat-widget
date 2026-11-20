@@ -1,0 +1,18 @@
+{
+  "skill": "ai-docs",
+  "skill_version": "0.1.0",
+  "created": "2026-11-20",
+  "last_run": { "mode": "init", "commit": "6667018", "date": "2026-11-20" },
+  "superseded": [
+    "docs/legacy/ARCHITECTURE.md",
+    "docs/AI_INSTRUCTIONS.md",
+    "docs/MODULE_CHAT_WIDGET.md",
+    "docs/MODULE_CHAT_WIDGET_CALLING.md",
+    "docs/MODULE_CHAT_WIDGET_DEMO_CHATBOT.md",
+    "docs/MODULE_CHAT_WIDGET_EXPERIMENTS.md",
+    "docs/MODULE_CHAT_WIDGET_REPLY.md",
+    "docs/VISION.md",
+    "docs/OPEN_QUESTIONS.md",
+    "docs/brainstorms/region-wise-routing-requirements.md"
+  ]
+}
