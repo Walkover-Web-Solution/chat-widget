@@ -13,6 +13,7 @@ The widget enables end-users to communicate with:
 depending on how the backend assigns the conversation.
 
 This repository contains **only the client-side implementation** of the chat widget.
+It serves only the Hello chat widget (loaded via `public/chat-widget.js`); the former GTWY chatbot code has been removed.
 All ticketing, assignment logic, AI responses, and persistence are handled by a separate backend system.
 
 ## High-Level Components

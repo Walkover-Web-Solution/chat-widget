@@ -5,18 +5,15 @@ import React, { useEffect, useMemo, useRef } from 'react';
 // Context and hooks
 import { MessageContext } from '../Interface-Chatbot/InterfaceChatbot';
 import { useReduxStateManagement } from './hooks/useReduxManagement';
-import useRtlayerEventManager from './hooks/useRtlayerEventManager';
 
 // Components
 import FormComponent from '../FormComponent';
 import CallUI from '../Hello/callUI';
 import ChatbotDrawer from '../Interface-Chatbot/ChatbotDrawer';
 import ChatbotHeader from '../Interface-Chatbot/ChatbotHeader';
-import ChatbotHeaderTab from '../Interface-Chatbot/ChatbotHeaderTab';
 import ChatbotTextField from '../Interface-Chatbot/ChatbotTextField';
 import MessageList from '../Interface-Chatbot/Messages/MessageList';
 import NotificationPage from '../Interface-Chatbot/NotificationPage';
-import StarterQuestions from '../Interface-Chatbot/Messages/StarterQuestions';
 
 // Utils
 import { ChatBotGif } from '@/assests/assestsIndex';
@@ -25,7 +22,6 @@ import { setToggleDrawer } from '@/store/chat/chatSlice';
 import { setDataInDraftReducer } from '@/store/draftData/draftDataSlice';
 import { useAppDispatch } from '@/store/useTypedHooks';
 import { useCustomSelector } from '@/utils/deepCheckSelector';
-import { useChatEffects } from './hooks/useChatEffects';
 import { useColor } from './hooks/useColor';
 import { useHelloEffects } from './hooks/useHelloEffects';
 import { useReduxEffects } from './hooks/useReduxEffects';
@@ -75,7 +71,6 @@ const EmptyChatView = React.memo(() => {
       <div className="max-w-5xl w-full mt-8">
         <ChatbotTextField />
       </div>
-      <StarterQuestions />
     </div>
   );
 });
@@ -99,14 +94,13 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   // Refs
   const mountedRef = useRef<boolean>(false);
   const messageRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
   const { primaryBgColor } = useColor();
   const { isSmallScreen } = useScreenSize();
   const dispatch = useAppDispatch();
 
   // State management
-  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, messageIds, helloMsgIds, subThreadId, showNotificationView, notificationsCount } = useCustomSelector((state) => {
+  const { show_widget_form, greetingMessage, isToggledrawer, chatsLoading, subThreadId, showNotificationView, notificationsCount } = useCustomSelector((state) => {
     // script config wins, then runtime/API widgetInfo, then the client-details heuristic
     const show_widget_form = state.Hello?.[chatSessionId]?.helloConfig?.show_widget_form
       ?? state.Hello?.[chatSessionId]?.widgetInfo?.show_widget_form
@@ -115,29 +109,25 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
       greetingMessage: state.Hello?.[chatSessionId]?.greeting as any,
       isToggledrawer: state.Chat.isToggledrawer,
       chatsLoading: state.Chat.chatsLoading,
-      messageIds: state.Chat.messageIds,
       subThreadId: state.Chat.subThreadId,
-      helloMsgIds: state.Chat.helloMsgIds,
       notificationsCount: (state.Chat.notifications || []).length,
       showNotificationView: state.appInfo?.[tabSessionId]?.showNotificationView || false,
     })
   });
 
   // Custom hooks
-  useChatEffects({ chatSessionId, tabSessionId, messageRef, timeoutIdRef });
   useHelloEffects({ chatSessionId, tabSessionId, messageRef });
-  useReduxEffects({ chatSessionId, tabSessionId });
-  useRtlayerEventManager({ timeoutIdRef, chatSessionId, tabSessionId });
+  useReduxEffects({ tabSessionId });
 
-  const { isHelloUser, currentChatId, isDefaultNavigateToChatScreen } = useReduxStateManagement({ chatSessionId, tabSessionId });
+  const { currentChatId, isDefaultNavigateToChatScreen } = useReduxStateManagement({ chatSessionId, tabSessionId });
 
   // Effect to open drawer for new human users
   useEffect(() => {
-    if (isHelloUser && !currentChatId && !mountedRef.current) {
+    if (!currentChatId && !mountedRef.current) {
       dispatch(setToggleDrawer(true));
     }
     mountedRef.current = true;
-  }, [isHelloUser, currentChatId, dispatch]);
+  }, [currentChatId, dispatch]);
 
   // open Chat directly if no team or one team exista
   useEffect(() => {
@@ -150,19 +140,11 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
   }, [isDefaultNavigateToChatScreen])
 
   // Context value - memoized to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    messageRef,
-    timeoutIdRef
-  }), [
-    messageRef,
-    timeoutIdRef
-  ]);
+  const contextValue = useMemo(() => ({ messageRef }), [messageRef]);
 
   // Check if chat is empty
-  const isChatEmpty = isHelloUser
-  ? (!subThreadId || helloMsgIds[subThreadId]?.length === 0) &&
-    (!greetingMessage || (!greetingMessage.text && !greetingMessage?.options?.length))
-    : !subThreadId || messageIds[subThreadId]?.length === 0;
+  const isChatEmpty = !subThreadId &&
+    (!greetingMessage || (!greetingMessage.text && !greetingMessage?.options?.length));
 
   return (
     <MessageContext.Provider value={contextValue}>
@@ -194,11 +176,10 @@ function Chatbot({ chatSessionId, tabSessionId }: ChatbotProps) {
               to prevent "Enter your details" form from covering notification content */}
           {!(showNotificationView && notificationsCount > 0) && (
             <>
-              {isHelloUser && show_widget_form && (
+              {show_widget_form && (
                 <FormComponent />
               )}
               <CallUI />
-              <ChatbotHeaderTab />
             </>
           )}
 

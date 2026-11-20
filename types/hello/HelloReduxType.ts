@@ -1,14 +1,10 @@
 export interface $HelloReduxType {
   [chatSessionId: string]: {
     widgetInfo: any;
-    anonymousClientId: any;
     socketJwt: { jwt: string };
     ChannelList: any;
     Channel?: any;
-    isLoading?: boolean;
-    mode?: Array<string | null>;
     helloConfig?: HelloData;
-    vision?: boolean;
     channelListData: ChannelListData;
     greeting?: object;
     showWidgetForm?: boolean | null;

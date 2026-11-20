@@ -1,8 +1,5 @@
 /* eslint-disable */
 import { addUrlDataHoc } from '@/hoc/addUrlDataHoc';
-import { useCustomSelector } from '@/utils/deepCheckSelector';
-import { emitEventToParent } from '@/utils/emitEventsToParent/emitEventsToParent';
-import { ALLOWED_EVENTS_TO_SUBSCRIBE } from '@/utils/enums';
 import { hasMoreContent } from '@/utils/readMore';
 import { Reply } from "lucide-react";
 import React, { useCallback, useState } from 'react';
@@ -18,20 +15,10 @@ import RepliedMessage from './RepliedMessage';
  * It includes an image with fallback, message content, and sender time.
  */
 
-const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor, chatSessionId }: any) => {
+const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor }: any) => {
     const [showSenderTime, setShowSenderTime] = useState(false);
     const [showReplyButton, setShowReplyButton] = useState(false);
     const { setReplyToMessage } = useReplyContext();
-
-    const { sendEventToParentOnMessageClick } = useCustomSelector((state) => ({
-        sendEventToParentOnMessageClick: state.Interface?.[chatSessionId]?.eventsSubscribedByParent?.includes(ALLOWED_EVENTS_TO_SUBSCRIBE.MESSAGE_CLICK) || false
-    }))
-
-    const handleMessageClick = () => {
-        if (sendEventToParentOnMessageClick) {
-            emitEventToParent("MESSAGE_CLICK", message)
-        }
-    }
 
     const handleReplyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -48,7 +35,6 @@ const UserMessageCard = React.memo(({ message, backgroundColor, foregroundColor,
     return (
         <div
             className="flex flex-col items-end w-full pb-3 animate-slide-left"
-            onClick={handleMessageClick}
             onMouseEnter={() => setShowReplyButton(true)}
             onMouseLeave={() => setShowReplyButton(false)}
         >
