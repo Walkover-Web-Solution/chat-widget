@@ -8,7 +8,7 @@ import { lighten } from "@mui/material";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 // App imports
-import { useChatActions, useGetMoreChats } from "@/components/Chatbot/hooks/useChatActions";
+import { useChatActions } from "@/components/Chatbot/hooks/useChatActions";
 import { useColor } from "@/components/Chatbot/hooks/useColor";
 import { useGetMoreHelloChats } from "@/components/Chatbot/hooks/useHelloIntegration";
 import { addUrlDataHoc } from "@/hoc/addUrlDataHoc";
@@ -28,7 +28,6 @@ const SCROLL_BUFFER = -500;
 
 function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: string, currentChannelId: string }) {
   const getMoreHelloChats = useGetMoreHelloChats();
-  const getMoreChats = useGetMoreChats();
   const { setNewMessage } = useChatActions();
   const { primaryBgColor, foregroundColor } = useColor();
 
@@ -43,8 +42,7 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
   const scrollableDivRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const { isHelloUser, assigned_type, greetingMessage } = useCustomSelector((state) => ({
-    isHelloUser: state.draftData?.isHelloUser,
+  const { assigned_type, greetingMessage } = useCustomSelector((state) => ({
     assigned_type: (() => {
       const foundType = state.Hello?.[chatSessionId]?.channelListData?.channels?.find((channel: any) => channel?.channel === currentChannelId)?.assigned_type;
       return foundType === undefined ? 'bot' : foundType;
@@ -55,14 +53,6 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
   const themePalette = useMemo(() => ({
     "--primary-main": lighten(primaryBgColor, 0.4),
   }), [primaryBgColor]);
-
-  const fetchMoreData = useCallback(() => {
-    if (isHelloUser) {
-      getMoreHelloChats();
-    } else {
-      getMoreChats();
-    }
-  }, [isHelloUser, getMoreHelloChats, getMoreChats]);
 
   const moveToDown = useCallback(() => {
     if (scrollableDivRef.current) {
@@ -105,7 +95,7 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
 
   // this is the greeting message that is shown when the user first opens the chat
   const renderGreetingMessage = useMemo(() => {
-    if (!isHelloUser || !greetingMessage ||
+    if (!greetingMessage ||
       (!greetingMessage.text && !greetingMessage?.options?.length)) {
       return null;
     }
@@ -133,7 +123,7 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
         }}
       />
     );
-  }, [isHelloUser, greetingMessage]);
+  }, [greetingMessage]);
 
   const ThinkingIndicator = React.memo(({ themePalette }: { themePalette: any }) => (
     <div className="w-full mb-3">
@@ -149,9 +139,9 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
   ));
 
   const renderThinkingIndicator = useMemo(() => {
-    const shouldShow = loading && (assigned_type === 'bot') && isHelloUser;
+    const shouldShow = loading && (assigned_type === 'bot');
     return shouldShow ? <ThinkingIndicator themePalette={themePalette} /> : null;
-  }, [loading, assigned_type, isHelloUser, themePalette]);
+  }, [loading, assigned_type, themePalette]);
 
   const renderedMessages = useMemo(() => {
     let lastHumanOrBotIndex = -1;
@@ -200,7 +190,7 @@ function MessageList({ chatSessionId, currentChannelId = "" }: { chatSessionId: 
       >
         <InfiniteScroll
           dataLength={messageIds.length}
-          next={fetchMoreData}
+          next={getMoreHelloChats}
           hasMore={hasMoreMessages}
           loader={<Loader />}
           scrollableTarget="scrollableDiv"

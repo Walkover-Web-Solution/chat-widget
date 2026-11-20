@@ -2,34 +2,26 @@
 /* eslint-disable */
 import { useColor } from "@/components/Chatbot/hooks/useColor";
 import React, { useMemo } from "react";
-import AssistantMessageCard from "./AssistantMessage";
 import DateGroup from "./DateGroup";
 import HumanOrBotMessageCard from "./HumanOrBotMessage";
 import "./Message.css";
-import ToolsCallMessage from "./ToolsCallMessage";
 import UserMessageCard from "./UserMessage";
 import VoiceCallMessage from "./VoiceCallMessage";
 
-/**
- * A component that displays a message.
- * It includes a message card, date group, and tools call message.
- */
+// Renders one message by role, with its date group
 
 interface MessageProps {
   message: any;
-  addMessage?: any;
   prevTime?: string | number | null;
   isLastMessage?: boolean;
 }
 
 const ROLE_USER = "user";
-const ROLE_ASSISTANT = "assistant";
 const ROLE_HUMAN = "Human";
 const ROLE_BOT = "Bot";
-const ROLE_TOOLS_CALL = "tools_call";
 const ROLE_VOICE_CALL = "voice_call";
 
-function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps) {
+function Message({ message, prevTime, isLastMessage }: MessageProps) {
   const { primaryBgColor, foregroundColor } = useColor();
 
   /**
@@ -41,26 +33,7 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
     switch (role) {
       case ROLE_USER:
         return (
-          <>
-            <UserMessageCard
-              message={message}
-              foregroundColor={foregroundColor}
-              backgroundColor={primaryBgColor}
-            />
-            {message?.error && (
-              <AssistantMessageCard
-                message={message}
-                isError={true}
-                foregroundColor={foregroundColor}
-                backgroundColor={primaryBgColor}
-              />
-            )}
-          </>
-        );
-
-      case ROLE_ASSISTANT:
-        return (
-          <AssistantMessageCard
+          <UserMessageCard
             message={message}
             foregroundColor={foregroundColor}
             backgroundColor={primaryBgColor}
@@ -73,16 +46,13 @@ function Message({ message, addMessage, prevTime, isLastMessage }: MessageProps)
       case ROLE_BOT:
         return <HumanOrBotMessageCard message={message} isBot={true} isLastMessage={isLastMessage} />;
 
-      case ROLE_TOOLS_CALL:
-        return <ToolsCallMessage message={message} />;
-
       case ROLE_VOICE_CALL:
         return <VoiceCallMessage message={message} />;
 
       default:
         return null;
     }
-  }, [message, foregroundColor, primaryBgColor, addMessage]);
+  }, [message, foregroundColor, primaryBgColor, isLastMessage]);
 
   return (
     <div className="w-full">

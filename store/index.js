@@ -10,12 +10,8 @@ import {
   REGISTER,
   REHYDRATE
 } from 'redux-persist/es/constants';
-import createSagaMiddleware from "redux-saga";
 import { createStateSyncMiddleware, initMessageListener } from 'redux-state-sync';
 import rootReducer from "./combineReducer";
-import rootSaga from "./rootSaga.ts";
-
-// import { getInfoParametersFromUrl } from "../utils/utilities";
 
 export const getInfoParametersFromUrl = (storeAPI) => {
   if (typeof window === "undefined") {
@@ -67,7 +63,6 @@ const rootPersistConfig = {
 };
 
 const persistedReducer = persistReducer(rootPersistConfig, rootReducer);
-const sagaMiddleware = createSagaMiddleware();
 
 export function initializeStore(initialState) {
   const isServer = typeof window === "undefined";
@@ -79,10 +74,8 @@ export function initializeStore(initialState) {
       preloadedState: initialState,
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({ serializableCheck: false })
-          .concat(customMiddleware)
-          .concat(sagaMiddleware),
+          .concat(customMiddleware),
     });
-    sagaMiddleware.run(rootSaga);
     return store;
   } else {
     // Client-side: include redux-state-sync middleware
@@ -92,11 +85,9 @@ export function initializeStore(initialState) {
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({ serializableCheck: false })
           .concat(customMiddleware)
-          .concat(sagaMiddleware)
           .concat(createStateSyncMiddleware(crossTabSyncConfig)),
     });
     initMessageListener(store);
-    sagaMiddleware.run(rootSaga);
     return store;
   }
 }
