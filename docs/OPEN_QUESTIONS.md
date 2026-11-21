@@ -22,6 +22,10 @@ These are questions that the repository does not answer. Each one blocks a secti
 10. **Priorities.** What are the current strategic priorities?
 11. **Success metrics.** Which metrics define success (for example adoption, conversation volume, response time, call success rate)?
 
+## Task routing
+
+14. **WhatsApp Webhook (New) Test Run.** Steward tasks for `wa.voice.event.received` dry-run under `Walkover-Web-Solution/chat-widget` have no implementation surface in this repository; the UI lives in `Walkover-Web-Solution/msg91-UI` (`apps/msg91/src/app/webhook/`). Should future MSG91 panel webhook work be routed to `msg91-UI` (and the reports API backend) instead of `chat-widget`?
+
 ## Consistency with the rules
 
 12. **Hardcoded hosts.** `config/api.ts` (`api.phone91.com`, `flow-api.viasocket.com`) and `public/chatbot.js` contain hardcoded hosts, although `docs/AI_INSTRUCTIONS.md` prohibits them. Are these intentional exceptions or debt to remove?
