@@ -1,3 +1,5 @@
+> Superseded by the verified docs in docs/ — start at AGENTS.md and docs/README.md. Kept for reference; may be stale.
+
 # Calling Feature
 
 ## Overview

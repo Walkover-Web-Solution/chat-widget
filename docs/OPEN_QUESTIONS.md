@@ -1,3 +1,5 @@
+> Product/decision doc, not verified against the code. For how the code works today, see AGENTS.md and docs/README.md.
+
 # Open Questions
 
 These are questions that the repository does not answer. Each one blocks a section of `docs/VISION.md` that is marked "Not stated: an owner decides". When an owner answers a question, record the answer in `docs/VISION.md` and remove the question from this list.

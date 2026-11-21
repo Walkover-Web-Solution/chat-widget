@@ -1,3 +1,5 @@
+> Product/decision doc, not verified against the code. For how the code works today, see AGENTS.md and docs/README.md.
+
 # Region-wise API & Socket Routing — Requirements
 
 **Date:** 2026-08-11 (updated 2026-09-01: region now resolved by a dedicated `/routing-region`
