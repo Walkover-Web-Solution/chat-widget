@@ -17,6 +17,7 @@ class HelloVoiceService {
     private callDirection: "incoming" | "outgoing" | null = null;
     private callId: string | null = null;
     private isMuted: boolean = false;
+    private ringAudio: HTMLAudioElement | null = null;
 
     private constructor() {
         this.eventEmitter = new EventEmitter();
@@ -38,6 +39,9 @@ class HelloVoiceService {
 
         this.webrtc = WebRTC(clientToken, WebRTC_environment);
         this.webrtc.on("call", this.handleCall);
+        this.webrtc.on("play-ringtone", this.playRingtone);
+        this.webrtc.on("stop-ringtone", this.stopRingtone);
+        this.ensureRingAudio();
     }
 
     /** Incoming (Agent→Client) and client-started outgoing share the same accept/hang UI. */
@@ -56,6 +60,9 @@ class HelloVoiceService {
         if (isIncoming) {
             // CallUI lives in the iframe — open parent chatbot so Accept is visible.
             emitEventToParent("OPEN_CHATBOT");
+            this.playRingtone();
+        } else {
+            this.stopRingtone();
         }
         this.eventEmitter.emit("callStateChanged", {
             state: this.callState,
@@ -72,12 +79,14 @@ class HelloVoiceService {
         // Set up event listeners for this call
         call.on("answered", (data: any) => {
             console.log('call answered', data);
+            this.stopRingtone();
             this.callState = "connected";
             this.eventEmitter.emit("callStateChanged", { state: this.callState, data });
         });
 
         call.on("connected", (mediaStream: any) => {
             console.log('call connected');
+            this.stopRingtone();
             this.callState = "connected";
             this.eventEmitter.emit("callStateChanged", {
                 state: this.callState,
@@ -144,12 +153,14 @@ class HelloVoiceService {
 
     public answerCall(): void {
         if (this.currentCall && this.callState === "ringing" && this.callDirection === "incoming") {
+            this.stopRingtone();
             this.currentCall.accept();
         }
     }
 
     public rejectCall(): void {
         if (this.currentCall && this.callState === "ringing") {
+            this.stopRingtone();
             if (typeof this.currentCall.reject === "function") {
                 this.currentCall.reject();
             } else {
@@ -160,11 +171,8 @@ class HelloVoiceService {
 
     public endCall(): void {
         if (this.currentCall) {
-            if (this.callState === "ringing" && this.callDirection === "incoming" && typeof this.currentCall.reject === "function") {
-                this.currentCall.reject();
-            } else {
-                this.currentCall.hang();
-            }
+            this.stopRingtone();
+            this.currentCall.hang();
         }
     }
 
@@ -214,7 +222,31 @@ class HelloVoiceService {
         return !!this.webrtc;
     }
 
+    private ensureRingAudio(): HTMLAudioElement {
+        if (!this.ringAudio) {
+            this.ringAudio = document.createElement("audio");
+            this.ringAudio.src = "/vintage2.mp3";
+            this.ringAudio.loop = true;
+            this.ringAudio.preload = "auto";
+        }
+        return this.ringAudio;
+    }
+
+    private playRingtone = () => {
+        if (this.callDirection === "outgoing") return;
+        this.ensureRingAudio().play().catch((error) => {
+            console.log("Widget ringtone play failed", error);
+        });
+    };
+
+    private stopRingtone = () => {
+        if (!this.ringAudio) return;
+        this.ringAudio.pause();
+        this.ringAudio.currentTime = 0;
+    };
+
     public resetCall(): void {
+        this.stopRingtone();
         this.callState = "idle";
         this.callDirection = null;
         this.callId = null;
@@ -225,6 +257,7 @@ class HelloVoiceService {
     }
 
     public cleanUp(): void {
+        this.stopRingtone();
         if (this.webrtc) {
             // this.webrtc.off("call");
             this.webrtc = null;
