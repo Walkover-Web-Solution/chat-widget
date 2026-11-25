@@ -1,19 +1,41 @@
-.mat-faqs-btn {
-    height: 30px;
-    line-height: 30px;
-    font-family: var(--msg-fontFamily);
-}
+@use '../../ui' as ui;
+
 .all-conversation {
-    padding: 32px 16px !important;
-    border-radius: 16px 16px 40px 40px;
-    box-sizing: border-box;
-    height: 104px;
-    box-shadow: 0px 0px 8px rgb(0 0 0 / 8%);
+    @include ui.header-compact;
+
+    .header-row {
+        gap: 4px;
+    }
+
+    .btn-w-icon {
+        @include ui.header-icon-button;
+    }
+
     h3 {
-        line-height: 20px;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 22px;
+        letter-spacing: -0.01em;
+        color: var(--msg-textColor);
+    }
+
+    .mat-faqs-btn {
+        @include ui.header-pill;
     }
 }
 
 .channels-body-inner-container {
-   inset: 0;
+    inset: 0;
+    padding: 16px;
+    @include ui.scrollbar;
+
+    .conversation-card {
+        @include ui.card;
+    }
+}
+
+@media (max-width: 576px) {
+    .all-conversation .header-row {
+        padding-right: 44px;
+    }
 }

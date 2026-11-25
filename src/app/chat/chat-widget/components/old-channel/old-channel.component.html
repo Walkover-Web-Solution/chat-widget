@@ -1,5 +1,5 @@
-<button class="main-msg91-old-channel h-auto" mat-button>
-    <div class="old-message-list-card position-relative w-100 d-flex">
+<button class="main-msg91-old-channel h-auto" mat-button type="button">
+    <div class="old-message-list-card position-relative w-100 d-flex align-items-center">
         <div
             class="old-profile-group position-relative d-flex align-items-center justify-content-center"
             [ngClass]="{
@@ -24,30 +24,25 @@
                 >
                 </msg91-profile-name>
             </ng-container>
-        </div>
-        <div class="old-message-list-text-content d-flex flex-column flex-1 ml-2">
-            <small class="old-title text-dotted fw-normal font-12">
-                {{ assignees?.assigneeName
-                }}{{
-                    channel?.last_message?.timetoken
-                        ? ' . ' + (channel?.last_message?.timetoken | timeConversion: 'timeAgo')
-                        : ''
-                }}</small>
-            <span class="text-dotted font-12">{{ channel?.last_message | lastConversion: 20 }}</span>
-            <span *ngIf="channel.widget_unread_count > 0" class="unread-count d-flex align-items-center">
-                <p class="new-message m-0 font-10">New message</p>
-                <span class="count border-radius-50 position-absolute text-white text-center fw-bolder font-10">
-                    {{ channel.widget_unread_count }}
-                </span>
+            <span *ngIf="channel.widget_unread_count > 0" class="count" [attr.aria-label]="channel.widget_unread_count + ' unread'">
+                {{ channel.widget_unread_count }}
             </span>
         </div>
-        <button class="old-c-btn d-flex align-items-center position-absolute p-0">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                    d="M8.58984 7.41L13.1698 12L8.58984 16.59L9.99984 18L15.9998 12L9.99984 6L8.58984 7.41Z"
-                    fill="var(--msg-primaryColor)"
-                />
+        <div class="old-message-list-text-content d-flex flex-column flex-1 overflow-hidden">
+            <span class="old-meta d-flex align-items-baseline">
+                <span class="old-title text-dotted">{{ assignees?.assigneeName }}</span>
+                <small class="old-time" *ngIf="channel?.last_message?.timetoken">
+                    {{ channel?.last_message?.timetoken | timeConversion: 'timeAgo' }}
+                </small>
+            </span>
+            <span class="old-preview text-dotted" [class.unread]="channel.widget_unread_count > 0">
+                {{ channel?.last_message | lastConversion: 40 }}
+            </span>
+        </div>
+        <span class="old-c-btn d-flex align-items-center justify-content-center" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
             </svg>
-        </button>
+        </span>
     </div>
 </button>

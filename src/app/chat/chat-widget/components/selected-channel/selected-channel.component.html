@@ -8,8 +8,8 @@
         }"
     >
         <div class="header-title d-flex align-items-center m-0 position-relative fw-bolder">
-            <button (click)="backToChat()" class="btn-w-icon" mat-icon-button *ngIf="botConfig?.type !== 'trial_bot'">
-                <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button (click)="backToChat()" class="btn-w-icon" mat-icon-button type="button" aria-label="Back" *ngIf="botConfig?.type !== 'trial_bot'">
+                <svg width="26" height="26" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path
                         d="M19.2627 20.7375L13.5377 15L19.2627 9.2625L17.5002 7.5L10.0002 15L17.5002 22.5L19.2627 20.7375Z"
                         fill="white"
@@ -46,7 +46,10 @@
                         </msg91-profile-name>
                     </ng-container>
                 </div>
-                <span class="assigneeName text-dotted fw-bolder font-18" [style.color]="textColor">{{ selectedChannelAssignee?.assigneeName }}</span>
+                <span class="assigneeName text-dotted" [style.color]="textColor">{{
+                    selectedChannelAssignee?.assigneeName ||
+                        (selectedChannelAssignee?.assigneeBot ? widgetInfo?.bot_name || 'Bot' : 'Conversation')
+                }}</span>
             </ng-container>
             <ng-template #conversationTeamHeader>
                 <ng-container *ngIf="selectedTeamAssignee$ | async as selectedTeamAssignee; else conversationHeader">
@@ -77,7 +80,7 @@
                             </msg91-profile-name>
                         </ng-container>
                     </div>
-                    <span [style.color]="textColor" class="assigneeName text-dotted fw-bolder font-18"> {{ selectedTeamAssignee.assigneeName }}</span>
+                    <span [style.color]="textColor" class="assigneeName text-dotted">{{ selectedTeamAssignee.assigneeName || 'Conversation' }}</span>
                 </ng-container>
             </ng-template>
             <ng-template #conversationHeader>
@@ -106,21 +109,21 @@
                         </msg91-profile-name>
                     </ng-container>
                 </div>
-                <span class="assigneeName text-dotted fw-bolder font-18" [style.color]="textColor">Conversation</span>
+                <span class="assigneeName text-dotted" [style.color]="textColor">Conversation</span>
             </ng-template>
-            <button mat-button class="mat-faqs-btn font-16 fw-bolder ml-auto py-0 pr-1 pl-2 flex-row-reverse gap-1" (click)="enableChatView(false)" *ngIf="widgetShowFaq$ | async">
+            <button mat-button class="mat-faqs-btn ml-auto flex-row-reverse" (click)="enableChatView(false)" *ngIf="widgetShowFaq$ | async">
                 FAQs
-                <mat-icon class="material-symbols-outlined mat-icon-20" aria-hidden="false" aria-label="chevron right icon" fontIcon="chevron_right"></mat-icon>
+                <mat-icon class="material-symbols-outlined" aria-hidden="true" fontIcon="chevron_right"></mat-icon>
             </button>
         </div>
         <!-- Widget Tagline:: START -->
         <div>
             <ng-container *ngIf="!widgetTagline$ | async as tagline">
-                <p class="h-desc text-white">We reply within a few hours.</p>
+                <p class="h-desc">We reply within a few hours.</p>
             </ng-container>
 
             <ng-container *ngIf="widgetTagline$ | async as tagline">
-                <p class="h-desc text-white">
+                <p class="h-desc">
                     {{ tagline }}
                 </p>
             </ng-container>
@@ -140,7 +143,7 @@
                     style="color: var(--msg-outboundMsg)"
                 ></mat-spinner>
             </div>
-            <ul class="message-ul my-2 p-0" id="message-list">
+            <ul class="message-ul p-0" id="message-list">
                 <ng-container
                     *ngFor="
                         let messageGroup of channelMessages$ | async | DateGroup;
@@ -149,8 +152,8 @@
                         trackBy: identifyList
                     "
                 >
-                    <div *ngIf="messageGroup[0]?.timetoken" class="chat-time-line d-flex justify-content-center mb-2">
-                        <span class="font-10 fw-bolder text-capitalize"> {{ messageGroup[0]?.timetoken | timeConversion: 'shortDate' }}</span>
+                    <div *ngIf="messageGroup[0]?.timetoken" class="chat-time-line d-flex justify-content-center">
+                        <span class="text-capitalize"> {{ messageGroup[0]?.timetoken | timeConversion: 'shortDate' }}</span>
                     </div>
                     <msg91-in-message
                         *ngIf="(firstMessage$ | async).text"
@@ -175,7 +178,7 @@
                             "
                             class="chat-unread-line d-flex justofy-content-center align-items-center"
                         >
-                            <span class="py-1 px-3 font-12 d-inline-block text-capitalize"> UNREAD </span>
+                            <span class="d-inline-block">Unread</span>
                         </div>
                         <li [id]="message.timetoken">
                             <ng-container [ngSwitch]="message.message.type">

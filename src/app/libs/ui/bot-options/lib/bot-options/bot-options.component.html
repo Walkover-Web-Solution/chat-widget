@@ -4,7 +4,7 @@
         (click)="optionClick.emit(option)"
         mat-stroked-button
         *ngFor="let option of options"
-        style="background: var(--color-common-white) !important"
+        type="button"
         [ngStyle]="{ 'pointer-events': disableAction ? 'none' : 'auto' }"
     >
         <span class="overflow-dotted">{{ option.name }}</span>

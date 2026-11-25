@@ -1,70 +1,149 @@
+@use '../../../../ui' as ui;
+
 @mixin button-styles {
     border: none;
-    height: 44px;
-    width: 44px;
-    padding: 0px 8px;
-    min-width: 44px;
+    height: 36px;
+    width: 36px;
+    padding: 0;
+    min-width: 36px;
+    border-radius: var(--cw-radius-pill) !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.18s var(--cw-ease),
+        transform 0.18s var(--cw-ease);
+    @include ui.focus-ring;
 }
 .mat-button {
     font-family: var(--msg-fontFamily) !important;
 }
 
 .textarea-bord-container {
-    background-color: var(--msg-inboundMsg);
+    background-color: var(--cw-surface);
+    border-top: 1px solid var(--cw-border);
+    padding: 10px 12px 12px;
 
     .bottom-bar {
+        align-items: flex-end !important;
+        padding: 3px 4px 3px 0 !important;
+        border: 1px solid var(--cw-border);
+        border-radius: 22px;
+        background-color: var(--cw-surface-muted);
+        transition:
+            border-color 0.18s var(--cw-ease),
+            box-shadow 0.18s var(--cw-ease),
+            background-color 0.18s var(--cw-ease);
+
+        &:focus-within {
+            border-color: var(--msg-primaryColor);
+            background-color: var(--cw-surface);
+            box-shadow: 0 0 0 3px var(--msg-secondaryColor);
+        }
+
+        > div:first-child {
+            min-height: 40px !important;
+        }
+
         .action-button {
             max-width: 110px;
-            
+            gap: 2px;
+            padding: 0 !important;
+            min-height: 40px;
+
             .link-btn {
                 @include button-styles;
                 .mat-icon {
-                    color: #A1A1A1;
+                    color: var(--cw-text-subtle);
                     transform: rotate(30deg);
                 }
+                &:hover {
+                    background-color: rgb(16 24 40 / 6%);
+                    .mat-icon {
+                        color: var(--cw-text-muted);
+                    }
+                }
             }
-            
+
             .send-msg-btn {
                 @include button-styles;
+                background-color: var(--msg-primaryColor);
+                box-shadow: 0 4px 10px -4px var(--msg-primaryColor);
+                animation: send-in 0.2s var(--cw-ease) both;
                 .mat-icon {
-                    color: var(--msg-outboundMsg);
+                    color: var(--msg-textColor);
+                    font-size: 18px;
+                    width: 18px;
+                    height: 18px;
+                }
+                &:hover {
+                    transform: scale(1.06);
                 }
             }
         }
     }
     .textarea-bord {
         border: 0;
-        padding: 10px 8px 8px 10px;
+        padding: 10px 6px 10px 16px;
         min-height: 25px !important;
+        max-height: 120px;
         resize: none;
         background-color: transparent;
-        color: #393939;
+        color: var(--cw-text);
         font-family: var(--msg-fontFamily);
+        line-height: 20px;
         cursor: auto;
         &:focus {
             outline: none;
         }
-    
+        &:disabled {
+            cursor: not-allowed;
+        }
+
         &::placeholder {
             /* Chrome, Firefox, Opera, Safari 10.1+ */
             font-size: 14px;
             line-height: 20px;
-            color: #a2a2a2;
+            color: var(--cw-text-subtle);
         }
-    
+
         &:-ms-input-placeholder {
             /* Internet Explorer 10-11 */
             font-size: 14px;
             line-height: 20px;
-            color: #a2a2a2;
+            color: var(--cw-text-subtle);
         }
-    
+
         &::-ms-input-placeholder {
             /* Microsoft Edge */
             font-size: 14px;
             line-height: 20px;
-            color: #a2a2a2;
+            color: var(--cw-text-subtle);
         }
+    }
+}
+
+@keyframes send-in {
+    from {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+// Inputs below 16px make iOS Safari zoom the page on focus.
+@media (max-width: 576px) {
+    .textarea-bord-container .textarea-bord.font-14 {
+        font-size: 16px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .textarea-bord-container .bottom-bar .action-button .send-msg-btn {
+        animation: none;
     }
 }
 
@@ -73,8 +152,10 @@
     color: #545454;
 
     .attach-file-wrapper {
-        background-color: rgba(0, 0, 0, 0.08);
-        height: 36px;
+        background-color: var(--cw-surface-muted);
+        border: 1px solid var(--cw-border);
+        border-radius: var(--cw-radius-control) !important;
+        height: 40px;
         box-sizing: border-box;
 
         .remove-attach {

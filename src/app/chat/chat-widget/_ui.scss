@@ -1,0 +1,163 @@
+// Shared visual primitives for the chat widget.
+// Values come from the --cw-* tokens declared on the widget host (chat-widget.component.scss)
+// and the brand colours (--msg-*) set at runtime from the widget settings.
+
+@mixin focus-ring {
+    &:focus-visible {
+        outline: 2px solid var(--msg-primaryColor) !important;
+        outline-offset: 2px;
+    }
+}
+
+// Brand header used on every screen. Inline background-color / background-image bindings
+// (widget colour and optional gradient) still win; the ::before layer only adds soft depth.
+@mixin header {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    box-sizing: border-box;
+    box-shadow: none;
+    color: var(--msg-textColor);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(120% 140% at 100% 0%, rgb(255 255 255 / 18%) 0%, rgb(255 255 255 / 0%) 55%),
+            radial-gradient(80% 120% at 0% 100%, rgb(0 0 0 / 14%) 0%, rgb(0 0 0 / 0%) 60%);
+    }
+
+    &.border-radius-none {
+        border-radius: 0 !important;
+    }
+}
+
+// Compact header row: back button, title, optional action on the right.
+@mixin header-compact {
+    @include header;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    height: auto !important;
+    min-height: 72px;
+    padding: 14px 16px 14px 8px !important;
+    border-radius: 0 !important;
+}
+
+// Round, translucent icon button that sits on the brand header.
+@mixin header-icon-button {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+    padding: 0 !important;
+    border-radius: var(--cw-radius-pill) !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: background-color 0.2s var(--cw-ease);
+    @include focus-ring;
+
+    &:hover {
+        background-color: rgb(255 255 255 / 16%);
+    }
+
+    svg path {
+        fill: var(--msg-textColor);
+    }
+}
+
+// Pill action ("FAQs") on the brand header.
+@mixin header-pill {
+    height: 32px !important;
+    line-height: 32px !important;
+    padding: 0 6px 0 12px !important;
+    border-radius: var(--cw-radius-pill) !important;
+    background-color: rgb(255 255 255 / 16%) !important;
+    color: var(--msg-textColor) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+    backdrop-filter: blur(6px);
+    transition:
+        background-color 0.2s var(--cw-ease),
+        transform 0.2s var(--cw-ease);
+    @include focus-ring;
+
+    &:hover {
+        background-color: rgb(255 255 255 / 26%) !important;
+    }
+
+    .mat-icon {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 18px !important;
+        margin: 0 !important;
+        color: inherit !important;
+    }
+}
+
+@mixin card {
+    background-color: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: var(--cw-radius-card);
+    box-shadow: var(--cw-shadow-card);
+    overflow: hidden;
+}
+
+// Tappable list row inside a card (conversation, team, FAQ folder, article).
+@mixin list-row {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    min-height: 60px;
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    text-align: left !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--cw-border) !important;
+    border-radius: 0 !important;
+    background-color: transparent;
+    line-height: 1.3 !important;
+    cursor: pointer;
+    transition: background-color 0.18s var(--cw-ease);
+    @include focus-ring;
+
+    &:hover {
+        background-color: var(--cw-surface-muted);
+    }
+
+    &:last-child {
+        border-bottom: 0 !important;
+    }
+}
+
+@mixin chevron {
+    color: var(--cw-text-subtle);
+    transition:
+        transform 0.2s var(--cw-ease),
+        color 0.2s var(--cw-ease);
+}
+
+@mixin scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(16 24 40 / 18%) transparent;
+
+    &::-webkit-scrollbar {
+        width: 6px !important;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgb(16 24 40 / 18%) !important;
+        border-radius: 999px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background: rgb(16 24 40 / 30%) !important;
+    }
+}

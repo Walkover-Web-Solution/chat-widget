@@ -24,6 +24,7 @@ import { environment } from '../../../../../../../environments/environment';
 import { PhoneNumber, PhoneNumberControl } from '@msg91/ui/phone-number-material';
 import { IntlPhoneLib } from '@msg91/utils';
 import { ALPHANUMERIC_WITH_SPACE_REGEX } from '@msg91/regex';
+import { getClientParamKind } from '../../../../../utils';
 
 @Component({
     selector: 'msg91-client-input',
@@ -59,21 +60,21 @@ export class ClientInputComponent extends BaseComponent implements OnInit, OnDes
             if (res?.length) {
                 res.forEach((x) => {
                     let phoneValue = null;
-                    if (x.name?.toUpperCase() === 'NUMBER') {
+                    if (this.isPhoneParam(x)) {
                         this.initIntl(x);
-                        phoneValue = ((this.message as IFormMessage)?.form[x.id].value as PhoneNumber).phonenumber;
+                        phoneValue = ((this.message as IFormMessage)?.form?.[x.id]?.value as PhoneNumber)?.phonenumber ?? null;
                         this.clientForm.addControl(x.id, new FormControl(phoneValue));
                     } else {
                         this.clientForm.addControl(
                             x.id,
                             new FormControl(
-                                (this.message as IFormMessage)?.form[x.id].value,
-                                (this.message as IFormMessage)?.form[x.id].validators,
-                                x.name?.toUpperCase() === 'NAME' ? this.validateName.bind(this) : null
+                                (this.message as IFormMessage)?.form?.[x.id]?.value,
+                                (this.message as IFormMessage)?.form?.[x.id]?.validators,
+                                getClientParamKind(x.name) === 'name' ? this.validateName.bind(this) : null
                             )
                         );
                     }
-                    if ((this.message as IFormMessage)?.form[x.id].value) {
+                    if ((this.message as IFormMessage)?.form?.[x.id]?.value) {
                         this.clientForm.get(x.id).markAsDirty();
                         this.clientForm.get(x.id).markAsTouched();
                     }
@@ -182,13 +183,23 @@ export class ClientInputComponent extends BaseComponent implements OnInit, OnDes
         }
     }
 
+    public isPhoneParam(param: IParam): boolean {
+        return getClientParamKind(param?.name) === 'number';
+    }
+
+    public isMailParam(param: IParam): boolean {
+        return getClientParamKind(param?.name) === 'mail';
+    }
+
     submitParam(params: IParam[]) {
-        if (!this.clientForm.invalid && this.intlClass.isValidNumber) {
+        // The phone helper only exists when the form has a phone field.
+        const phoneIsValid = !params?.some((p) => this.isPhoneParam(p)) || !!this.intlClass?.isValidNumber;
+        if (!this.clientForm.invalid && phoneIsValid) {
             this.formIsSubmiting = true;
             const result: Partial<IClient> = {};
             const formValue = this.clientForm.getRawValue();
             Object.keys(formValue).forEach((x) => {
-                if (params.find((m) => m.id === x)?.name?.toUpperCase() === 'NUMBER') {
+                if (this.isPhoneParam(params.find((m) => m.id === x))) {
                     // const phoneValue: PhoneNumber = formValue[x];
                     // result[x] = phoneValue?.phonenumber;
                     result[x] = this.intlClass.phoneNumber;

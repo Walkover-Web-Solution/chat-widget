@@ -1,23 +1,36 @@
+@use '../../ui' as ui;
+
+:host {
+    display: block;
+}
+
 .team-list-body-container {
     .team-list-body-inner-container {
-        margin-bottom: 32px !important;
-        box-shadow: 0px 0px 10px rgb(0 0 0 / 8%);
-        border-radius: 6px;
+        @include ui.card;
+        margin: 16px;
     }
 }
 
-.team-message-list-card .team-profile-group {
-    width: 35px;
-    height: 35px;
-    min-width: 35px;
+// Embedded in the home "start a conversation" card: the parent card provides the frame.
+:host-context(.start-card) .team-list-body-container .team-list-body-inner-container {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .team-message-list-card {
+    gap: 12px;
+
     .team-profile-group {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+
         .profile-name {
             &.team-profile-1 {
                 top: 0;
-                z-index: 9999;
+                z-index: 9;
             }
 
             &.team-profile-2 {
@@ -33,39 +46,36 @@
     }
 }
 
-.team-message-list-text-content strong {
-    width: 172px;
-    line-height: 18px;
-    color: #4f4f4f;
-}
+.team-message-list-text-content {
+    margin-left: 0 !important;
+    min-width: 0;
 
-button.team-c-btn {
-    border: unset;
-    background-color: unset;
-    background-color: unset;
-    min-width: 24px;
-    height: 24px;
-
-    &:focus {
-        outline: unset !important;
+    strong {
+        font-family: var(--msg-fontFamily);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+        color: var(--cw-text);
     }
 }
 
-.team-list-body-inner-container {
-    .main-team-channel {
-        height: 48px !important;
-        &:last-child {
-            border-bottom: 0px !important;
-        }
-    }
+.team-c-btn {
+    @include ui.chevron;
+    flex: 0 0 20px;
 }
 
 ::ng-deep.main-team-channel {
-    padding: 12px 16px !important;
-    border-bottom: 1px solid #e3e3e4 !important;
-    line-height: 1 !important;
+    @include ui.list-row;
+    height: auto !important;
+    min-height: 60px;
 
-    span.mat-button-wrapper {
+    span.mat-button-wrapper,
+    span.mdc-button__label {
         width: 100%;
+    }
+
+    &:hover .team-c-btn {
+        color: var(--msg-primaryColor);
+        transform: translateX(2px);
     }
 }

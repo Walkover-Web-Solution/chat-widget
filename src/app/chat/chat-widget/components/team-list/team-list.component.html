@@ -1,9 +1,13 @@
 <div class="team-list-body-container flex-1 position-relative">
     <div class="team-list-body-inner-container">
         <ng-container *ngIf="teams$ | async as teams">
-            <button (click)="selectTeam(team.id)" *ngFor="let team of teams" class="main-team-channel d-flex align-items-center text-left ml-0 w-100 fw-normal rounded-0" mat-button>
+            <button (click)="selectTeam(team.id)" *ngFor="let team of teams" class="main-team-channel d-flex align-items-center text-left ml-0 w-100 fw-normal rounded-0" mat-button type="button">
                 <div class="team-message-list-card position-relative d-flex align-items-center w-100">
-                    <div class="team-profile-group position-relative d-flex align-items-center justify-content-center" *ngIf="teamAssignees$[team.id] | async as assignees">
+                    <div
+                        class="team-profile-group position-relative d-flex align-items-center justify-content-center"
+                        *ngIf="(teamAssignees$[team.id] | async)?.length; else teamInitials"
+                    >
+                        <ng-container *ngIf="teamAssignees$[team.id] | async as assignees">
                         <ng-container *ngFor="let assignee of assignees; let i = index">
                             <msg91-profile-name
                                 [ngClass]="{
@@ -21,20 +25,29 @@
                             >
                             </msg91-profile-name>
                         </ng-container>
+                        </ng-container>
                     </div>
+                    <ng-template #teamInitials>
+                        <div class="team-profile-group d-flex align-items-center justify-content-center" aria-hidden="true">
+                            <msg91-profile-name
+                                [hashCode]="team.name | getHashCode"
+                                [shortName]="team.name | getShortName"
+                                [width]="36"
+                                [height]="36"
+                                [aProfileClass]="'profileSingle'"
+                            ></msg91-profile-name>
+                        </div>
+                    </ng-template>
 
                     <div class="team-message-list-text-content d-flex flex-column ml-2 flex-1">
-                        <strong class="text-capitalize d-block font-14 text-dotted fw-normal"> {{ team.name }}</strong>
+                        <strong class="text-capitalize d-block text-dotted">{{ team.name }}</strong>
                     </div>
 
-                    <button class="team-c-btn p-0 d-flex align-items-center">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M8.58984 7.41L13.1698 12L8.58984 16.59L9.99984 18L15.9998 12L9.99984 6L8.58984 7.41Z"
-                                fill="var(--msg-primaryColor)"
-                            />
+                    <span class="team-c-btn d-flex align-items-center justify-content-center" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
                         </svg>
-                    </button>
+                    </span>
                 </div>
             </button>
         </ng-container>

@@ -1,20 +1,49 @@
+// Quick-reply buttons under a bot message. Fallbacks keep it usable outside the chat widget.
 .options {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 8px 0px;
     flex-direction: column;
+    gap: 6px;
+    margin: 10px 0 2px;
+
     button {
         width: 100%;
+        min-height: 36px;
+        height: auto !important;
+        padding: 6px 12px !important;
+        border: 1px solid var(--cw-border, #eaecf0) !important;
+        border-radius: var(--cw-radius-pill, 999px) !important;
+        background-color: var(--cw-surface, #ffffff) !important;
+        color: var(--cw-text, #101828) !important;
+        font-family: var(--msg-fontFamily);
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 20px;
         white-space: break-spaces;
-        line-height: 1.5;
-        padding: 4px;
+        transition:
+            background-color 0.18s ease,
+            border-color 0.18s ease,
+            transform 0.18s ease;
+
+        &:hover {
+            border-color: var(--msg-primaryColor, #101828) !important;
+            background-color: var(--msg-secondaryColor, #f6f7f9) !important;
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--msg-primaryColor, #101828);
+            outline-offset: 2px;
+        }
+
         .overflow-dotted {
+            display: block;
+            padding: 0;
             white-space: nowrap;
             overflow: hidden !important;
             text-overflow: ellipsis;
-            display: block;
-            padding: 0px 8px;
         }
     }
 }

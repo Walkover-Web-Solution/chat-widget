@@ -1,101 +1,107 @@
-@use '../../../../../assets/styles/component/global' as  global;
+@use '../../../../../assets/styles/component/global' as global;
+@use '../../ui' as ui;
 
 ::ng-deep {
     display: flex;
     flex-direction: column;
 }
 
-
 .mat-button {
     font-family: var(--msg-fontFamily) !important;
 }
 
-.frequently-body-inner-container {
-     inset: 0;
+/* Header */
 
-    .folder-items {
-        margin-bottom: 32px !important;
-        box-shadow: 0px 0px 10px rgb(0 0 0 / 8%);
-        .folder-icon {
-            color: var(--msg-outboundMsg) !important;
-        }
-    }
-    ul {
-        list-style: none;
-    }
-}
+.semples-header {
+    @include ui.header-compact;
+    flex-direction: row !important;
 
-
-.search-box {
-    position: relative;
-    z-index: 0;
-    svg {
-        position: absolute;
-        top: 25px;
-        left: 26px;
-    }
-}
-
-.search-box input[type='text'] {
-    border-radius: 6px;
-    border: 0px;
-    padding: 8px 10px 7px 39px;
-    height: 40px;
-    box-sizing: border-box;
-    background-color: var(--msg-inboundMsg);
-    color: #393939;
-    width: 100%;
-
-    &:focus {
-        outline: none;
+    .back-btn,
+    .view-btn {
+        @include ui.header-icon-button;
     }
 
-    &::placeholder {
-        /* Chrome, Firefox, Opera, Safari 10.1+ */
-        font-size: 14px;
-        line-height: 20px;
-        color: #a2a2a2;
-    }
-
-    &:-ms-input-placeholder {
-        /* Internet Explorer 10-11 */
-        font-size: 14px;
-        line-height: 20px;
-        color: #a2a2a2;
-    }
-
-    &::-ms-input-placeholder {
-        /* Microsoft Edge */
-        font-size: 14px;
-        line-height: 20px;
-        color: #a2a2a2;
-    }
-
-    &:focus {
-        outline: unset !important;
+    .view-btn svg {
+        fill: var(--msg-textColor);
     }
 }
 
 .faq-view-header {
+    gap: 4px;
+    min-width: 0;
     min-height: 40px;
+
     .faq-title {
-        line-height: 20px;
+        min-width: 0;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 22px;
+        letter-spacing: -0.01em;
         -webkit-font-smoothing: antialiased;
     }
 }
 
-.main-loader {
-    background-color: #ffffffbf;
+.head-logo {
+    order: 1;
+}
 
-    .mat-progress-spinner {
-        circle {
-            stroke: var(--msg-primaryColor);
+/* Search */
+
+.search-box {
+    position: relative;
+    z-index: 0;
+    padding: 16px 16px 4px;
+
+    svg {
+        position: absolute;
+        top: 26px;
+        left: 28px;
+        pointer-events: none;
+
+        path {
+            fill: var(--cw-text-subtle);
         }
     }
 }
 
+.search-box input[type='search'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 42px;
+    padding: 0 40px 0 40px;
+    box-sizing: border-box;
+    border: 1px solid var(--cw-border);
+    border-radius: var(--cw-radius-control);
+    background-color: var(--cw-surface-muted);
+    color: var(--cw-text);
+    font-family: var(--msg-fontFamily);
+    font-size: 14px;
+    transition:
+        border-color 0.18s var(--cw-ease),
+        box-shadow 0.18s var(--cw-ease),
+        background-color 0.18s var(--cw-ease);
+
+    &::placeholder {
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--cw-text-subtle);
+    }
+
+    &::-webkit-search-cancel-button {
+        cursor: pointer;
+    }
+
+    &:focus {
+        outline: none !important;
+        border-color: var(--msg-primaryColor);
+        background-color: var(--cw-surface);
+        box-shadow: 0 0 0 3px var(--msg-secondaryColor);
+    }
+}
+
 .search-loader {
-    top: 25px;
+    top: 27px;
     right: 28px;
 
     .mat-progress-spinner {
@@ -105,36 +111,79 @@
     }
 }
 
-.head-logo {
-   order: 1;
+/* Lists */
+
+.frequently-body-inner-container {
+    inset: 0;
+    padding: 12px 16px 16px;
+    @include ui.scrollbar;
+
+    .folder-items {
+        @include ui.card;
+    }
+
+    ul {
+        list-style: none;
+    }
 }
 
-.semples-header {
-    padding: 32px 16px !important;
-    border-radius: 16px 16px 40px 40px;
-    box-sizing: border-box;
-    height: 104px;
-    box-shadow: 0px 0px 8px rgb(0 0 0 / 8%);
+.folder-row {
+    @include ui.list-row;
+    gap: 12px;
+    font-family: var(--msg-fontFamily);
+    color: var(--cw-text);
+
+    .folder-icon {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background-color: var(--msg-secondaryColor);
+
+        .mat-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 20px;
+            color: var(--msg-primaryColorDark);
+        }
+    }
+
+    .folder-text {
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .folder-name {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+    }
+
+    .folder-meta {
+        font-size: 12px;
+        line-height: 16px;
+        color: var(--cw-text-muted);
+    }
+
+    .row-chevron {
+        @include ui.chevron;
+        flex: 0 0 20px;
+    }
+
+    &:hover .row-chevron {
+        color: var(--msg-primaryColor);
+        transform: translateX(2px);
+    }
 }
 
-/* width */
-::-webkit-scrollbar {
-    width: 5px !important;
-}
+.main-loader {
+    background-color: rgb(255 255 255 / 75%);
 
-/* Track */
-::-webkit-scrollbar-track {
-    background: var(--msg-inboundMsg) !important;
-}
-
-/* Handle */
-::-webkit-scrollbar-thumb {
-    background: var(--msg-outboundMsg) !important;
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-    background: var(--msg-primaryColor) !important;
+    .mat-progress-spinner {
+        circle {
+            stroke: var(--msg-primaryColor);
+        }
+    }
 }
 
 .faIcon {
@@ -148,12 +197,13 @@
     stroke: var(--msg-secondaryColor);
 }
 
-.faq-list {
-    .mdc-list-item {
-        color: #4f4f4f;
+@media (max-width: 576px) {
+    .semples-header {
+        padding-right: 56px !important;
+    }
 
-        &.mdc-list-item--with-one-line {
-            height: 52px !important;
-        }
+    // Inputs below 16px make iOS Safari zoom the page on focus.
+    .search-box input[type='search'] {
+        font-size: 16px;
     }
 }

@@ -1,34 +1,53 @@
+@use '../../ui' as ui;
+
 ul {
     margin: 0;
     padding: 0;
     list-style: none;
+
     &.articles-list {
-        margin-bottom: 32px !important;
-        box-shadow: 0px 0px 10px rgb(0 0 0 / 8%);
-        border-radius: 6px;
-        svg {
-            fill: var(--msg-outboundMsg);
-            width: 16px;
-            height: 16px;
-        }
+        @include ui.card;
     }
 }
 
 .folder-list {
-    padding: 15px 15px 15px 40px;
-    border-bottom: 1px solid #e3e3e4;
-    // font-size: 14px !important;
-    // display: flex;
-    // align-items: center;
-    // cursor: pointer;
-    transition: 500ms all;
-    // width: auto;
-    color: #4f4f4f !important;
-    &:hover {
-        background-color: #dcdcdc63;
+    @include ui.list-row;
+    gap: 12px;
+    color: var(--cw-text) !important;
+    font-family: var(--msg-fontFamily);
+    font-weight: 500;
+
+    .article-icon {
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background-color: var(--cw-surface-muted);
+        color: var(--cw-text-muted);
+        transition:
+            background-color 0.18s var(--cw-ease),
+            color 0.18s var(--cw-ease);
     }
-    svg {
-        position: absolute;
-        left: 15px;
+
+    .word-break {
+        flex: 1;
+        min-width: 0;
+        line-height: 20px;
+    }
+
+    .row-chevron {
+        @include ui.chevron;
+        flex: 0 0 20px;
+    }
+
+    &:hover {
+        .article-icon {
+            background-color: var(--msg-secondaryColor);
+            color: var(--msg-primaryColorDark);
+        }
+        .row-chevron {
+            color: var(--msg-primaryColor);
+            transform: translateX(2px);
+        }
     }
 }

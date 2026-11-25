@@ -4,18 +4,40 @@
     align-items: flex-start;
 }
 
+@keyframes bubble-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .input-msg-box {
+        animation: none !important;
+    }
+}
+
 .input-msg-box {
     .agent-name {
-        color: #8f9396;
+        color: var(--cw-text-muted);
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.01em;
     }
 
-    padding: 6px;
-    background-color: var(--msg-inboundMsg);
-    color: #393939;
-    min-width: 160px;
-    max-width: 233px;
-    border-radius: 6px;
+    padding: 9px 13px;
+    background-color: #f2f4f7;
+    color: var(--cw-text);
+    min-width: 64px;
+    max-width: 260px;
+    border-radius: 18px 18px 18px 6px;
     box-sizing: border-box;
+    line-height: 20px;
+    animation: bubble-in 0.24s var(--cw-ease) both;
     span {
         display: block;
     }
@@ -23,7 +45,8 @@
     P {
         margin: 0px;
         font-family: var(--msg-fontFamily);
-        color: #313131;
+        color: var(--cw-text);
+        line-height: 20px;
     }
 
     &.if-attachment {
@@ -107,8 +130,8 @@
     .input-msg-break {
         -ms-word-break: break-word !important;
         word-break: break-word !important;
-        -webkit-hyphens: auto !important;
-        hyphens: auto !important;
+        -webkit-hyphens: manual !important;
+        hyphens: manual !important;
         pre {
             overflow-wrap: break-word;
             white-space: pre-wrap;

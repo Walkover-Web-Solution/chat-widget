@@ -1,24 +1,45 @@
+@use '../../../../ui' as ui;
+
 :host {
     display: block;
-    max-width: 90%;
+    width: 100%;
+    max-width: 280px;
 
     .client-input-form {
         display: flex;
         align-items: flex-end;
-        .bot-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            margin-right: 16px;
-        }
         .msg-container {
             display: flex;
             flex-direction: column;
-            .details-card {
-                margin-top: 8px;
-            }
+            width: 100%;
+            gap: 8px;
         }
     }
+}
+
+/* Intro message: same look as an incoming bubble */
+.intro-bubble {
+    padding: 9px 13px;
+    border-radius: 18px 18px 18px 6px;
+    background-color: #f2f4f7;
+    color: var(--cw-text);
+    font-size: 14px;
+    line-height: 20px;
+
+    .agent-name {
+        margin-bottom: 2px !important;
+        color: var(--cw-text-muted);
+        font-size: 11px;
+        font-weight: 600;
+    }
+}
+
+/* Form card */
+::ng-deep.details-card.mat-mdc-card {
+    @include ui.card;
+    padding: 14px 14px 12px !important;
+    box-shadow: var(--cw-shadow-card) !important;
+    box-sizing: border-box;
 }
 
 ::ng-deep.show-loader {
@@ -30,67 +51,159 @@
         }
     }
 }
+
 ::ng-deep.clint-input-container {
+    margin-bottom: 2px !important;
+
+    .mat-mdc-form-field {
+        font-family: var(--msg-fontFamily);
+    }
+
     .mat-mdc-text-field-wrapper {
+        background-color: var(--cw-surface);
+
         .mat-mdc-floating-label {
-            color: #393939 !important;
+            color: var(--cw-text-muted) !important;
+            font-size: 14px;
         }
     }
+
+    // Rounded outline to match the rest of the widget.
+    .mdc-notched-outline__leading {
+        border-radius: var(--cw-radius-control) 0 0 var(--cw-radius-control) !important;
+        width: 12px !important;
+    }
+    .mdc-notched-outline__trailing {
+        border-radius: 0 var(--cw-radius-control) var(--cw-radius-control) 0 !important;
+    }
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled) {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+            border-color: var(--cw-border) !important;
+        }
+        &:hover .mdc-notched-outline > * {
+            border-color: #c4c9d2 !important;
+        }
+    }
+    .mdc-text-field--focused:not(.mdc-text-field--disabled) {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+            border-color: var(--msg-primaryColor) !important;
+            border-width: 2px !important;
+        }
+        .mat-mdc-floating-label {
+            color: var(--msg-primaryColor) !important;
+        }
+    }
+    .mdc-text-field--invalid:not(.mdc-text-field--disabled) {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+            border-color: #d92d20 !important;
+        }
+    }
+
+    .mat-mdc-input-element {
+        color: var(--cw-text);
+        font-size: 14px;
+    }
+
     .mat-mdc-form-field-subscript-wrapper {
         padding-left: 0px !important;
         .mat-mdc-form-field-error {
+            color: #d92d20;
             font-size: 12px;
         }
     }
     .invalid-number {
         bottom: -11px;
-        color: #f44336;
+        color: #d92d20;
     }
 }
 
 ::ng-deep.form-btn {
+    margin-top: 4px;
 
-    .mdc-button--unelevated.mat-primary,
-    .mdc-button--unelevated.mat-primary,
-    .mat-mdc-fab .mat-primary,
-    .mat-mdc-mini-fab.mat-primary {
-        background-color: var(--msg-primaryColor);
-        box-shadow: none !important;
+    .submit-btn.mdc-button {
+        height: 44px;
+        border-radius: var(--cw-radius-control) !important;
+        background-color: var(--msg-primaryColor) !important;
+        color: var(--msg-textColor) !important;
+        font-family: var(--msg-fontFamily);
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        box-shadow: 0 6px 14px -8px var(--msg-primaryColor) !important;
+        transition: filter 0.18s var(--cw-ease);
+        @include ui.focus-ring;
+
+        &:hover:not(:disabled) {
+            filter: brightness(1.06);
+        }
+
+        &:disabled {
+            background-color: var(--cw-surface-muted) !important;
+            color: var(--cw-text-subtle) !important;
+            box-shadow: none !important;
+        }
+    }
+}
+
+/* Submitted */
+.success-clint-form {
+    gap: 12px;
+    margin: 8px 0;
+    padding: 14px;
+    border: 1px solid #c6f0d6;
+    border-radius: var(--cw-radius-card);
+    background-color: #ecfdf3;
+
+    .success-icon {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #12b76a;
         color: #ffffff;
     }
-}
 
-::ng-deep.details-card {
-    box-shadow: none !important;
-    box-sizing: border-box;
-}
-
-.success-clint-form {
-    padding: 22px 12px;
-    background-color: var(--msg-inboundMsg);
-    border-radius: 6px;
     strong {
+        color: #05603a;
+        font-size: 14px;
+        font-weight: 600;
         line-height: 20px;
-        color: #313131;
-    }
-    img {
-        width: 42px;
-        height: 42px;
     }
 }
 
-
-.input-msg-box {
-    padding: 6px;
-    background-color: var(--msg-inboundMsg);
-    color: #393939;
-    line-height: 20px;
-    .agent-name {
-        color: #8f9396;
-    }
+::ng-deep.clint-input-container .iti {
+    width: 100%;
 }
 
 #init-contact {
+    box-sizing: border-box;
+    width: 100%;
     height: 48px !important;
-    background-color: transparent;
+    // Left padding is set by the country picker so the flag stays clear of the text.
+    padding-right: 14px;
+    border: 1px solid var(--cw-border);
+    border-radius: var(--cw-radius-control);
+    background-color: var(--cw-surface);
+    color: var(--cw-text);
+    font-size: 14px;
+
+    &:focus {
+        outline: none;
+        border-color: var(--msg-primaryColor);
+        box-shadow: 0 0 0 3px var(--msg-secondaryColor);
+    }
+}
+
+@media (max-width: 576px) {
+    // Inputs below 16px make iOS Safari zoom the page on focus.
+    ::ng-deep.clint-input-container .mat-mdc-input-element,
+    #init-contact {
+        font-size: 16px;
+    }
 }

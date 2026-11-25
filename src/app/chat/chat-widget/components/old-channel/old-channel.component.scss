@@ -1,19 +1,29 @@
+@use '../../ui' as ui;
+
+:host {
+    display: block;
+}
+
 .mat-button {
     font-family: var(--msg-fontFamily) !important;
 }
 
 .old-message-list-card {
+    gap: 12px;
+
     .old-profile-group {
+        flex: 0 0 40px;
+        width: 40px;
+        height: 40px;
+
         &.singleInitial {
-            width: 40px;
-            height: 40px;
             font-weight: 600;
-            font-size: 18px;
+            font-size: 16px;
             line-height: 20px;
         }
         &.multipleInitial {
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
         }
         .profile-name {
             &.old-profile-1 {
@@ -33,90 +43,87 @@
             position: unset !important;
             top: unset !important;
         }
-    }
-    .old-message-list-text-content {
+
         .count {
-            color: #979797;
-            line-height: 16px;
+            position: absolute;
+            top: -4px;
+            right: -6px;
+            z-index: 10;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: var(--cw-radius-pill);
+            background-color: #ef4444;
+            box-shadow: 0 0 0 2px var(--cw-surface);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: center;
         }
-    
+    }
+
+    .old-message-list-text-content {
+        gap: 3px;
+        min-width: 0;
+        font-family: var(--msg-fontFamily) !important;
+
+        .old-meta {
+            gap: 8px;
+            min-width: 0;
+        }
+
         .old-title {
-            color: #999797;
+            min-width: 0;
+            font-size: 14px;
+            font-weight: 600;
             line-height: 20px;
-            width: 160px;
-            font-family: var(--msg-fontFamily) !important;
+            color: var(--cw-text);
         }
-    
-        > span {
-            line-height: 20px;
-            width: 160px;
-            color: #313131;
-            font-family: var(--msg-fontFamily) !important;
+
+        .old-time {
+            flex-shrink: 0;
+            margin-left: auto;
+            font-size: 11px;
+            line-height: 16px;
+            color: var(--cw-text-subtle);
         }
-        span.unread-count {
-            color: #5eaf00;
-            border-radius: 20px;
-          
-            mat-icon {
-              font-size: 13px;
-              width: 13px;
-              height: 13px;
-              margin-right: 6px;
-              color: #ffb700;
-            }
-            .new-message {
-                line-height: 11px;
-                color: var(--msg-primaryColor);
-            }
-            .count {
-                background-color: #f50505;
-                left: -5px;
-                top: -6px;
-                width: 20px;
-                height: 20px;
-                line-height: 20px;
-                z-index: 9;
+
+        .old-preview {
+            font-size: 13px;
+            line-height: 18px;
+            color: var(--cw-text-muted);
+
+            &.unread {
+                font-weight: 600;
+                color: var(--cw-text);
             }
         }
     }
-    button {
-        &.old-c-btn {
-            border: unset;
-            background-color: unset;
-            min-width: 24px;
-            height: 24px;
-            bottom: 0px;
-            right: 0;
 
-            &:focus {
-                outline: unset !important;
-            }
-        }
-    }
-}
-
-:host {
-    &:last-child {
-        .main-msg91-old-channel {
-            border-bottom: 0px !important;
-        }
+    .old-c-btn {
+        @include ui.chevron;
+        flex: 0 0 20px;
     }
 }
 
 ::ng-deep.main-msg91-old-channel {
-    display: flex !important;
-    padding: 12px 16px !important;
-    border-bottom: 1px solid #e3e3e4 !important;
-    margin-right: 0 !important;
-    width: 100% !important;
-    text-align: left !important;
-    line-height: 1 !important;
+    @include ui.list-row;
+    height: auto !important;
     font-weight: normal !important;
-    border-radius: 0px !important;
 
     span.mdc-button__label {
         width: 100%;
     }
+
+    &:hover .old-c-btn {
+        color: var(--msg-primaryColor);
+        transform: translateX(2px);
+    }
+}
+
+:host:last-child ::ng-deep.main-msg91-old-channel {
+    border-bottom: 0 !important;
 }
 
 .secondary-color-fill {

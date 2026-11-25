@@ -34,7 +34,7 @@ import { ValidatorFn, Validators } from '@angular/forms';
 import { cloneDeep } from 'lodash-es';
 import { PhoneNumber } from '@msg91/ui/phone-number-material';
 import { HttpErrorResponse } from '@angular/common/http';
-import { getCookie, removeCookie } from '../../../utils';
+import { getClientParamKind, getCookie, removeCookie } from '../../../utils';
 import { SocketService } from '../../../service/socket.service';
 import { IHistoryRequest } from '../../../model/socket';
 import { EMAIL_REGEX } from '@msg91/regex';
@@ -513,18 +513,18 @@ export class ChannelsEffect {
                                 country_iso2 = client.country_iso2;
                                 params.forEach((x) => {
                                     formPreviousValue[x.id] = { value: null, validators: [] };
-                                    if (x.name?.toUpperCase() === 'NAME') {
+                                    if (getClientParamKind(x.name) === 'name') {
                                         formPreviousValue[x.id].value = !client.pseudo_name
                                             ? client.name ?? client.customer_name
                                             : '';
                                         formPreviousValue[x.id].validators = [Validators.required];
-                                    } else if (x.name?.toUpperCase() === 'NUMBER') {
+                                    } else if (getClientParamKind(x.name) === 'number') {
                                         formPreviousValue[x.id].value = new PhoneNumber(
                                             country_iso2 || '',
                                             (client.number ?? client.customer_number) || ''
                                         );
                                         formPreviousValue[x.id].validators = [];
-                                    } else if (x.name?.toUpperCase() === 'MAIL') {
+                                    } else if (getClientParamKind(x.name) === 'mail') {
                                         formPreviousValue[x.id]['value'] = client.mail ?? client.customer_mail;
                                         formPreviousValue[x.id].validators = [Validators.pattern(EMAIL_REGEX)];
                                     }

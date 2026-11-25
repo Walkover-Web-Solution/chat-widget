@@ -39,8 +39,10 @@
                 (click)="cancelFile()"
                 mat-button
                 class="remove-attach"
+                type="button"
+                aria-label="Remove attachment"
             >
-                <mat-icon class="mat-icon-20 m-0" aria-hidden="false" aria-label="close icon" fontIcon="close"></mat-icon>
+                <mat-icon class="mat-icon-20 m-0" aria-hidden="true" fontIcon="close"></mat-icon>
             </button>
         </div>
     </div>
@@ -105,17 +107,20 @@
                 class="link-btn"
                 mat-button
                 type="button"
+                aria-label="Attach a file"
                 *ngIf="!hideUpload && (!fileUploadPercentage || fileUploadPercentage === 0)"
             >
-                <mat-icon class="mat-icon-20 m-0" aria-hidden="false" aria-label="attach file icon" fontIcon="attach_file"></mat-icon>
+                <mat-icon class="mat-icon-20 m-0" aria-hidden="true" fontIcon="attach_file"></mat-icon>
             </button>
             <button
                 (click)="sendMessage()"
                 *ngIf="(messageContent?.trim().length || File) && showSendButton"
                 class="send-msg-btn"
                 mat-button
+                type="button"
+                aria-label="Send message"
             >
-                <mat-icon class="mat-icon-20 m-0" aria-hidden="false" aria-label="send icon" fontIcon="send"></mat-icon>
+                <mat-icon class="mat-icon-20 m-0" aria-hidden="true" fontIcon="send"></mat-icon>
             </button>
         </div>
     </div>

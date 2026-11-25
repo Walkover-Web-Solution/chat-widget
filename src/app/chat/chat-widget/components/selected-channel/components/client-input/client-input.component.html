@@ -1,10 +1,10 @@
 <div class="client-input-form">
     <div class="msg-container">
-        <div class="input-msg-box font-12" style="box-sizing: border-box" *ngIf="!$any(message)?.formSubmitted">
-            <h6 class="fw-bold agent-name font-10 fw-bold m-0 text-dotted">Bot</h6>
+        <div class="input-msg-box intro-bubble" *ngIf="!$any(message)?.formSubmitted">
+            <h6 class="agent-name m-0 text-dotted">Bot</h6>
             <span class="d-block">Please fill this form with your details to proceed with the conversation.</span>
         </div>
-        <mat-card *ngIf="!$any(message)?.formSubmitted" class="mat-elevation-z3 details-card min-w-100 max-w-100 p-2 rounded-4 font-12 input-msg-box">
+        <mat-card *ngIf="!$any(message)?.formSubmitted" class="details-card min-w-100 max-w-100">
             <form [formGroup]="clientForm">
                 <div class="show-loader position-absolute" *ngIf="formIsSubmiting" style="bottom: 112px">
                     <mat-progress-spinner diameter="20" mode="indeterminate" value="100"></mat-progress-spinner>
@@ -14,22 +14,22 @@
                         <mat-form-field
                             appearance="outline"
                             class="w-100"
-                            *ngIf="param.name?.toUpperCase() !== 'NUMBER'"
-                            [style.marginTop]="param?.name === 'mail' ? '10px' : ''"
+                            *ngIf="!isPhoneParam(param)"
+                            [style.marginTop]="isMailParam(param) ? '10px' : ''"
                             required
                         >
                             <mat-label class="text-capitalize">{{
                                 param?.name === 'mail' ? 'Email' : param?.name
                             }}</mat-label>
-                            <ng-container *ngIf="param.name?.toUpperCase() !== 'NUMBER'">
+                            <ng-container *ngIf="!isPhoneParam(param)">
                                 <input
                                 #formControl
                                 [formControlName]="param?.id"
                                 [name]="param?.name"
-                                type="text"
                                 [placeholder]="
-                                'Your ' + (param.name === 'mail' ? 'email' : param.name?.toLowerCase())
+                                'Your ' + (isMailParam(param) ? 'email' : param.name?.toLowerCase())
                                 "
+                                [type]="isMailParam(param) ? 'email' : 'text'"
                                 matInput
                                 autocomplete="off"
                                 >
@@ -52,7 +52,7 @@
                                 >{{ param?.name === 'mail' ? 'Email' : (param.name | titlecase) }} is invalid.
                             </mat-error>
                         </mat-form-field>
-                        <ng-container *ngIf="param.name?.toUpperCase() === 'NUMBER'">
+                        <ng-container *ngIf="isPhoneParam(param)">
                             <!-- <phone-number-control
                                 #formControl
                                 [formControlName]="param?.id"
@@ -84,7 +84,7 @@
                 <div class="form-btn d-flex justify-content-end">
                     <button
                         (click)="submitParam(defaultParams)"
-                        class="focused-color w-100 font-14 fw-bolder"
+                        class="submit-btn w-100"
                         color="primary"
                         mat-flat-button
                         type="submit"
@@ -99,10 +99,12 @@
 </div>
 
 <ng-template [ngIf]="$any(message)?.formSubmitted">
-    <div class="success-clint-form my-3">
-        <div class="text-center">
-            <img class="mb-3" [src]="appurl + 'assets/images/success-icon.png'" loading="lazy" />
-        </div>
-        <strong class="d-block text-center font-14"> Your details are successfully sent! </strong>
+    <div class="success-clint-form d-flex align-items-center" role="status">
+        <span class="success-icon d-flex align-items-center justify-content-center" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor" />
+            </svg>
+        </span>
+        <strong>Your details are successfully sent!</strong>
     </div>
 </ng-template>
