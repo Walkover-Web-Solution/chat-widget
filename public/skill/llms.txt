@@ -1,0 +1,29 @@
+# Hello Chat (MSG91)
+
+> Live chat for websites and apps. Prebuilt widget or build your own UI on Hello's infrastructure.
+
+## Skill (for AI agents)
+- [Index](https://ctest.msg91.com/skill/SKILL.md): start here; it links every chapter.
+
+## Prebuilt widget
+- [Embed](https://ctest.msg91.com/skill/01-embed-widget.md)
+- [Control from page](https://ctest.msg91.com/skill/02-control-widget.md)
+- [Events](https://ctest.msg91.com/skill/03-widget-events.md)
+
+## Custom UI (headless)
+- [Concepts](https://ctest.msg91.com/skill/04-concepts.md)
+- [Session](https://ctest.msg91.com/skill/05-session.md)
+- [Channels](https://ctest.msg91.com/skill/06-channels.md)
+- [Messages](https://ctest.msg91.com/skill/07-messages.md)
+- [Message types](https://ctest.msg91.com/skill/08-message-types.md)
+- [Realtime](https://ctest.msg91.com/skill/09-realtime.md)
+- [Attachments](https://ctest.msg91.com/skill/10-attachments.md)
+- [Typing and read receipts](https://ctest.msg91.com/skill/11-typing-read-receipts.md)
+- [Greetings](https://ctest.msg91.com/skill/12-greetings.md)
+- [Feedback](https://ctest.msg91.com/skill/13-feedback.md)
+- [Calls](https://ctest.msg91.com/skill/14-calls.md)
+- [Push notifications](https://ctest.msg91.com/skill/15-push-notifications.md)
+- [Agents and teams](https://ctest.msg91.com/skill/16-agents-teams.md)
+- [Errors](https://ctest.msg91.com/skill/17-errors.md)
+- [Types](https://ctest.msg91.com/skill/18-types.md)
+- [Recipe: custom UI](https://ctest.msg91.com/skill/recipe-custom-ui.md)
