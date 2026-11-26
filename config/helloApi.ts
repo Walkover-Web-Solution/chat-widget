@@ -334,6 +334,35 @@ export async function getFullMessageApi(channel: string, messageId: string): Pro
   }
 }
 
+// Full body of one show_more message ("Tap to view message"), fetched on tap.
+// Returns the full message content object, or null on failure.
+export async function getFullMessageV3Api(channelId: string, messageId: string): Promise<any> {
+  try {
+    const response = await axios.post(
+      `${HELLO_HOST_URL}/v3/get-history/`,
+      {
+        channel: channelId,
+        message_id: messageId,
+        origin: "chat",
+        page_size: PAGE_SIZE.hello,
+        start_from: 1,
+        user_data: getUserData(),
+      },
+      {
+        headers: {
+          authorization: getAuthorization(),
+          "content-type": "application/json",
+        },
+      }
+    );
+    // Response: { message: { id, channel, timetoken, message: { message_type, content } } }
+    return response?.data?.message?.message?.content ?? null;
+  } catch (error: any) {
+    errorToast(error?.response?.data?.message || "Failed to load full message");
+    return null;
+  }
+}
+
 // Main function to initialize Hello chat
 export async function initializeHelloChat(): Promise<any> {
   try {

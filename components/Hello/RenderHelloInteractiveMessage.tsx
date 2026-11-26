@@ -1,6 +1,10 @@
 import InterfaceMarkdown from '@/components/Interface-Chatbot/Interface-Markdown/InterfaceMarkdown';
 import { useReplyContext } from '@/components/Interface-Chatbot/contexts/ReplyContext';
+import { getFullMessageV3Api } from '@/config/helloApi';
+import { useCustomSelector } from '@/utils/deepCheckSelector';
+import { hasMoreContent } from '@/utils/readMore';
 import { ExternalLink, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
 import { useColor } from '../Chatbot/hooks/useColor';
 import { useSendMessageToHello } from '../Chatbot/hooks/useHelloIntegration';
 import ImageWithFallback from '../Interface-Chatbot/Messages/ImageWithFallback';
@@ -8,7 +12,22 @@ import { MESSAGE_TYPES } from "../Interface-Chatbot/Messages/MessageType";
 import AppleInteractiveMessage, { detectAppleInteractiveType } from './AppleInteractiveMessage';
 
 function RenderHelloInteractiveMessage({ message }: { message: any }) {
-  const messageJson = message?.messageJson || {};
+  // show_more: the socket sent only a preview ("Tap to view message"); fetch the full card on tap.
+  const showMore = hasMoreContent(message);
+  const messageId = message?.message_id || message?.id;
+  const { channel } = useCustomSelector((state: any) => ({ channel: state.Chat?.subThreadId }));
+  const [fullJson, setFullJson] = useState<any>(null);
+  const [loadingFull, setLoadingFull] = useState(false);
+  const handleViewFull = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!channel || !messageId || loadingFull) return;
+    setLoadingFull(true);
+    const full = await getFullMessageV3Api(channel, messageId);
+    setLoadingFull(false);
+    if (full) setFullJson(full?.interactive || full);
+  };
+
+  const messageJson = fullJson || message?.messageJson || {};
   const { replyToMessage } = useReplyContext();
   const isGreeting = message?.type === 'greeting_msg';
   const sendMessageToHello = useSendMessageToHello({
@@ -86,6 +105,13 @@ function RenderHelloInteractiveMessage({ message }: { message: any }) {
   };
 
   const renderInteractiveContent = () => {
+    if (showMore && !fullJson) {
+      return (
+        <button type="button" onClick={handleViewFull} disabled={loadingFull} className="text-inherit underline disabled:opacity-70">
+          {loadingFull ? 'Loading…' : (messageJson?.text || 'Tap to view message')}
+        </button>
+      );
+    }
     // Apple Messages for Business payloads (list picker, time picker, quick reply, rich link, form, auth, Apple Pay)
     if (detectAppleInteractiveType(messageJson)) {
       return <AppleInteractiveMessage messageJson={messageJson} sendMessageToHello={sendMessageToHello} />;
