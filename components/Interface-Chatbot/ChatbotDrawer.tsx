@@ -26,6 +26,7 @@ import { useOnSendHello } from "../Chatbot/hooks/useHelloIntegration";
 import { useScreenSize } from "../Chatbot/hooks/useScreenSize";
 import { stripHtmlToText } from "@/utils/utilities";
 import { MessageContext } from "./InterfaceChatbot";
+import { stripMarkdownForPreview } from "@/utils/stripMarkdownForPreview";
 
 interface ChatbotDrawerProps {
   chatSessionId: string
@@ -282,42 +283,51 @@ const ChatbotDrawer = ({
                     || (lastMsgType && titleByType[lastMsgType])
                     || 'Conversation';
 
-                  const subtitleHtml = (() => {
+                  const formatPreviewText = (raw: string) => stripMarkdownForPreview(raw);
+
+                  const subtitleText = (() => {
                     if (lastMessage) {
                       const isUserMessage = lastMessage?.role == "user" || lastMessage?.role === "voice_call";
                       let text: string;
                       if (lastMessage?.message_type === 'pushNotification') {
                         text = "Custom Notification";
                       } else if (lastMessage.messageJson?.text) {
-                        text = lastMessage.messageJson.text;
+                        text = formatPreviewText(lastMessage.messageJson.text);
                       } else if (lastMessage.messageJson?.attachment?.length > 0) {
                         text = "Attachment";
                       } else if (lastMessage?.message_type === 'interactive') {
-                        text = lastMessage.messageJson?.body?.text || getAppleInteractivePreviewText(lastMessage.messageJson) || "Interactive Message";
+                        text =
+                          lastMessage.messageJson?.body?.text ||
+                          getAppleInteractivePreviewText(lastMessage.messageJson) ||
+                          "Interactive Message";
                       } else if (lastMessage.messageJson?.message_type) {
                         text = lastMessage.messageJson.message_type;
                       } else {
                         text = "New conversation";
                       }
-                      text = stripHtmlToText(text);
+                      text = stripHtmlToText(formatPreviewText(text));
                       return `${isUserMessage ? "You: " : ""}${text || "New conversation"}`;
                     }
                     if (channel?.last_message) {
                       const isYou = !channel?.last_message?.message?.sender_id && !channel?.last_message?.message?.is_auto_response;
                       let text: string;
                       if (channel?.last_message?.message?.content?.text) {
-                        text = channel.last_message.message.content.text;
+                        text = formatPreviewText(channel.last_message.message.content.text);
                       } else if (channel?.last_message?.message?.content?.attachment?.length > 0) {
                         text = "Attachment";
                       } else if (channel?.last_message?.message?.message_type === 'interactive') {
-                        const interactiveContent = channel.last_message.message.content?.interactive || channel.last_message.message.content;
-                        text = interactiveContent?.body?.text || getAppleInteractivePreviewText(interactiveContent) || "Interactive Message";
+                        const interactiveContent =
+                          channel.last_message.message.content?.interactive || channel.last_message.message.content;
+                        text =
+                          interactiveContent?.body?.text ||
+                          getAppleInteractivePreviewText(interactiveContent) ||
+                          "Interactive Message";
                       } else if (channel?.last_message?.message?.message_type) {
                         text = channel.last_message.message.message_type;
                       } else {
                         text = "New conversation";
                       }
-                      text = stripHtmlToText(text);
+                      text = stripHtmlToText(formatPreviewText(text));
                       return `${isYou ? "You: " : ""}${text || "New conversation"}`;
                     }
                     return "New conversation";
@@ -387,10 +397,8 @@ const ChatbotDrawer = ({
                             </span>
                           )}
                         </div>
-                        <div
-                          className="text-xs opacity-70 line-clamp-1 break-all [&_*]:inline"
-                        >
-                          {subtitleHtml}
+                        <div className="text-xs opacity-70 line-clamp-1 break-all">
+                          {subtitleText}
                         </div>
                       </div>
 
